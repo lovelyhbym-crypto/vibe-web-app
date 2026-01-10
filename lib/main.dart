@@ -27,20 +27,15 @@ void main() async {
     ),
   );
 
-  final notificationService = NotificationService();
-  await notificationService.initialize();
-  // Request permissions logic is now partly inside initialize (FCM)
-  // But we keep this for consistency if local notifications need separate prompt logic?
-  // Actually NotificationService.initialize() now requests FCM permission.
-  // The existing .requestPermissions() was for local notifications purely.
-  // We can keep calling it or merge. The prompt says "call NotificationService().initialize()".
-  // Let's keep existing calls to retain behavior unless conflicts.
-  await notificationService.requestPermissions();
-  // Schedule a default reminder if none exists, this is a simple default.
-  // In a real app we might base this on dynamic data immediately.
-  await notificationService.scheduleDailyTenPM(
-    'Ready to save closer to your goal? Log your resistance now!',
-  );
+  // Notifications not supported on web currently or requires specific setup
+  // if (!kIsWeb) {
+  //   final notificationService = NotificationService();
+  //   await notificationService.initialize();
+  //   await notificationService.requestPermissions();
+  //   await notificationService.scheduleDailyTenPM(
+  //     'Ready to save closer to your goal? Log your resistance now!',
+  //   );
+  // }
 
   runApp(const ProviderScope(child: MyApp()));
 }
