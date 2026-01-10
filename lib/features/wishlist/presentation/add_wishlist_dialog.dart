@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/services/image_service.dart';
 import '../../../core/utils/i18n.dart';
+import '../../../../core/ui/bouncy_button.dart';
 import '../domain/wishlist_model.dart';
 import '../providers/wishlist_provider.dart';
 
@@ -192,24 +193,27 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
             style: const TextStyle(color: Colors.white60),
           ),
         ),
-        ElevatedButton(
-          onPressed: _isUploading ? null : _submit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFCCFF00),
-            foregroundColor: Colors.black,
-            disabledBackgroundColor: Colors.grey[700],
-            disabledForegroundColor: Colors.white38,
+        BouncyButton(
+          onTap: _isUploading ? () {} : _submit,
+          child: ElevatedButton(
+            onPressed: _isUploading ? null : _submit,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFCCFF00),
+              foregroundColor: Colors.black,
+              disabledBackgroundColor: Colors.grey[700],
+              disabledForegroundColor: Colors.white38,
+            ),
+            child: _isUploading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Text(i18n.add),
           ),
-          child: _isUploading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Text(i18n.add),
         ),
       ],
     );

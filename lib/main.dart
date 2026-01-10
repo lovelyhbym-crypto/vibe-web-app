@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -9,6 +10,7 @@ import 'core/utils/i18n.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
 
   await Supabase.initialize(
     url: const String.fromEnvironment(
@@ -27,6 +29,12 @@ void main() async {
 
   final notificationService = NotificationService();
   await notificationService.initialize();
+  // Request permissions logic is now partly inside initialize (FCM)
+  // But we keep this for consistency if local notifications need separate prompt logic?
+  // Actually NotificationService.initialize() now requests FCM permission.
+  // The existing .requestPermissions() was for local notifications purely.
+  // We can keep calling it or merge. The prompt says "call NotificationService().initialize()".
+  // Let's keep existing calls to retain behavior unless conflicts.
   await notificationService.requestPermissions();
   // Schedule a default reminder if none exists, this is a simple default.
   // In a real app we might base this on dynamic data immediately.

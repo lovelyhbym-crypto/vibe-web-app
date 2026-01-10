@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "198497109026",
+    "project_id": "vibe-saver",
+    "storage_bucket": "vibe-saver.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:198497109026:android:cf79d2b7f211d1d07e767b",
+        "android_client_info": {
+          "package_name": "com.example.vive_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD60vBEfshq8s9--ocik6p77BoHnRQ7N0A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

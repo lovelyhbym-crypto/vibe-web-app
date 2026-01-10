@@ -11,12 +11,15 @@ import '../../auth/providers/auth_provider.dart';
 import '../../wishlist/providers/wishlist_provider.dart';
 import '../../../core/utils/i18n.dart';
 
+import '../../../core/ui/background_gradient.dart';
+
 import '../providers/dashboard_provider.dart';
 import '../providers/savings_period_provider.dart';
 import '../../wishlist/domain/wishlist_model.dart';
 import '../providers/total_saved_provider.dart';
 import '../providers/achievement_provider.dart';
 import 'widgets/success_summary_card.dart';
+import '../../../core/ui/glass_card.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -24,7 +27,6 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardAsync = ref.watch(dashboardProvider);
-
     final totalSaved = ref.watch(totalSavedProvider);
 
     // Listen for achievement events
@@ -62,77 +64,84 @@ class DashboardScreen extends ConsumerWidget {
     final activeGoals =
         wishlistAsync.asData?.value.where((w) => !w.isAchieved).toList() ?? [];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          i18n.dashboardTitle,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => context.push('/settings'),
+    return BackgroundGradient(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(
+            i18n.dashboardTitle,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-        ],
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        elevation: 0,
-        foregroundColor: Colors.white,
-      ),
-      // Background color is handled by Theme now (scaffoldBackgroundColor)
-      body: dashboardAsync.when(
-        data: (data) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(dashboardProvider);
-            ref.invalidate(wishlistProvider);
-          },
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _PeriodSelector(),
-                const SizedBox(height: 16),
-                const SizedBox(height: 16),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () => context.push('/settings'),
+            ),
+          ],
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: Colors.white,
+        ),
+        body: dashboardAsync.when(
+          data: (data) => RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(dashboardProvider);
+              ref.invalidate(wishlistProvider);
+            },
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _PeriodSelector(),
+                  const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // Top: Total Saved Card
-                _SummaryCard(totalSaved: totalSaved)
-                    .animate()
-                    .fadeIn(duration: 600.ms)
-                    .slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
+                  // Top: Total Saved Card
+                  _SummaryCard(totalSaved: totalSaved)
+                      .animate()
+                      .fadeIn(duration: 600.ms)
+                      .slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
 
-                const SizedBox(height: 24),
-
-                // [NEW] Goal Progress Slider
-                if (activeGoals.isNotEmpty) ...[
-                  _GoalCarousel(
-                    wishlist: activeGoals,
-                    averageDailySavings: data.averageDailySavings,
-                  ).animate().fadeIn(delay: 100.ms).slideX(begin: 0.1, end: 0),
                   const SizedBox(height: 24),
+
+                  // [NEW] Goal Progress Slider
+                  if (activeGoals.isNotEmpty) ...[
+                    _GoalCarousel(
+                          wishlist: activeGoals,
+                          averageDailySavings: data.averageDailySavings,
+                        )
+                        .animate()
+                        .fadeIn(delay: 100.ms)
+                        .slideX(begin: 0.1, end: 0),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Middle: Weekly Trend
+                  if (data.totalSaved > 0)
+                    _WeeklyTrendChart(weeklyData: data.weeklyTrend)
+                        .animate()
+                        .fadeIn(delay: 200.ms)
+                        .slideX(begin: 0.1, end: 0),
+
+                  const SizedBox(height: 24),
+
+                  // Bottom: Category Pie
+                  if (data.totalSaved > 0)
+                    _CategoryPieChart(categoryData: data.categoryBreakdown)
+                        .animate()
+                        .fadeIn(delay: 400.ms)
+                        .slideX(begin: -0.1, end: 0),
+
+                  const SizedBox(height: 100),
                 ],
-
-                // Middle: Weekly Trend
-                if (data.totalSaved > 0)
-                  _WeeklyTrendChart(
-                    weeklyData: data.weeklyTrend,
-                  ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1, end: 0),
-
-                const SizedBox(height: 24),
-
-                // Bottom: Category Pie
-                if (data.totalSaved > 0)
-                  _CategoryPieChart(
-                    categoryData: data.categoryBreakdown,
-                  ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1, end: 0),
-
-                const SizedBox(height: 100),
-              ],
+              ),
             ),
           ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (err, stack) => Center(child: Text('Error: $err')),
         ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
-      ), // Close when
+      ),
     );
   }
 
@@ -187,7 +196,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            duration: const Duration(seconds: 2, milliseconds: 500), // 2.5s
+            duration: const Duration(seconds: 2, milliseconds: 500),
           ),
         )
         .closed
@@ -271,27 +280,15 @@ class _SummaryCard extends ConsumerWidget {
         labelText = i18n.totalSaved;
         break;
       case SavingsPeriod.yearly:
-        labelText = '올해 절약 금액'; // Needs i18n support ideally
+        labelText = '올해 절약 금액';
         break;
       case SavingsPeriod.monthly:
-        labelText = '이번 달 절약 금액'; // Needs i18n support ideally
+        labelText = '이번 달 절약 금액';
         break;
     }
 
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(color: Colors.white10),
-      ),
       child: Column(
         children: [
           Text(
@@ -301,7 +298,7 @@ class _SummaryCard extends ConsumerWidget {
           const SizedBox(height: 8),
           TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: 0, end: totalSaved),
-            duration: const Duration(milliseconds: 800),
+            duration: const Duration(milliseconds: 1500),
             curve: Curves.easeOutExpo,
             builder: (context, value, child) {
               return Text(
@@ -370,9 +367,7 @@ class _GoalCarouselState extends ConsumerState<_GoalCarousel> {
           child: PageView.builder(
             controller: _pageController,
             itemCount: itemCount,
-            onPageChanged: (index) {
-              // Optional: Update selected index logic if needed
-            },
+            onPageChanged: (index) {},
             itemBuilder: (context, index) {
               final item = widget.wishlist[index];
               return AnimatedBuilder(
@@ -417,14 +412,11 @@ class _PageIndicator extends StatelessWidget {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, child) {
-        // Page might be null initially
         final page = controller.hasClients ? (controller.page ?? 0) : 0.0;
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(count, (index) {
-            // Simple logic to highlight the closest dot
-            // A more complex one would interpolate colors/sizes
             final selected = (page - index).abs() < 0.5;
 
             return AnimatedContainer(
@@ -478,13 +470,8 @@ class _WishlistProgressCard extends StatelessWidget {
 
     final progressColor = _getProgressColor(progress);
 
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -524,12 +511,19 @@ class _WishlistProgressCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: progress,
-            backgroundColor: Colors.grey[800],
-            color: progressColor,
-            minHeight: 12,
-            borderRadius: BorderRadius.circular(6),
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0.0, end: progress),
+            duration: const Duration(milliseconds: 1500),
+            curve: Curves.easeOutExpo,
+            builder: (context, value, child) {
+              return LinearProgressIndicator(
+                value: value,
+                backgroundColor: Colors.grey[800],
+                color: progressColor,
+                minHeight: 12,
+                borderRadius: BorderRadius.circular(6),
+              );
+            },
           ),
           if (prediction != null) ...[
             const SizedBox(height: 16),
@@ -568,14 +562,9 @@ class _WeeklyTrendChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
       height: 250,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -590,6 +579,8 @@ class _WeeklyTrendChart extends StatelessWidget {
           const SizedBox(height: 20),
           Expanded(
             child: LineChart(
+              duration: const Duration(milliseconds: 1000),
+              curve: Curves.easeInOut,
               LineChartData(
                 gridData: FlGridData(show: false),
                 titlesData: FlTitlesData(
@@ -700,14 +691,9 @@ class _CategoryPieChart extends StatelessWidget {
       );
     }).toList();
 
-    return Container(
+    return GlassCard(
       height: 300,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white10),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -722,6 +708,8 @@ class _CategoryPieChart extends StatelessWidget {
           const SizedBox(height: 20),
           Expanded(
             child: PieChart(
+              duration: const Duration(milliseconds: 1000),
+              curve: Curves.easeInOut,
               PieChartData(
                 sections: sections,
                 centerSpaceRadius: 40,
@@ -825,27 +813,19 @@ class _MilestoneDialogState extends State<_MilestoneDialog> {
             ),
           ),
         ),
-        Positioned(
-          top: isSuccess ? -50 : -20,
+        Align(
+          alignment: Alignment.topCenter,
           child: ConfettiWidget(
             confettiController: _confettiController,
             blastDirectionality: BlastDirectionality.explosive,
-            shouldLoop: isSuccess, // Loop for success
-            colors: [
+            shouldLoop: false,
+            colors: const [
               Colors.green,
               Colors.blue,
               Colors.pink,
               Colors.orange,
               Colors.purple,
-              Colors.yellow,
-              if (isSuccess) Colors.amber,
-              if (isSuccess) Colors.white,
             ],
-            numberOfParticles: isSuccess ? 100 : 50,
-            gravity: 0.1,
-            maxBlastForce: isSuccess ? 50 : 20, // Bigger blast
-            minBlastForce: isSuccess ? 20 : 10,
-            emissionFrequency: isSuccess ? 0.05 : 0.02,
           ),
         ),
       ],

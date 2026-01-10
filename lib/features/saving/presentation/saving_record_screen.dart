@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:confetti/confetti.dart';
 import '../../../core/utils/i18n.dart';
+import '../../../core/ui/background_gradient.dart'; // Import
 
 import 'package:vive_app/features/saving/domain/category_model.dart';
 import 'package:vive_app/features/saving/providers/category_provider.dart';
@@ -20,13 +23,24 @@ class SavingRecordScreen extends ConsumerStatefulWidget {
 class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
   final _amountController = TextEditingController();
   final _customCategoryController = TextEditingController();
+  late ConfettiController _confettiController;
   String? _selectedCategoryId;
   bool _addToCategories = false;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(
+      duration: const Duration(seconds: 1),
+    );
+  }
 
   @override
   void dispose() {
     _amountController.dispose();
     _customCategoryController.dispose();
+    _confettiController.dispose();
     super.dispose();
   }
 
@@ -36,6 +50,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
   }
 
   Future<void> _submit() async {
+    if (_isLoading) return;
+
     final i18n = I18n.of(context);
 
     // Sanitize input: remove commas and spaces
@@ -55,6 +71,10 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       String finalCategoryName = '';
       final categories = ref.read(categoryProvider).value ?? [];
@@ -66,6 +86,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(SnackBar(content: Text(i18n.snackBarSelect)));
+            setState(() => _isLoading = false);
           }
           return;
         }
@@ -93,14 +114,37 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
 
       // 2. Update Wishlist (Add funds to ALL items)
       final wishlistNotifier = ref.read(wishlistProvider.notifier);
-      // Cast to double for wishlist calculations as wishlist still uses double for money
       await wishlistNotifier.addSavingToAllGoals(amount.toDouble());
 
       if (mounted) {
-        // 3. Show Feedback
-        _showSuccessDialog(i18n);
+        // 3. Play Success Effects
+        HapticFeedback.mediumImpact();
+        _confettiController.play();
+
+        // Wait for user to enjoy the effect (2 seconds)
+        await Future.delayed(const Duration(seconds: 2));
+
+        if (mounted) {
+          // Reset form state since IndexedStack preserves it
+          _amountController.clear();
+          _customCategoryController.clear();
+          setState(() {
+            _selectedCategoryId = null;
+            _addToCategories = false;
+            _isLoading = false;
+          });
+
+          // Navigate away
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            // Fallback for Tab navigation: Switch to Stats (Index 2)
+            ref.read(navigationIndexProvider.notifier).state = 2;
+          }
+        }
       }
     } catch (e) {
+      setState(() => _isLoading = false);
       if (mounted) {
         // Friendly error message
         String message = i18n.isKorean
@@ -119,307 +163,268 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
     }
   }
 
-  void _showSuccessDialog(I18n i18n) {
-    showDialog(
-      context: context,
-      builder: (context) =>
-          AlertDialog(
-                backgroundColor: const Color(0xFF1A1A1A),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  side: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.1),
-                    width: 1,
-                  ),
-                ),
-                title: Center(
-                  child: Text(
-                    i18n.dialogGreatJob,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                    ),
-                  ),
-                ),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 8),
-                    Text(
-                      i18n.dialogSaved,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        height: 1.4,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      if (context.canPop()) {
-                        context.pop(); // Close dialog
-                      }
-
-                      // Reset Form
-                      _amountController.clear();
-                      _customCategoryController.clear();
-                      setState(() {
-                        _selectedCategoryId = null;
-                        _addToCategories = false;
-                      });
-
-                      // Navigate to Stats Tab (Index 2)
-                      ref.read(navigationIndexProvider.notifier).state = 2;
-                    },
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                    ),
-                    child: Text(
-                      i18n.dialogAwesome,
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              )
-              .animate()
-              .scale(duration: 400.ms, curve: Curves.elasticOut)
-              .shimmer(
-                delay: 400.ms,
-                duration: 1200.ms,
-                color: const Color(0xFFCCFF00),
-              ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final i18n = I18n.of(context);
     final categoriesAsync = ref.watch(categoryProvider);
     final categories = categoriesAsync.asData?.value ?? [];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(i18n.recordSavingTitle),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () => context.push('/settings'),
-          ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.all(24.0),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  Text(
-                    i18n.whatDidYouResist,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ...categories.map((category) {
-                        final isSelected = _selectedCategoryId == category.id;
-                        return GestureDetector(
-                          onLongPress: category.isCustom
-                              ? () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: Text(
-                                        i18n.isKorean
-                                            ? '카테고리 삭제'
-                                            : 'Delete Category',
-                                      ),
-                                      content: Text(
-                                        i18n.isKorean
-                                            ? "'${category.name}' 카테고리를 삭제하시겠습니까?"
-                                            : "Delete '${category.name}'?",
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => context.pop(),
-                                          child: Text(
-                                            i18n.isKorean ? '취소' : 'Cancel',
-                                          ),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            ref
-                                                .read(categoryProvider.notifier)
-                                                .deleteCategory(category.id);
-                                            if (isSelected) {
-                                              setState(
-                                                () =>
-                                                    _selectedCategoryId = null,
-                                              );
-                                            }
-                                            context.pop();
-                                          },
-                                          child: Text(
-                                            i18n.isKorean ? '삭제' : 'Delete',
-                                            style: const TextStyle(
-                                              color: Colors.red,
+    return BackgroundGradient(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(i18n.recordSavingTitle),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () => context.push('/settings'),
+            ),
+          ],
+        ),
+        body: Stack(
+          children: [
+            GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: CustomScrollView(
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.all(24.0),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        Text(
+                          i18n.whatDidYouResist,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ...categories.map((category) {
+                              final isSelected =
+                                  _selectedCategoryId == category.id;
+                              return GestureDetector(
+                                onLongPress: category.isCustom
+                                    ? () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => AlertDialog(
+                                            title: Text(
+                                              i18n.isKorean
+                                                  ? '카테고리 삭제'
+                                                  : 'Delete Category',
                                             ),
+                                            content: Text(
+                                              i18n.isKorean
+                                                  ? "'${category.name}' 카테고리를 삭제하시겠습니까?"
+                                                  : "Delete '${category.name}'?",
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => context.pop(),
+                                                child: Text(
+                                                  i18n.isKorean
+                                                      ? '취소'
+                                                      : 'Cancel',
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  ref
+                                                      .read(
+                                                        categoryProvider
+                                                            .notifier,
+                                                      )
+                                                      .deleteCategory(
+                                                        category.id,
+                                                      );
+                                                  if (isSelected) {
+                                                    setState(
+                                                      () =>
+                                                          _selectedCategoryId =
+                                                              null,
+                                                    );
+                                                  }
+                                                  context.pop();
+                                                },
+                                                child: Text(
+                                                  i18n.isKorean
+                                                      ? '삭제'
+                                                      : 'Delete',
+                                                  style: const TextStyle(
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
-                              : null,
-                          child: ChoiceChip(
-                            label: Text(
-                              category.name,
-                            ), // i18n support needed later?
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(
-                                () => _selectedCategoryId = selected
-                                    ? category.id
+                                        );
+                                      }
                                     : null,
+                                child: ChoiceChip(
+                                  label: Text(category.name),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    setState(
+                                      () => _selectedCategoryId = selected
+                                          ? category.id
+                                          : null,
+                                    );
+                                  },
+                                  backgroundColor: Colors.white,
+                                  selectedColor: Colors.black,
+                                  labelStyle: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : Colors.black,
+                                  ),
+                                ),
                               );
-                            },
-                            backgroundColor: Colors.white,
-                            selectedColor: Colors.black,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black,
+                            }),
+                            ChoiceChip(
+                              label: Text(i18n.categoryName('Other')),
+                              selected: _selectedCategoryId == 'other',
+                              onSelected: (selected) {
+                                setState(
+                                  () => _selectedCategoryId = selected
+                                      ? 'other'
+                                      : null,
+                                );
+                              },
+                              backgroundColor: Colors.white,
+                              selectedColor: Colors.black,
+                              labelStyle: TextStyle(
+                                color: _selectedCategoryId == 'other'
+                                    ? Colors.white
+                                    : Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_selectedCategoryId == 'other') ...[
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _customCategoryController,
+                            decoration: InputDecoration(
+                              labelText: i18n.categoryName('Other'),
+                              border: const OutlineInputBorder(),
+                              hintText: 'ex) Bubble Tea',
                             ),
                           ),
-                        );
-                      }),
-                      ChoiceChip(
-                        label: Text(i18n.categoryName('Other')),
-                        selected: _selectedCategoryId == 'other',
-                        onSelected: (selected) {
-                          setState(
-                            () =>
-                                _selectedCategoryId = selected ? 'other' : null,
-                          );
-                        },
-                        backgroundColor: Colors.white,
-                        selectedColor: Colors.black,
-                        labelStyle: TextStyle(
-                          color: _selectedCategoryId == 'other'
-                              ? Colors.white
-                              : Colors.black,
+                          const SizedBox(height: 8),
+                          CheckboxListTile(
+                            value: _addToCategories,
+                            onChanged: (value) {
+                              setState(() {
+                                _addToCategories = value ?? false;
+                              });
+                            },
+                            title: Text(
+                              i18n.isKorean
+                                  ? '새 카테고리로 추가'
+                                  : 'Add to categories',
+                            ),
+                            controlAffinity: ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ],
+                        const SizedBox(height: 32),
+                        Text(
+                          i18n.howMuchSaved,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  if (_selectedCategoryId == 'other') ...[
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _customCategoryController,
-                      decoration: InputDecoration(
-                        labelText: i18n.categoryName(
-                          'Other',
-                        ), // "Direct Input" or "Category Name"
-                        border: const OutlineInputBorder(),
-                        hintText: 'ex) Bubble Tea',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    CheckboxListTile(
-                      value: _addToCategories,
-                      onChanged: (value) {
-                        setState(() {
-                          _addToCategories = value ?? false;
-                        });
-                      },
-                      title: Text(
-                        i18n.isKorean ? '새 카테고리로 추가' : 'Add to categories',
-                      ),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ],
-                  const SizedBox(height: 32),
-                  Text(
-                    i18n.howMuchSaved,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      prefixText: i18n.isKorean ? '' : '\$ ',
-                      suffixText: i18n.isKorean ? '원' : '',
-                      border: const OutlineInputBorder(),
-                      labelText: i18n.amountLabel,
-                    ),
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _QuickAmountButton(
-                        label: '+1,000',
-                        amount: 1000,
-                        onPressed: _addAmount,
-                      ),
-                      _QuickAmountButton(
-                        label: '+5,000',
-                        amount: 5000,
-                        onPressed: _addAmount,
-                      ),
-                      _QuickAmountButton(
-                        label: '+10,000',
-                        amount: 10000,
-                        onPressed: _addAmount,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(
-                      i18n.submitButton,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _amountController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            prefixText: i18n.isKorean ? '' : '\$ ',
+                            suffixText: i18n.isKorean ? '원' : '',
+                            border: const OutlineInputBorder(),
+                            labelText: i18n.amountLabel,
+                          ),
+                          style: const TextStyle(fontSize: 24),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _QuickAmountButton(
+                              label: '+1,000',
+                              amount: 1000,
+                              onPressed: _addAmount,
+                            ),
+                            _QuickAmountButton(
+                              label: '+5,000',
+                              amount: 5000,
+                              onPressed: _addAmount,
+                            ),
+                            _QuickAmountButton(
+                              label: '+10,000',
+                              amount: 10000,
+                              onPressed: _addAmount,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                        ElevatedButton(
+                          onPressed: _isLoading ? null : _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  i18n.submitButton,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                        const SizedBox(height: 48),
+                        // Today's Records List
+                        _TodaysRecordsList(),
+                      ]),
                     ),
                   ),
-                  const SizedBox(height: 48),
-                  // Today's Records List
-                  _TodaysRecordsList(),
-                ]),
+                ],
+              ),
+            ),
+
+            Align(
+              alignment: Alignment.topCenter,
+              child: ConfettiWidget(
+                confettiController: _confettiController,
+                blastDirectionality: BlastDirectionality.explosive,
+                shouldLoop: false,
+                colors: const [
+                  Colors.greenAccent,
+                  Colors.pinkAccent,
+                  Colors.white,
+                ],
+                gravity: 0.2,
               ),
             ),
           ],

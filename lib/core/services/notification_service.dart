@@ -2,6 +2,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter/services.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:io';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -34,6 +36,58 @@ class NotificationService {
         );
 
     await _notificationsPlugin.initialize(initializationSettings);
+
+    // --- FCM Setup ---
+    try {
+      // 1. Request Permission
+      final settings = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+      print('User granted permission: ${settings.authorizationStatus}');
+
+      // 2. Check APNS Token for iOS
+      if (Platform.isIOS) {
+        String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+        if (apnsToken == null) {
+          await Future.delayed(const Duration(seconds: 3));
+          apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+        }
+        if (apnsToken == null) {
+          print("APNS 토큰을 가져올 수 없습니다. 시뮬레이터 문제일 수 있습니다.");
+          return;
+        }
+      }
+
+      // 3. Get Token
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      print("FCM Token: $fcmToken");
+
+      // 4. Foreground Message Listener
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        print('Got a message whilst in the foreground!');
+        print('Message data: ${message.data}');
+
+        if (message.notification != null) {
+          print(
+            'Message also contained a notification: ${message.notification}',
+          );
+
+          // Show local notification for foreground message
+          showInstant(
+            message.notification!.title ?? 'No Title',
+            message.notification!.body ?? 'No Body',
+          );
+        }
+      });
+    } catch (e) {
+      print('FCM 초기화 오류: $e');
+    }
   }
 
   Future<void> requestPermissions() async {
