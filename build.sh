@@ -34,6 +34,6 @@ flutter pub get
 echo "Building Flutter Web application..."
 # Using --release for optimized build
 # --web-renderer auto selects appropriate renderer (HTML vs CanvasKit)
-flutter build web --release --web-renderer auto
+flutter build web --release
 
 echo "Build completed successfully!"
