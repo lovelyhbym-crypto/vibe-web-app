@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/i18n.dart';
+import '../../../core/providers/wishlist_provider.dart';
 import '../providers/wishlist_provider.dart';
 import 'add_wishlist_dialog.dart';
 
@@ -11,7 +12,7 @@ class WishlistScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final wishlistAsync = ref.watch(wishlistProvider);
+    final wishlistAsync = ref.watch(wishlistStreamProvider);
     final i18n = I18n.of(context);
 
     return Scaffold(
