@@ -20,6 +20,7 @@ import '../providers/total_saved_provider.dart';
 import '../providers/achievement_provider.dart';
 import '../../../core/ui/glass_card.dart';
 import '../../home/providers/navigation_provider.dart';
+import '../../vibe_shifter/presentation/vibe_shifter_dialog.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -142,6 +143,54 @@ class DashboardScreen extends ConsumerWidget {
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, stack) => Center(child: Text('Error: $err')),
+        ),
+        floatingActionButton: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.redAccent.withOpacity(0.5),
+                blurRadius: 20,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child:
+              FloatingActionButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => const VibeShifterDialog(),
+                      );
+                    },
+                    backgroundColor: Colors.redAccent.withOpacity(0.8),
+                    shape: const CircleBorder(),
+                    child: const Text(
+                      'SOS',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                        shadows: [
+                          BoxShadow(color: Colors.pinkAccent, blurRadius: 8),
+                          BoxShadow(color: Colors.red, blurRadius: 12),
+                        ],
+                      ),
+                    ),
+                  )
+                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                  .scale(
+                    begin: const Offset(1, 1),
+                    end: const Offset(1.1, 1.1),
+                    duration: 800.ms,
+                    curve: Curves.easeInOut,
+                  )
+                  .then()
+                  .shimmer(
+                    duration: 1200.ms,
+                    color: Colors.white54,
+                    delay: 2000.ms,
+                  ),
         ),
       ),
     );
