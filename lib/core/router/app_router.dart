@@ -6,9 +6,11 @@ import '../../features/auth/presentation/login_screen.dart';
 import '../../features/wishlist/presentation/wishlist_screen.dart';
 import '../../features/saving/presentation/saving_record_screen.dart';
 import '../../features/home/presentation/main_navigation_screen.dart';
-import '../../features/dashboard/presentation/dashboard_screen.dart';
+
 import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/wishlist/presentation/achieved_timeline_screen.dart';
+import '../../features/wishlist/presentation/wishlist_detail_screen.dart';
+import '../../features/wishlist/domain/wishlist_model.dart';
 
 part 'app_router.g.dart';
 
@@ -57,6 +59,13 @@ GoRouter goRouter(Ref ref) {
       GoRoute(
         path: '/achieved-goals',
         builder: (context, state) => const AchievedTimelineScreen(),
+      ),
+      GoRoute(
+        path: '/wishlist/detail',
+        builder: (context, state) {
+          final item = state.extra as WishlistModel;
+          return WishlistDetailScreen(item: item);
+        },
       ),
     ],
   );

@@ -8,6 +8,7 @@ class WishlistModel {
   final bool isAchieved;
   final DateTime? achievedAt;
   final DateTime createdAt;
+  final String? comment;
 
   WishlistModel({
     this.id,
@@ -19,6 +20,7 @@ class WishlistModel {
     this.isAchieved = false,
     this.achievedAt,
     DateTime? createdAt,
+    this.comment,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toJson() {
@@ -30,6 +32,7 @@ class WishlistModel {
       'image_url': imageUrl,
       'is_achieved': isAchieved,
       'created_at': createdAt.toIso8601String(),
+      'comment': comment,
     };
 
     // Only include achieved_at if it exists and is not null
@@ -62,6 +65,7 @@ class WishlistModel {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
+      comment: json['comment'] as String?,
     );
   }
 
@@ -75,6 +79,7 @@ class WishlistModel {
     bool? isAchieved,
     DateTime? achievedAt,
     DateTime? createdAt,
+    String? comment,
   }) {
     return WishlistModel(
       id: id ?? this.id,
@@ -86,6 +91,7 @@ class WishlistModel {
       isAchieved: isAchieved ?? this.isAchieved,
       achievedAt: achievedAt ?? this.achievedAt,
       createdAt: createdAt ?? this.createdAt,
+      comment: comment ?? this.comment,
     );
   }
 }

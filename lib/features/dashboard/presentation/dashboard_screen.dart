@@ -512,6 +512,7 @@ class _WishlistProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           TweenAnimationBuilder<double>(
+            key: ValueKey(progress),
             tween: Tween<double>(begin: 0.0, end: progress),
             duration: const Duration(milliseconds: 1500),
             curve: Curves.easeOutExpo,

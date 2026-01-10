@@ -190,6 +190,7 @@ class WishlistScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 12),
                                     TweenAnimationBuilder<double>(
+                                      key: ValueKey(progress),
                                       tween: Tween<double>(
                                         begin: 0.0,
                                         end: progress,
@@ -225,9 +226,10 @@ class WishlistScreen extends ConsumerWidget {
                                           ),
                                         ),
                                         Text(
-                                          '${i18n.target}: ${i18n.formatCurrency(item.totalGoal)}',
-                                          style: TextStyle(
-                                            color: Colors.grey[400],
+                                          '남은 금액: ${i18n.formatCurrency(item.totalGoal - item.savedAmount)}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
                                             fontSize: 12,
                                           ),
                                         ),
@@ -289,75 +291,6 @@ class WishlistScreen extends ConsumerWidget {
                                                             .ellipsis,
                                                       ),
                                                     ),
-                                                    if (item.imageUrl != null)
-                                                      IconButton(
-                                                        icon: const Icon(
-                                                          Icons.image_outlined,
-                                                          size: 20,
-                                                        ),
-                                                        color: Colors.white70,
-                                                        padding:
-                                                            EdgeInsets.zero,
-                                                        constraints:
-                                                            const BoxConstraints(),
-                                                        onPressed: () {
-                                                          showDialog(
-                                                            context: context,
-                                                            builder: (context) => Dialog(
-                                                              backgroundColor:
-                                                                  Colors
-                                                                      .transparent,
-                                                              insetPadding:
-                                                                  const EdgeInsets.all(
-                                                                    10,
-                                                                  ),
-                                                              child: Stack(
-                                                                alignment:
-                                                                    Alignment
-                                                                        .topRight,
-                                                                children: [
-                                                                  ClipRRect(
-                                                                    borderRadius:
-                                                                        BorderRadius.circular(
-                                                                          12,
-                                                                        ),
-                                                                    child: Hero(
-                                                                      tag:
-                                                                          'wishlist_img_${item.id}',
-                                                                      child: Image.network(
-                                                                        item.imageUrl!,
-                                                                        fit: BoxFit
-                                                                            .contain,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                  Padding(
-                                                                    padding:
-                                                                        const EdgeInsets.all(
-                                                                          8.0,
-                                                                        ),
-                                                                    child: IconButton(
-                                                                      icon: const Icon(
-                                                                        Icons
-                                                                            .close,
-                                                                        color: Colors
-                                                                            .white,
-                                                                      ),
-                                                                      onPressed: () =>
-                                                                          context
-                                                                              .pop(),
-                                                                      style: IconButton.styleFrom(
-                                                                        backgroundColor:
-                                                                            Colors.black54,
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          );
-                                                        },
-                                                      ),
                                                   ],
                                                 ),
                                               ),
@@ -376,6 +309,7 @@ class WishlistScreen extends ConsumerWidget {
                                           ),
                                           const SizedBox(height: 12),
                                           TweenAnimationBuilder<double>(
+                                            key: ValueKey(progress),
                                             tween: Tween<double>(
                                               begin: 0.0,
                                               end: progress,
@@ -411,9 +345,10 @@ class WishlistScreen extends ConsumerWidget {
                                                 ),
                                               ),
                                               Text(
-                                                '${i18n.target}: ${i18n.formatCurrency(item.totalGoal)}',
-                                                style: TextStyle(
-                                                  color: Colors.grey[400],
+                                                '남은 금액: ${i18n.formatCurrency(item.totalGoal - item.savedAmount)}',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
                                                   fontSize: 12,
                                                 ),
                                               ),
@@ -428,7 +363,8 @@ class WishlistScreen extends ConsumerWidget {
                             );
 
                       final card = BouncyButton(
-                        onTap: () {}, // Just for the bounce effect
+                        onTap: () =>
+                            context.push('/wishlist/detail', extra: item),
                         child: cardcontent,
                       );
 

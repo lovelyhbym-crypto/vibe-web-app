@@ -189,6 +189,43 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
   }
 
+  Future<void> updateComment(String id, String comment) async {
+    final authNotifier = ref.read(authProvider.notifier);
+    final user = ref.read(authProvider).asData?.value;
+
+    // Optimistic Update
+    final previousList = state.valueOrNull ?? [];
+    final index = previousList.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final updatedItem = previousList[index].copyWith(comment: comment);
+    final updatedList = List<WishlistModel>.from(previousList);
+    updatedList[index] = updatedItem;
+
+    state = AsyncValue.data(updatedList);
+
+    if (authNotifier.isGuest || user == null) {
+      final guestIndex = _guestWishlist.indexWhere((item) => item.id == id);
+      if (guestIndex != -1) {
+        _guestWishlist[guestIndex] = updatedItem;
+      }
+      return;
+    }
+
+    try {
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .update({'comment': comment})
+          .eq('id', id);
+    } catch (e) {
+      // Revert state on error
+      ref.invalidateSelf();
+      print('Error updating comment: $e');
+      throw Exception('Failed to update comment: $e');
+    }
+  }
+
   Future<String?> addFundsToSelectedItem(double amount) async {
     final wishlist = await future;
     if (wishlist.isEmpty) return null;

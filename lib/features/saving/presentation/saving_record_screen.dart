@@ -278,11 +278,13 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
                                     );
                                   },
                                   backgroundColor: Colors.white,
-                                  selectedColor: Colors.black,
+                                  selectedColor: const Color(0xFFCCFF00),
+                                  checkmarkColor: Colors.black,
                                   labelStyle: TextStyle(
-                                    color: isSelected
-                                        ? Colors.white
-                                        : Colors.black,
+                                    color: Colors.black,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                                   ),
                                 ),
                               );
@@ -298,11 +300,13 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
                                 );
                               },
                               backgroundColor: Colors.white,
-                              selectedColor: Colors.black,
+                              selectedColor: const Color(0xFFCCFF00),
+                              checkmarkColor: Colors.black,
                               labelStyle: TextStyle(
-                                color: _selectedCategoryId == 'other'
-                                    ? Colors.white
-                                    : Colors.black,
+                                color: Colors.black,
+                                fontWeight: _selectedCategoryId == 'other'
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                               ),
                             ),
                           ],
