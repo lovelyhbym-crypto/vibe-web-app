@@ -127,6 +127,40 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
   }
 
+  Future<void> deleteWishlists(List<String> ids) async {
+    if (ids.isEmpty) return;
+
+    final authNotifier = ref.read(authProvider.notifier);
+    final user = ref.read(authProvider).asData?.value;
+
+    if (authNotifier.isGuest || user == null) {
+      _guestWishlist.removeWhere((item) => ids.contains(item.id));
+      state = AsyncValue.data([..._guestWishlist]);
+      return;
+    }
+
+    try {
+      print('Deleting multiple wishlist items from Supabase: $ids');
+      // 1. Perform server deletion FIRST
+      // Supabase's 'in_' filter allows matching any value in a list
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .delete()
+          .filter('id', 'in', ids);
+
+      // 2. If valid execution, Remove from local state
+      final previousList = state.valueOrNull ?? [];
+      final updatedList = previousList
+          .where((item) => !ids.contains(item.id))
+          .toList();
+      state = AsyncValue.data(updatedList);
+    } catch (e) {
+      print('Error deleting multiple wishlist items: $e');
+      throw Exception('Failed to delete wishlist items: $e');
+    }
+  }
+
   Future<void> addSavingToAllGoals(double amount) async {
     final wishlist = await future;
     if (wishlist.isEmpty) return;

@@ -7,12 +7,145 @@ import '../../saving/providers/saving_provider.dart';
 import '../../saving/domain/saving_model.dart';
 import '../providers/wishlist_provider.dart';
 import '../domain/wishlist_model.dart';
+import '../../../core/ui/glass_card.dart';
 
-class AchievedTimelineScreen extends ConsumerWidget {
+class AchievedTimelineScreen extends ConsumerStatefulWidget {
   const AchievedTimelineScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AchievedTimelineScreen> createState() =>
+      _AchievedTimelineScreenState();
+}
+
+class _AchievedTimelineScreenState
+    extends ConsumerState<AchievedTimelineScreen> {
+  bool _isEditing = false;
+  final Set<String> _selectedIds = {};
+
+  void _toggleEditMode() {
+    setState(() {
+      _isEditing = !_isEditing;
+      _selectedIds.clear();
+    });
+  }
+
+  void _toggleSelection(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  void _selectAll(List<String> allIds) {
+    setState(() {
+      if (_selectedIds.length == allIds.length) {
+        _selectedIds.clear(); // Deselect all if already all selected
+      } else {
+        _selectedIds.addAll(allIds);
+      }
+    });
+  }
+
+  Future<void> _deleteSelected() async {
+    final count = _selectedIds.length;
+    if (count == 0) return;
+
+    final i18n = I18n.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Colors.white24),
+        ),
+        title: Text(
+          i18n.isKorean ? '기록 삭제' : 'Delete Items',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          i18n.isKorean
+              ? "선택한 ${count}개의 기록을 삭제하시겠습니까?\n(삭제된 기록은 복구할 수 없습니다.)"
+              : "Delete $count selected items?\n(This action cannot be undone.)",
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(
+              i18n.isKorean ? '취소' : 'Cancel',
+              style: const TextStyle(color: Colors.white60),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(
+              i18n.isKorean ? '삭제' : 'Delete',
+              style: const TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await ref
+            .read(wishlistProvider.notifier)
+            .deleteWishlists(_selectedIds.toList());
+
+        if (mounted) {
+          setState(() {
+            _selectedIds.clear();
+            _isEditing = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('🗑️', style: TextStyle(fontSize: 18)),
+                  const SizedBox(width: 8),
+                  Text(
+                    i18n.isKorean
+                        ? '$count개의 기록이 삭제되었습니다.'
+                        : '$count items deleted.',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFF1A1A1A),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: const BorderSide(color: Colors.white24, width: 1),
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final wishlistAsync = ref.watch(wishlistProvider);
     final savingsAsync = ref.watch(savingProvider);
     final i18n = I18n.of(context);
@@ -30,11 +163,27 @@ class AchievedTimelineScreen extends ConsumerWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         foregroundColor: Colors.white,
+        actions: [
+          TextButton(
+            onPressed: _toggleEditMode,
+            child: Text(
+              _isEditing
+                  ? (i18n.isKorean ? '완료' : 'Done')
+                  : (i18n.isKorean ? '편집' : 'Edit'),
+              style: const TextStyle(
+                color: limeColor,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: wishlistAsync.when(
         data: (wishlist) {
           final achievedGoals = wishlist
-              .where((item) => item.isAchieved)
+              .where((item) => item.isAchieved && item.id != null)
               .toList();
 
           // Sort by achieved date descending
@@ -50,172 +199,303 @@ class AchievedTimelineScreen extends ConsumerWidget {
                 return const Center(child: Text('No history yet.'));
               }
 
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 32,
-                ),
-                itemCount: achievedGoals.length,
-                itemBuilder: (context, index) {
-                  final goal = achievedGoals[index];
-                  final isLast = index == achievedGoals.length - 1;
+              return Stack(
+                children: [
+                  ListView.builder(
+                    padding: EdgeInsets.only(
+                      left: 20,
+                      right: 20,
+                      top: 32,
+                      bottom: _isEditing
+                          ? 100
+                          : 32, // More padding for bottom bar
+                    ),
+                    itemCount: achievedGoals.length,
+                    itemBuilder: (context, index) {
+                      final goal = achievedGoals[index];
+                      // We filtered null IDs above, so id is safe
+                      final id = goal.id!;
+                      final isLast = index == achievedGoals.length - 1;
+                      final isSelected = _selectedIds.contains(id);
 
-                  // Calculate stats for this goal
-                  final stats = _calculateStats(goal, savings);
+                      // Calculate stats for this goal
+                      final stats = _calculateStats(goal, savings);
 
-                  return IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Timeline Column
-                        Column(
-                          children: [
-                            // Dot
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: const BoxDecoration(
-                                color: limeColor,
-                                shape: BoxShape.circle,
+                      return GestureDetector(
+                        onTap: _isEditing
+                            ? () => _toggleSelection(id)
+                            : null, // Toggle selection on tap in edit mode
+                        child: IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Checkbox Area (Animated)
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                width: _isEditing ? 40 : 0,
+                                margin: EdgeInsets.only(
+                                  right: _isEditing ? 8 : 0,
+                                ),
+                                alignment: Alignment.topCenter,
+                                child: _isEditing
+                                    ? Padding(
+                                        padding: const EdgeInsets.only(top: 24),
+                                        child: Container(
+                                          width: 24,
+                                          height: 24,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? limeColor
+                                                  : Colors.white30,
+                                              width: 2,
+                                            ),
+                                            color: isSelected
+                                                ? limeColor
+                                                : Colors.transparent,
+                                          ),
+                                          child: isSelected
+                                              ? const Icon(
+                                                  Icons.check,
+                                                  size: 16,
+                                                  color: Colors.black,
+                                                )
+                                              : null,
+                                        ),
+                                      )
+                                    : null,
                               ),
-                            ),
-                            // Line
-                            if (!isLast)
+
+                              // Timeline Column
+                              Column(
+                                children: [
+                                  // Dot
+                                  Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: const BoxDecoration(
+                                      color: limeColor,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  // Line
+                                  if (!isLast)
+                                    Expanded(
+                                      child: Container(
+                                        width: 2,
+                                        color: limeColor.withOpacity(0.3),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(width: 24),
+                              // Content Column
                               Expanded(
-                                child: Container(
-                                  width: 2,
-                                  color: limeColor.withOpacity(0.3),
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(width: 24),
-                        // Content Column
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 48.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Date Header
-                                Text(
-                                  DateFormat(
-                                    'yyyy.MM.dd',
-                                  ).format(goal.achievedAt ?? DateTime.now()),
-                                  style: TextStyle(
-                                    color: Colors.grey[400],
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                // Goal Card (Minimal)
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: cardColor,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.white10),
-                                  ),
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 48.0),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              goal.title,
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          ),
-                                          const Icon(
-                                            Icons.check_circle,
-                                            color: limeColor,
-                                            size: 20,
-                                          ),
-                                        ],
+                                      // Date Header
+                                      Text(
+                                        DateFormat('yyyy.MM.dd').format(
+                                          goal.achievedAt ?? DateTime.now(),
+                                        ),
+                                        style: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
-                                      const SizedBox(height: 12),
-                                      // Stats Chips
-                                      if (stats.isNotEmpty) ...[
-                                        const Text(
-                                          'Resisted Temptations:',
-                                          style: TextStyle(
-                                            color: Colors.white60,
-                                            fontSize: 12,
+                                      const SizedBox(height: 8),
+                                      // Goal Card (Minimal)
+                                      Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: cardColor,
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white10,
                                           ),
                                         ),
-                                        const SizedBox(height: 8),
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 8,
-                                          children: stats.entries.map((e) {
-                                            return Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 4,
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    goal.title,
+                                                    style: const TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
                                                   ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withOpacity(
-                                                  0.05,
                                                 ),
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                                border: Border.all(
-                                                  color: Colors.white10,
+                                                const Icon(
+                                                  Icons.check_circle,
+                                                  color: limeColor,
+                                                  size: 20,
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            // Stats Chips
+                                            if (stats.isNotEmpty) ...[
+                                              const Text(
+                                                'Resisted Temptations:',
+                                                style: TextStyle(
+                                                  color: Colors.white60,
+                                                  fontSize: 12,
                                                 ),
                                               ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(
-                                                    _getCategoryIcon(
-                                                      e.key,
-                                                      i18n,
+                                              const SizedBox(height: 8),
+                                              Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: stats.entries.map((
+                                                  e,
+                                                ) {
+                                                  return Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 10,
+                                                          vertical: 4,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white
+                                                          .withOpacity(0.05),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            20,
+                                                          ),
+                                                      border: Border.all(
+                                                        color: Colors.white10,
+                                                      ),
                                                     ),
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Text(
+                                                          _getCategoryIcon(
+                                                            e.key,
+                                                            i18n,
+                                                          ),
+                                                          style:
+                                                              const TextStyle(
+                                                                fontSize: 12,
+                                                              ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 4,
+                                                        ),
+                                                        Text(
+                                                          '${i18n.categoryName(e.key)} x${e.value}',
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white70,
+                                                                fontSize: 12,
+                                                              ),
+                                                        ),
+                                                      ],
                                                     ),
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    '${i18n.categoryName(e.key)} x${e.value}',
-                                                    style: const TextStyle(
-                                                      color: Colors.white70,
-                                                      fontSize: 12,
-                                                    ),
-                                                  ),
-                                                ],
+                                                  );
+                                                }).toList(),
                                               ),
-                                            );
-                                          }).toList(),
+                                            ] else
+                                              const Text(
+                                                'Pure dedication (no specific records)',
+                                                style: TextStyle(
+                                                  color: Colors.white38,
+                                                  fontStyle: FontStyle.italic,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                          ],
                                         ),
-                                      ] else
-                                        const Text(
-                                          'Pure dedication (no specific records)',
-                                          style: TextStyle(
-                                            color: Colors.white38,
-                                            fontStyle: FontStyle.italic,
-                                            fontSize: 12,
-                                          ),
-                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
+                      );
+                    },
+                  ),
+
+                  // Bottom Action Bar
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    bottom: _isEditing ? 0 : -100,
+                    left: 0,
+                    right: 0,
+                    child: GlassCard(
+                      width: double.infinity,
+                      height: 80,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton(
+                              onPressed: () => _selectAll(
+                                achievedGoals.map((e) => e.id!).toList(),
+                              ),
+                              child: Text(
+                                i18n.isKorean
+                                    ? (_selectedIds.length ==
+                                              achievedGoals.length
+                                          ? '선택 해제'
+                                          : '전체 선택')
+                                    : (_selectedIds.length ==
+                                              achievedGoals.length
+                                          ? 'Deselect All'
+                                          : 'Select All'),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _selectedIds.isEmpty
+                                  ? null
+                                  : _deleteSelected,
+                              child: Text(
+                                i18n.isKorean
+                                    ? '삭제 (${_selectedIds.length})'
+                                    : 'Delete (${_selectedIds.length})',
+                                style: TextStyle(
+                                  color: _selectedIds.isEmpty
+                                      ? Colors.white30
+                                      : Colors.redAccent,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  );
-                },
+                  ),
+                ],
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),

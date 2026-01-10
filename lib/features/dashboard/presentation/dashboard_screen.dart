@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../auth/providers/auth_provider.dart';
+
 import '../../wishlist/providers/wishlist_provider.dart';
 import '../../../core/utils/i18n.dart';
 
@@ -18,7 +18,6 @@ import '../providers/savings_period_provider.dart';
 import '../../wishlist/domain/wishlist_model.dart';
 import '../providers/total_saved_provider.dart';
 import '../providers/achievement_provider.dart';
-import 'widgets/success_summary_card.dart';
 import '../../../core/ui/glass_card.dart';
 import '../../home/providers/navigation_provider.dart';
 
