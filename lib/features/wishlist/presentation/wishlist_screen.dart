@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/i18n.dart';
-import '../domain/wishlist_model.dart';
 import '../providers/wishlist_provider.dart';
+import 'add_wishlist_dialog.dart';
 
 class WishlistScreen extends ConsumerWidget {
   const WishlistScreen({super.key});
@@ -308,111 +308,9 @@ class WishlistScreen extends ConsumerWidget {
   }
 
   void _showAddDialog(BuildContext context, WidgetRef ref) {
-    final titleController = TextEditingController();
-    final priceController = TextEditingController();
-    final i18n = I18n.of(context);
-
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: Text(
-          i18n.wishlistAddTitle,
-          style: const TextStyle(color: Colors.white),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: InputDecoration(
-                labelText: i18n.itemNameLabel,
-                labelStyle: const TextStyle(color: Colors.white70),
-                enabledBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white30),
-                ),
-                focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFCCFF00)),
-                ),
-              ),
-              style: const TextStyle(color: Colors.white),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: priceController,
-              decoration: InputDecoration(
-                labelText: i18n.priceLabel,
-                labelStyle: const TextStyle(color: Colors.white70),
-                enabledBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white30),
-                ),
-                focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFCCFF00)),
-                ),
-              ),
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: Text(
-              i18n.cancel,
-              style: const TextStyle(color: Colors.white60),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final title = titleController.text;
-              final price = double.tryParse(priceController.text) ?? 0.0;
-              if (title.isNotEmpty && price > 0) {
-                try {
-                  await ref
-                      .read(wishlistProvider.notifier)
-                      .addWishlist(
-                        WishlistModel(
-                          title: title,
-                          price: price,
-                          totalGoal:
-                              price, // Assuming goal equals price for now
-                        ),
-                      );
-                  if (context.mounted) {
-                    context.pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('목표가 추가되었습니다.')),
-                    );
-                  }
-                } catch (e) {
-                  // Detailed error logging
-                  print('Add dialog error: $e');
-                  if (e.toString().contains('ID가 없는 항목입니다')) {
-                    print('Null field check - Title: $title, Price: $price');
-                  }
-
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          '저장 실패: ${e.toString().replaceAll('Exception: ', '')}',
-                        ),
-                        backgroundColor: Colors.redAccent,
-                      ),
-                    );
-                  }
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFCCFF00),
-              foregroundColor: Colors.black,
-            ),
-            child: Text(i18n.add),
-          ),
-        ],
-      ),
+      builder: (context) => const AddWishlistDialog(),
     );
   }
 
