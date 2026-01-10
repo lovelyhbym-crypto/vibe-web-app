@@ -11,7 +11,6 @@ import 'package:vive_app/features/saving/domain/category_model.dart';
 import 'package:vive_app/features/saving/providers/category_provider.dart';
 import 'package:vive_app/features/saving/providers/saving_provider.dart';
 import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
-import '../../home/providers/navigation_provider.dart';
 
 class SavingRecordScreen extends ConsumerStatefulWidget {
   const SavingRecordScreen({super.key});
@@ -134,12 +133,37 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
             _isLoading = false;
           });
 
-          // Navigate away
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            // Fallback for Tab navigation: Switch to Stats (Index 2)
-            ref.read(navigationIndexProvider.notifier).state = 2;
+          // Hide keyboard
+          if (mounted) {
+            FocusScope.of(context).unfocus();
+
+            // Show Success Message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('🎉', style: TextStyle(fontSize: 18)),
+                    const SizedBox(width: 8),
+                    Text(
+                      i18n.isKorean ? '성공적으로 저축했습니다!' : 'Saved successfully!',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: const Color(0xFF1A1A1A),
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.all(20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: const BorderSide(color: Colors.greenAccent, width: 2),
+                ),
+              ),
+            );
           }
         }
       }

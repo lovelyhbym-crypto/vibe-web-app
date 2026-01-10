@@ -60,10 +60,29 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('다짐이 저장되었습니다! ✨'),
-            backgroundColor: Color(0xFF1E1E1E),
+          SnackBar(
+            content: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('✨', style: TextStyle(fontSize: 18)),
+                const SizedBox(width: 8),
+                const Text(
+                  '나의 다짐이 저장되었습니다!',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF1A1A1A),
             behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: Colors.greenAccent, width: 2),
+            ),
           ),
         );
         setState(() {
@@ -300,7 +319,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               height: 1.5,
                             ),
                             decoration: InputDecoration(
-                              hintText: "이 목표를 위해 어떤 다짐을 했나요? (클릭해서 수정)",
+                              hintText: "미래의 나에게 보내는 응원 메시지",
                               hintStyle: TextStyle(color: Colors.white30),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.zero,

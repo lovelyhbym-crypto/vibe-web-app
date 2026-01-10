@@ -20,6 +20,7 @@ import '../providers/total_saved_provider.dart';
 import '../providers/achievement_provider.dart';
 import 'widgets/success_summary_card.dart';
 import '../../../core/ui/glass_card.dart';
+import '../../home/providers/navigation_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -28,6 +29,7 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardAsync = ref.watch(dashboardProvider);
     final totalSaved = ref.watch(totalSavedProvider);
+    final navIndex = ref.watch(navigationIndexProvider); // Watch nav index
 
     // Listen for achievement events
     ref.listen<AsyncValue<MilestoneEvent?>>(achievementNotifierProvider, (
@@ -110,6 +112,7 @@ class DashboardScreen extends ConsumerWidget {
                     _GoalCarousel(
                           wishlist: activeGoals,
                           averageDailySavings: data.averageDailySavings,
+                          navIndex: navIndex, // Pass navIndex
                         )
                         .animate()
                         .fadeIn(delay: 100.ms)
@@ -273,6 +276,9 @@ class _SummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = I18n.of(context);
     final period = ref.watch(savingsPeriodProvider);
+    final navIndex = ref.watch(
+      navigationIndexProvider,
+    ); // Watch nav index locally
 
     String labelText;
     switch (period) {
@@ -297,6 +303,8 @@ class _SummaryCard extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           TweenAnimationBuilder<double>(
+            // key: Added navIndex to force rebuild when tab changes
+            key: ValueKey('${totalSaved}_$navIndex'),
             tween: Tween<double>(begin: 0, end: totalSaved),
             duration: const Duration(milliseconds: 1500),
             curve: Curves.easeOutExpo,
@@ -329,10 +337,12 @@ class _SummaryCard extends ConsumerWidget {
 class _GoalCarousel extends ConsumerStatefulWidget {
   final List<WishlistModel> wishlist;
   final double averageDailySavings;
+  final int navIndex;
 
   const _GoalCarousel({
     required this.wishlist,
     required this.averageDailySavings,
+    required this.navIndex,
   });
 
   @override
@@ -388,6 +398,7 @@ class _GoalCarouselState extends ConsumerState<_GoalCarousel> {
                   child: _WishlistProgressCard(
                     topWishlist: item,
                     averageDailySavings: widget.averageDailySavings,
+                    navIndex: widget.navIndex, // Pass navIndex
                   ),
                 ),
               );
@@ -441,10 +452,12 @@ class _PageIndicator extends StatelessWidget {
 class _WishlistProgressCard extends StatelessWidget {
   final dynamic topWishlist;
   final double averageDailySavings;
+  final int navIndex;
 
   const _WishlistProgressCard({
     required this.topWishlist,
     required this.averageDailySavings,
+    required this.navIndex,
   });
 
   Color _getProgressColor(double progress) {
@@ -512,7 +525,8 @@ class _WishlistProgressCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           TweenAnimationBuilder<double>(
-            key: ValueKey(progress),
+            // key: Added navIndex to force rebuild
+            key: ValueKey('${progress}_$navIndex'),
             tween: Tween<double>(begin: 0.0, end: progress),
             duration: const Duration(milliseconds: 1500),
             curve: Curves.easeOutExpo,
