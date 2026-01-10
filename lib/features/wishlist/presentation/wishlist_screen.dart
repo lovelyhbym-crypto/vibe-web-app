@@ -146,72 +146,153 @@ class WishlistScreen extends ConsumerWidget {
                       ),
                       child: Card(
                         elevation: 0,
+                        clipBehavior: Clip.antiAlias,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                           side: const BorderSide(color: Colors.white10),
                         ),
                         color: Theme.of(context).cardColor,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      item.title,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                        child: Container(
+                          decoration: item.imageUrl != null
+                              ? BoxDecoration(
+                                  image: DecorationImage(
+                                    image: NetworkImage(item.imageUrl!),
+                                    fit: BoxFit.cover,
+                                    colorFilter: ColorFilter.mode(
+                                      Colors.black.withOpacity(0.5),
+                                      BlendMode.darken,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              item.title,
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.white,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          if (item.imageUrl != null)
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.image_outlined,
+                                                size: 20,
+                                              ),
+                                              color: Colors.white70,
+                                              padding: EdgeInsets.zero,
+                                              constraints:
+                                                  const BoxConstraints(),
+                                              onPressed: () {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) => Dialog(
+                                                    backgroundColor:
+                                                        Colors.transparent,
+                                                    insetPadding:
+                                                        const EdgeInsets.all(
+                                                          10,
+                                                        ),
+                                                    child: Stack(
+                                                      alignment:
+                                                          Alignment.topRight,
+                                                      children: [
+                                                        ClipRRect(
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                12,
+                                                              ),
+                                                          child: Image.network(
+                                                            item.imageUrl!,
+                                                            fit: BoxFit.contain,
+                                                          ),
+                                                        ),
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets.all(
+                                                                8.0,
+                                                              ),
+                                                          child: IconButton(
+                                                            icon: const Icon(
+                                                              Icons.close,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                            onPressed: () =>
+                                                                context.pop(),
+                                                            style: IconButton.styleFrom(
+                                                              backgroundColor:
+                                                                  Colors
+                                                                      .black54,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                        ],
                                       ),
-                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    i18n.formatCurrency(item.price),
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFFCCFF00), // Neon Green
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      i18n.formatCurrency(item.price),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFCCFF00), // Neon Green
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              LinearProgressIndicator(
-                                value: progress,
-                                backgroundColor: Colors.grey[800],
-                                color: const Color(0xFFCCFF00), // Neon Green
-                                minHeight: 8,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${(progress * 100).toInt()}% ${i18n.achieved}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.white60,
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                LinearProgressIndicator(
+                                  value: progress,
+                                  backgroundColor: Colors.grey[800],
+                                  color: const Color(0xFFCCFF00), // Neon Green
+                                  minHeight: 8,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '${(progress * 100).toInt()}% ${i18n.achieved}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white60,
+                                      ),
                                     ),
-                                  ),
-                                  Text(
-                                    '${i18n.target}: ${i18n.formatCurrency(item.totalGoal)}',
-                                    style: TextStyle(
-                                      color: Colors.grey[400],
-                                      fontSize: 12,
+                                    Text(
+                                      '${i18n.target}: ${i18n.formatCurrency(item.totalGoal)}',
+                                      style: TextStyle(
+                                        color: Colors.grey[400],
+                                        fontSize: 12,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
