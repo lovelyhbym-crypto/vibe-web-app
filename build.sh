@@ -34,6 +34,6 @@ flutter pub get
 echo "Building Flutter Web application..."
 # Using --release for optimized build
 # --web-renderer auto selects appropriate renderer (HTML vs CanvasKit)
-flutter build web --release
+flutter build web --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" --dart-define=KAKAO_NATIVE_APP_KEY="$KAKAO_NATIVE_APP_KEY"
 
 echo "Build completed successfully!"
