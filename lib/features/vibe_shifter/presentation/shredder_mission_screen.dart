@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:math' as math;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,6 +9,23 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/ui/glass_card.dart';
 import '../../../core/ui/bouncy_button.dart';
 import '../../../core/ui/background_gradient.dart';
+
+// Robust Damage Entry Class
+class DamageEntry {
+  final Key key; // UniqueKey is critical
+  final Offset position;
+  final String text;
+  final Color color;
+  final double fontSize;
+
+  DamageEntry({
+    required this.key,
+    required this.position,
+    required this.text,
+    this.color = Colors.white,
+    this.fontSize = 24,
+  });
+}
 
 class ShredderMissionScreen extends StatefulWidget {
   const ShredderMissionScreen({super.key});
@@ -18,7 +37,7 @@ class ShredderMissionScreen extends StatefulWidget {
 enum _TargetType { none, image, text }
 
 class _ShredderMissionScreenState extends State<ShredderMissionScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   _TargetType _targetType = _TargetType.none;
   XFile? _targetImage;
   String? _targetText;
@@ -28,7 +47,13 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
   bool _isDestroyed = false;
 
   late AnimationController _shakeController;
+  // Note: Float controller removed for ultra-stability (reducing animation overhead)
+
   final TextEditingController _textController = TextEditingController();
+
+  final List<DamageEntry> _damageNumbers = [];
+  final List<Path> _crackPaths = [];
+  final math.Random _random = math.Random();
 
   @override
   void initState() {
@@ -49,14 +74,13 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
   Future<void> _pickImage() async {
     try {
       final picker = ImagePicker();
-      // Critical OOM Optimization:
-      // - maxWidth: 600 (reduced from 800)
-      // - imageQuality: 50
-      // - requestFullMetadata: false
+      // ULTRA-LIGHT MODE OPTIMIZATION
+      // maxWidth: 300 (Very small, optimized for thumbail/preview usage)
+      // imageQuality: 30 (High compression)
       final image = await picker.pickImage(
         source: ImageSource.camera,
-        maxWidth: 600,
-        imageQuality: 50,
+        maxWidth: 300,
+        imageQuality: 30,
         requestFullMetadata: false,
       );
 
@@ -88,20 +112,84 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
     }
   }
 
-  void _onTapTarget() {
+  void _generateCrack() {
+    // Optimization: Limit to 10 cracks to prevent memory/GPU overload
+    if (_crackPaths.length >= 10) {
+      _crackPaths.removeAt(0);
+    }
+
+    final path = Path();
+    final bool isHorizontal = _random.nextBool();
+
+    // Fixed size container reference (320x480)
+    const double w = 320;
+    const double h = 480;
+
+    if (isHorizontal) {
+      // Left to Right crack
+      double startY = _random.nextDouble() * h;
+      double endY = _random.nextDouble() * h;
+      path.moveTo(0, startY);
+
+      // Simple 3-step zigzag
+      path.lineTo(w * 0.3, startY + (_random.nextDouble() - 0.5) * 50);
+      path.lineTo(w * 0.6, endY + (_random.nextDouble() - 0.5) * 50);
+      path.lineTo(w, endY);
+    } else {
+      // Top to Bottom crack
+      double startX = _random.nextDouble() * w;
+      double endX = _random.nextDouble() * w;
+      path.moveTo(startX, 0);
+
+      // Simple 3-step zigzag
+      path.lineTo(startX + (_random.nextDouble() - 0.5) * 50, h * 0.3);
+      path.lineTo(endX + (_random.nextDouble() - 0.5) * 50, h * 0.6);
+      path.lineTo(endX, h);
+    }
+
+    _crackPaths.add(path);
+  }
+
+  void _onTapTarget(TapDownDetails details) {
     if (_hp <= 0) return;
 
     HapticFeedback.mediumImpact();
 
-    // Trigger shake without rebuilding whole widget tree
     _shakeController.forward(from: 0).then((_) {
       if (mounted) _shakeController.reset();
     });
 
-    // Only rebuild for HP change
     if (mounted) {
       setState(() {
         _hp--;
+
+        // 1. Add Optimized Edge-to-Edge Crack
+        _generateCrack();
+
+        // 2. Add Floating Damage Text with UniqueKey
+        // Optimization: Limit to 5 active texts
+        if (_damageNumbers.length >= 5) {
+          _damageNumbers.removeAt(0);
+        }
+
+        final isCritical = _random.nextDouble() < 0.2;
+        final newEntry = DamageEntry(
+          key: UniqueKey(), // CRITICAL for preventing red screen
+          position: details.localPosition,
+          text: isCritical ? "CRITICAL!" : "-1",
+          color: isCritical ? Colors.yellowAccent : Colors.white,
+          fontSize: isCritical ? 48 : 36,
+        );
+        _damageNumbers.add(newEntry);
+
+        // 3. Cleanup logic (still needed for natural fade out)
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            setState(() {
+              _damageNumbers.removeWhere((e) => e.key == newEntry.key);
+            });
+          }
+        });
       });
     }
 
@@ -111,17 +199,15 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
   }
 
   Future<void> _destroy() async {
-    // Only set destruction state once
     if (_isDestroyed || !mounted) return;
 
     setState(() {
       _isDestroyed = true;
+      _damageNumbers.clear();
     });
 
-    // Heavy impact for destruction
     HapticFeedback.heavyImpact();
 
-    // Wait for animation then close
     await Future.delayed(const Duration(milliseconds: 2000));
     if (mounted) {
       context.pop();
@@ -135,7 +221,7 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: const Text(
-            '이미지 분쇄기',
+            '이미지 분쇄기 (Lite)',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           backgroundColor: Colors.transparent,
@@ -267,136 +353,190 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
   }
 
   Widget _buildDestructionZone() {
-    // Damage calculation: 0.0 (full hp) -> 1.0 (dead)
     final damagePercent = (_maxHp - _hp) / _maxHp;
 
-    return GestureDetector(
-      onTap: _onTapTarget,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Target Content with AnimationController optimized shake
-          AnimatedBuilder(
+    return Center(
+      child: GestureDetector(
+        onTapDown: _onTapTarget,
+        child: SizedBox(
+          width: 320,
+          height: 480,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // 1. Base Container (Simple, No BoxShadow)
+              AnimatedBuilder(
                 animation: _shakeController,
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(32),
-                  child: _targetType == _TargetType.image
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.file(
-                            File(_targetImage!.path),
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : GlassCard(
-                          height: 300,
-                          child: Center(
-                            child: Text(
-                              _targetText ?? '',
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                ),
                 builder: (context, child) {
                   final double offset =
                       _shakeController.value *
-                      10 *
+                      8 *
                       (0.5 - _shakeController.value).sign;
                   return Transform.translate(
                     offset: Offset(offset, 0),
                     child: child,
                   );
                 },
-              )
-              .animate(target: _isDestroyed ? 1 : 0)
-              .fadeOut(duration: 200.ms), // Disappear on destroy
-          // Damage Overlay (Optimized: No Opacity widget, just color alpha)
-          Positioned.fill(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: IgnorePointer(
                 child: Container(
+                  width: double.infinity,
+                  height: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(
-                      (damagePercent * 0.8).clamp(0.0, 1.0),
-                    ),
+                    color: Colors.black.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.redAccent, width: 2),
+                    // NO BoxShadow for performance
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Content
+                      _targetType == _TargetType.image
+                          ? Image.file(
+                              File(_targetImage!.path),
+                              fit: BoxFit.cover,
+                            )
+                          : Center(
+                              child: Text(
+                                _targetText ?? '',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+
+                      // Simple Color Overlay
+                      Container(
+                        color: Colors.red.withOpacity(
+                          (damagePercent * 0.7).clamp(0.0, 0.9),
+                        ),
+                      ),
+
+                      // LIGHTWEIGHT CRACKS (No Blur, Just Lines)
+                      CustomPaint(
+                        painter: CrackPainter(_crackPaths),
+                        size: Size.infinite,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ),
-          ),
+              ).animate(target: _isDestroyed ? 1 : 0).fadeOut(duration: 150.ms),
 
-          // HP Indicator
-          Positioned(
-                top: 20,
+              // 2. Floating Damage Numbers (Simple Stack)
+              for (final entry in _damageNumbers)
+                Positioned(
+                  left:
+                      entry.position.dx -
+                      40, // Centering adjustment for bigger text
+                  top: entry.position.dy - 60,
+                  child:
+                      Text(
+                            entry.text,
+                            style: TextStyle(
+                              color: entry.color,
+                              fontSize: entry.fontSize,
+                              // Bold for Normal, W900 for Critical
+                              fontWeight: entry.text == "CRITICAL!"
+                                  ? FontWeight.w900
+                                  : FontWeight.bold,
+                              // Simple shadow
+                              shadows: const [
+                                BoxShadow(color: Colors.black, blurRadius: 1),
+                              ],
+                            ),
+                          )
+                          .animate(key: entry.key)
+                          // Increased moveY from -40 to -100 for bigger jump
+                          .moveY(begin: 0, end: -100, duration: 400.ms)
+                          .fadeOut(delay: 200.ms, duration: 200.ms),
+                ),
+
+              // HP Indicator
+              Positioned(
+                top: -40,
                 child: Text(
                   'HP: $_hp',
                   style: TextStyle(
                     color: Colors.redAccent,
                     fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    shadows: [BoxShadow(color: Colors.black, blurRadius: 4)],
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              )
-              .animate(key: UniqueKey())
-              .scale(duration: 100.ms, curve: Curves.easeOutBack),
-
-          // Prompt Text
-          if (!_isDestroyed)
-            Positioned(
-              bottom: 40,
-              child:
-                  Text(
-                        '터치해서 파괴하세요!',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 16,
-                          letterSpacing: 1.2,
-                        ),
-                      )
-                      .animate(onPlay: (c) => c.repeat(reverse: true))
-                      .fadeIn()
-                      .moveY(begin: 5, end: 0),
-            ),
-
-          // Destruction Effect
-          if (_isDestroyed)
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    '💥',
-                    style: TextStyle(fontSize: 80),
-                  ).animate().scale(duration: 400.ms, curve: Curves.elasticOut),
-                  const Text(
-                    'DESTROYED!',
-                    style: TextStyle(
-                      fontSize: 40,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.redAccent,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ).animate().fadeIn(duration: 200.ms).shake(),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '충동이 분쇄되었습니다.',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
-                  ).animate().fadeIn(delay: 500.ms),
-                ],
               ),
-            ),
-        ],
+
+              // Prompt Text
+              if (!_isDestroyed)
+                Positioned(
+                  bottom: -40,
+                  child: Text(
+                    '터치해서 파괴하세요!',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 16,
+                    ),
+                  ).animate(onPlay: (c) => c.repeat(reverse: true)).fadeIn(),
+                ),
+
+              // Destruction Text
+              if (_isDestroyed)
+                Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 20),
+                      const Text('💥', style: TextStyle(fontSize: 80))
+                          .animate()
+                          .scale(duration: 400.ms, curve: Curves.elasticOut),
+                      const Text(
+                        'DESTROYED!',
+                        style: TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.redAccent,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ).animate().fadeIn(duration: 200.ms),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
+  }
+}
+
+// Simple Painter without Blur
+// Simple Painter with Neon Effect restored
+class CrackPainter extends CustomPainter {
+  final List<Path> cracks;
+
+  CrackPainter(this.cracks);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (cracks.isEmpty) return;
+
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.9)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth =
+          4.5 // Even thicker
+      ..strokeCap = StrokeCap.round
+      // Restore Neon Blur for dramatic effect
+      ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 4);
+
+    for (final path in cracks) {
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CrackPainter oldDelegate) {
+    return oldDelegate.cracks.length != cracks.length;
   }
 }
