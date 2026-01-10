@@ -157,6 +157,7 @@ class DashboardScreen extends ConsumerWidget {
           ),
           child:
               FloatingActionButton(
+                    heroTag: 'dashboard_sos_fab',
                     onPressed: () {
                       showDialog(
                         context: context,

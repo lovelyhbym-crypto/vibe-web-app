@@ -455,6 +455,7 @@ class WishlistScreen extends ConsumerWidget {
         floatingActionButton: BouncyButton(
           onTap: () => _showAddDialog(context, ref),
           child: FloatingActionButton(
+            heroTag: 'wishlist_add_fab',
             onPressed: () => _showAddDialog(context, ref),
             backgroundColor: const Color(0xFFCCFF00),
             child: const Icon(Icons.add, color: Colors.black),

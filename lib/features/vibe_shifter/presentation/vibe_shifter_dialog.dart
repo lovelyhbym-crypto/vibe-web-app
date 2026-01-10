@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/ui/glass_card.dart';
 import '../../../core/ui/bouncy_button.dart';
 import 'shredder_mission_screen.dart';
+import 'asmr_mission_screen.dart';
 
 class VibeShifterDialog extends StatefulWidget {
   const VibeShifterDialog({super.key});
@@ -158,6 +159,13 @@ class _VibeShifterDialogState extends State<VibeShifterDialog> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => const ShredderMissionScreen(),
+                ),
+              );
+            } else if (_selectedMission.title == '[힐링 타임]') {
+              // Phase 3: Navigate to ASMR Mission Screen
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const AsmrMissionScreen(),
                 ),
               );
             }
