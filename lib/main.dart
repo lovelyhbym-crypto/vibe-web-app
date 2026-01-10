@@ -10,7 +10,7 @@ import 'core/utils/i18n.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  // await Firebase.initializeApp(); // Temporarily disabled until properly configured for Web
 
   await Supabase.initialize(
     url: const String.fromEnvironment(
