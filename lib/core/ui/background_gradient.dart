@@ -32,7 +32,7 @@ class BackgroundGradient extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               gradient: RadialGradient(
-                colors: [Colors.purple.withOpacity(0.2), Colors.transparent],
+                colors: [Colors.purple.withAlpha(51), Colors.transparent],
                 center: Alignment.center,
                 radius: 0.8,
               ),
@@ -49,7 +49,7 @@ class BackgroundGradient extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               gradient: RadialGradient(
-                colors: [Colors.teal.withOpacity(0.15), Colors.transparent],
+                colors: [Colors.teal.withAlpha(38), Colors.transparent],
                 center: Alignment.center,
                 radius: 0.8,
               ),
@@ -66,10 +66,7 @@ class BackgroundGradient extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               gradient: RadialGradient(
-                colors: [
-                  Colors.blueAccent.withOpacity(0.1),
-                  Colors.transparent,
-                ],
+                colors: [Colors.blueAccent.withAlpha(26), Colors.transparent],
                 center: Alignment.center,
                 radius: 0.8,
               ),

@@ -20,14 +20,14 @@ class SuccessSummaryCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD4FF00).withOpacity(0.3), // Lime glow
+            color: const Color(0xFFD4FF00).withAlpha(77), // Lime glow
             blurRadius: 12,
             offset: const Offset(0, 4),
             spreadRadius: 1,
           ),
         ],
         border: Border.all(
-          color: const Color(0xFFD4FF00).withOpacity(0.5),
+          color: const Color(0xFFD4FF00).withAlpha(128),
           width: 1,
         ),
       ),
@@ -63,9 +63,9 @@ class SuccessSummaryCard extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withAlpha(26),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    border: Border.all(color: Colors.white.withAlpha(51)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,

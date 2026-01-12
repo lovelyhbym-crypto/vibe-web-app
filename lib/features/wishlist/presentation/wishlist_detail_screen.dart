@@ -332,9 +332,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               child: Text(
                                 '저장하려면 상단 체크 버튼을 눌러주세요',
                                 style: TextStyle(
-                                  color: const Color(
-                                    0xFFCCFF00,
-                                  ).withOpacity(0.7),
+                                  color: const Color(0xFFCCFF00).withAlpha(179),
                                   fontSize: 12,
                                 ),
                               ),

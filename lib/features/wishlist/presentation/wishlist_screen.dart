@@ -51,7 +51,7 @@ class WishlistScreen extends ConsumerWidget {
             // Log filtering results
             if (activeWishlist.length <
                 wishlist.where((i) => !i.isAchieved).length) {
-              print(
+              debugPrint(
                 'Filtered out ${wishlist.where((i) => !i.isAchieved).length - activeWishlist.length} items with null IDs',
               );
             }
@@ -85,7 +85,7 @@ class WishlistScreen extends ConsumerWidget {
                           Text(
                             "총 $achievedCount개의 목표 달성 완료",
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
+                              color: Colors.white.withAlpha(128),
                               fontSize: 14,
                             ),
                           ),
@@ -260,7 +260,7 @@ class WishlistScreen extends ConsumerWidget {
                                         child: Image.network(
                                           item.imageUrl!,
                                           fit: BoxFit.cover,
-                                          color: Colors.black.withOpacity(0.5),
+                                          color: Colors.black.withAlpha(128),
                                           colorBlendMode: BlendMode.darken,
                                         ),
                                       ),

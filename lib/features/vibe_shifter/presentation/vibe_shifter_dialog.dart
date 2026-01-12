@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -71,7 +71,7 @@ class _VibeShifterDialogState extends State<VibeShifterDialog> {
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.all(20),
       child: GlassCard(
-        backgroundColor: Colors.black.withOpacity(0.85),
+        backgroundColor: Colors.black.withAlpha(217),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: _isLoading ? Colors.white24 : _selectedMission.color,
@@ -133,7 +133,7 @@ class _VibeShifterDialogState extends State<VibeShifterDialog> {
             color: Colors.white,
             shadows: [
               BoxShadow(
-                color: _selectedMission.color.withOpacity(0.8),
+                color: _selectedMission.color.withAlpha(204),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
@@ -173,14 +173,12 @@ class _VibeShifterDialogState extends State<VibeShifterDialog> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             decoration: BoxDecoration(
-              color: _selectedMission.color.withOpacity(0.2),
+              color: _selectedMission.color.withAlpha(51),
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(
-                color: _selectedMission.color.withOpacity(0.5),
-              ),
+              border: Border.all(color: _selectedMission.color.withAlpha(128)),
               boxShadow: [
                 BoxShadow(
-                  color: _selectedMission.color.withOpacity(0.2),
+                  color: _selectedMission.color.withAlpha(51),
                   blurRadius: 15,
                   spreadRadius: 1,
                 ),

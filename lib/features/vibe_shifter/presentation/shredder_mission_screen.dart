@@ -45,6 +45,7 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
   int _hp = 10;
   final int _maxHp = 10;
   bool _isDestroyed = false;
+  bool _isNavigating = false;
 
   late AnimationController _shakeController;
   // Note: Float controller removed for ultra-stability (reducing animation overhead)
@@ -78,7 +79,7 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
       // maxWidth: 300 (Very small, optimized for thumbail/preview usage)
       // imageQuality: 30 (High compression)
       final image = await picker.pickImage(
-        source: ImageSource.camera,
+        source: ImageSource.gallery,
         maxWidth: 300,
         imageQuality: 30,
         requestFullMetadata: false,
@@ -199,17 +200,19 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
   }
 
   Future<void> _destroy() async {
-    if (_isDestroyed || !mounted) return;
+    if (_isDestroyed || _isNavigating || !mounted) return;
 
     setState(() {
       _isDestroyed = true;
+      _isNavigating = true; // Block future taps
       _damageNumbers.clear();
     });
 
     HapticFeedback.heavyImpact();
 
     await Future.delayed(const Duration(milliseconds: 2000));
-    if (mounted) {
+
+    if (mounted && context.canPop()) {
       context.pop();
     }
   }
@@ -264,8 +267,9 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildOptionButton(
-                icon: Icons.camera_alt_rounded,
-                label: '사진 촬영',
+                icon:
+                    Icons.photo_library, // Changed from local_library or camera
+                label: '갤러리에서 선택', // Changed from '사진 촬영'
                 color: Colors.redAccent,
                 onTap: _pickImage,
               ),
@@ -294,8 +298,8 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
       child: GlassCard(
         width: 140,
         height: 140,
-        backgroundColor: color.withOpacity(0.2),
-        border: Border.all(color: color.withOpacity(0.5)),
+        backgroundColor: color.withAlpha(51),
+        border: Border.all(color: color.withAlpha(128)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -381,7 +385,7 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
                   width: double.infinity,
                   height: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withAlpha(128),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.redAccent, width: 2),
                     // NO BoxShadow for performance
@@ -410,8 +414,8 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
 
                       // Simple Color Overlay
                       Container(
-                        color: Colors.red.withOpacity(
-                          (damagePercent * 0.7).clamp(0.0, 0.9),
+                        color: Colors.red.withAlpha(
+                          ((damagePercent * 0.7).clamp(0.0, 0.9) * 255).toInt(),
                         ),
                       ),
 
@@ -474,7 +478,7 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
                   child: Text(
                     '터치해서 파괴하세요!',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withAlpha(204),
                       fontSize: 16,
                     ),
                   ).animate(onPlay: (c) => c.repeat(reverse: true)).fadeIn(),
@@ -522,7 +526,7 @@ class CrackPainter extends CustomPainter {
     if (cracks.isEmpty) return;
 
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.9)
+      ..color = Colors.white.withAlpha(230)
       ..style = PaintingStyle.stroke
       ..strokeWidth =
           4.5 // Even thicker

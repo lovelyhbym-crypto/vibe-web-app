@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -49,7 +50,7 @@ class NotificationService {
         provisional: false,
         sound: true,
       );
-      print('User granted permission: ${settings.authorizationStatus}');
+      debugPrint('User granted permission: ${settings.authorizationStatus}');
 
       // 2. Check APNS Token for iOS
       if (Platform.isIOS) {
@@ -59,22 +60,22 @@ class NotificationService {
           apnsToken = await FirebaseMessaging.instance.getAPNSToken();
         }
         if (apnsToken == null) {
-          print("APNS 토큰을 가져올 수 없습니다. 시뮬레이터 문제일 수 있습니다.");
+          debugPrint("APNS 토큰을 가져올 수 없습니다. 시뮬레이터 문제일 수 있습니다.");
           return;
         }
       }
 
       // 3. Get Token
       final fcmToken = await FirebaseMessaging.instance.getToken();
-      print("FCM Token: $fcmToken");
+      debugPrint("FCM Token: $fcmToken");
 
       // 4. Foreground Message Listener
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        print('Got a message whilst in the foreground!');
-        print('Message data: ${message.data}');
+        debugPrint('Got a message whilst in the foreground!');
+        debugPrint('Message data: ${message.data}');
 
         if (message.notification != null) {
-          print(
+          debugPrint(
             'Message also contained a notification: ${message.notification}',
           );
 
@@ -86,7 +87,7 @@ class NotificationService {
         }
       });
     } catch (e) {
-      print('FCM 초기화 오류: $e');
+      debugPrint('FCM 초기화 오류: $e');
     }
   }
 

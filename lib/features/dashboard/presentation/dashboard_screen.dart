@@ -149,7 +149,7 @@ class DashboardScreen extends ConsumerWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.redAccent.withOpacity(0.5),
+                color: Colors.redAccent.withAlpha(128),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
@@ -164,7 +164,7 @@ class DashboardScreen extends ConsumerWidget {
                         builder: (context) => const VibeShifterDialog(),
                       );
                     },
-                    backgroundColor: Colors.redAccent.withOpacity(0.8),
+                    backgroundColor: Colors.redAccent.withAlpha(204),
                     shape: const CircleBorder(),
                     child: const Text(
                       'SOS',

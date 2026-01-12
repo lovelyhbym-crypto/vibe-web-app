@@ -131,14 +131,14 @@ class _AsmrMissionScreenState extends State<AsmrMissionScreen>
                         height: 200,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.amber.withOpacity(0.1),
+                          color: Colors.amber.withAlpha(26),
                           border: Border.all(
-                            color: Colors.amberAccent.withOpacity(0.6),
+                            color: Colors.amberAccent.withAlpha(153),
                             width: 2,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.amber.withOpacity(0.4),
+                              color: Colors.amber.withAlpha(102),
                               blurRadius:
                                   20 +
                                   (_breathingController.value * 20), // 20 ~ 40
@@ -180,7 +180,7 @@ class _AsmrMissionScreenState extends State<AsmrMissionScreen>
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.greenAccent.withOpacity(0.5),
+                              color: Colors.greenAccent.withAlpha(128),
                               blurRadius: 10,
                               offset: const Offset(0, -2),
                             ),

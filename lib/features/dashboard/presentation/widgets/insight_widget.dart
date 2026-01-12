@@ -42,10 +42,10 @@ class _InsightWidgetState extends State<InsightWidget>
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: limeColor.withOpacity(0.3), width: 1),
+        border: Border.all(color: limeColor.withAlpha(77), width: 1),
         boxShadow: [
           BoxShadow(
-            color: limeColor.withOpacity(0.1),
+            color: limeColor.withAlpha(26),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -112,7 +112,7 @@ class _CompactTrendChart extends StatelessWidget {
               dotData: FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
-                color: const Color(0xFFD4FF00).withOpacity(0.1),
+                color: const Color(0xFFD4FF00).withAlpha(26),
               ),
             ),
           ],

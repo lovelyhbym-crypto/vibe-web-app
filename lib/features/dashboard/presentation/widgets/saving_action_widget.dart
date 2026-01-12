@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/utils/i18n.dart';
 
 class SavingActionWidget extends StatelessWidget {
   const SavingActionWidget({super.key});
@@ -8,7 +7,6 @@ class SavingActionWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const limeColor = Color(0xFFD4FF00);
-    final i18n = I18n.of(context);
 
     return AspectRatio(
       aspectRatio: 1,
@@ -18,10 +16,10 @@ class SavingActionWidget extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: limeColor.withOpacity(0.3), width: 1),
+            border: Border.all(color: limeColor.withAlpha(77), width: 1),
             boxShadow: [
               BoxShadow(
-                color: limeColor.withOpacity(0.1),
+                color: limeColor.withAlpha(26),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -33,7 +31,7 @@ class SavingActionWidget extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: limeColor.withOpacity(0.1),
+                  color: limeColor.withAlpha(26),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(

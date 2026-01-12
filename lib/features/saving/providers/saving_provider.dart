@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/network/supabase_client.dart';
 import 'package:vive_app/features/auth/providers/auth_provider.dart';
@@ -30,7 +31,7 @@ class SavingNotifier extends _$SavingNotifier {
     final safeResponse = response.where((e) => e['id'] != null).toList();
 
     if (safeResponse.length < response.length) {
-      print(
+      debugPrint(
         'Filtered out ${response.length - safeResponse.length} savings with null IDs',
       );
     }
@@ -77,8 +78,8 @@ class SavingNotifier extends _$SavingNotifier {
           .select()
           .single();
 
-      print('Raw response from server: $response');
-      print('Original Map for SavingModel: $response'); // Requested log
+      debugPrint('Raw response from server: $response');
+      debugPrint('Original Map for SavingModel: $response'); // Requested log
 
       final savedItem = SavingModel.fromJson(response);
 
@@ -86,13 +87,13 @@ class SavingNotifier extends _$SavingNotifier {
         throw Exception('서버 응답 오류: ID 유실 (Server returned item with empty ID)');
       }
 
-      print('Parsed item ID: ${savedItem.id}');
+      debugPrint('Parsed item ID: ${savedItem.id}');
 
       // Immediately update state with the confirmed item
       final previousList = state.valueOrNull ?? [];
       state = AsyncValue.data([savedItem, ...previousList]);
     } catch (e) {
-      print('Error in addSaving: $e');
+      debugPrint('Error in addSaving: $e');
       throw Exception('Failed to add saving record: $e');
     }
   }
@@ -115,12 +116,12 @@ class SavingNotifier extends _$SavingNotifier {
           .eq('id', id)
           .select();
 
-      print('Saving delete result: $response');
+      debugPrint('Saving delete result: $response');
 
       // Refresh the list only if successful
       ref.invalidateSelf();
     } catch (e) {
-      print('Error in deleteSaving: $e');
+      debugPrint('Error in deleteSaving: $e');
       throw Exception('Failed to delete saving record: $e');
     }
   }

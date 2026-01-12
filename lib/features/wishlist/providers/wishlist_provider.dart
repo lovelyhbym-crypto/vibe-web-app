@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:vive_app/core/network/supabase_client.dart';
@@ -44,7 +45,7 @@ class WishlistNotifier extends _$WishlistNotifier {
         .toList();
 
     if (safeResponse.length < response.length) {
-      print(
+      debugPrint(
         'Filtered out ${response.length - safeResponse.length} items with invalid IDs from server fetch',
       );
     }
@@ -67,7 +68,7 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
 
     try {
-      print('Adding wishlist item to Supabase: ${item.title}');
+      debugPrint('Adding wishlist item to Supabase: ${item.title}');
       final response = await ref
           .read(supabaseProvider)
           .from('wishlists')
@@ -75,7 +76,7 @@ class WishlistNotifier extends _$WishlistNotifier {
           .select()
           .single();
 
-      print('Supabase response: $response');
+      debugPrint('Supabase response: $response');
 
       // Check raw response for ID before parsing (because fromJson now generates a fallback UUID)
       if (response['id'] == null) {
@@ -83,13 +84,13 @@ class WishlistNotifier extends _$WishlistNotifier {
       }
 
       final newItem = WishlistModel.fromJson(response);
-      print('Parsed item ID: ${newItem.id}');
+      debugPrint('Parsed item ID: ${newItem.id}');
 
       // Update state with the new item containing the valid ID
       final previousList = state.valueOrNull ?? [];
       state = AsyncValue.data([...previousList, newItem]);
     } catch (e) {
-      print('Error adding wishlist item: $e'); // Debug log
+      debugPrint('Error adding wishlist item: $e'); // Debug log
       throw Exception('Failed to add wishlist item: $e');
     }
   }
@@ -111,7 +112,7 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
 
     try {
-      print('Deleting wishlist item from Supabase: $id');
+      debugPrint('Deleting wishlist item from Supabase: $id');
       // 1. Perform server deletion FIRST
       // Using select() to ensure we get a response, though standard delete throws on error
       await ref.read(supabaseProvider).from('wishlists').delete().eq('id', id);
@@ -121,7 +122,7 @@ class WishlistNotifier extends _$WishlistNotifier {
       final updatedList = previousList.where((item) => item.id != id).toList();
       state = AsyncValue.data(updatedList);
     } catch (e) {
-      print('Error deleting wishlist item: $e');
+      debugPrint('Error deleting wishlist item: $e');
       // No state change needed as we haven't touched it yet
       throw Exception('Failed to delete wishlist item: $e');
     }
@@ -140,7 +141,7 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
 
     try {
-      print('Deleting multiple wishlist items from Supabase: $ids');
+      debugPrint('Deleting multiple wishlist items from Supabase: $ids');
       // 1. Perform server deletion FIRST
       // Supabase's 'in_' filter allows matching any value in a list
       await ref
@@ -156,7 +157,7 @@ class WishlistNotifier extends _$WishlistNotifier {
           .toList();
       state = AsyncValue.data(updatedList);
     } catch (e) {
-      print('Error deleting multiple wishlist items: $e');
+      debugPrint('Error deleting multiple wishlist items: $e');
       throw Exception('Failed to delete wishlist items: $e');
     }
   }
@@ -218,7 +219,7 @@ class WishlistNotifier extends _$WishlistNotifier {
     } catch (e) {
       // Revert state on error or invalidate
       ref.invalidateSelf();
-      print('Error in addSavingToAllGoals: $e');
+      debugPrint('Error in addSavingToAllGoals: $e');
       throw Exception('Failed to add funds to all goals: $e');
     }
   }
@@ -255,7 +256,7 @@ class WishlistNotifier extends _$WishlistNotifier {
     } catch (e) {
       // Revert state on error
       ref.invalidateSelf();
-      print('Error updating comment: $e');
+      debugPrint('Error updating comment: $e');
       throw Exception('Failed to update comment: $e');
     }
   }
@@ -319,7 +320,7 @@ class WishlistNotifier extends _$WishlistNotifier {
     } catch (e) {
       // Revert state on error if needed, or invalidate to re-fetch truth
       ref.invalidateSelf();
-      print('Error in addFundsToSelectedItem: $e');
+      debugPrint('Error in addFundsToSelectedItem: $e');
       throw Exception('Failed to add funds: $e');
     }
   }

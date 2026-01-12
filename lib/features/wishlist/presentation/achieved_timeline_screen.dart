@@ -68,7 +68,7 @@ class _AchievedTimelineScreenState
         ),
         content: Text(
           i18n.isKorean
-              ? "선택한 ${count}개의 기록을 삭제하시겠습니까?\n(삭제된 기록은 복구할 수 없습니다.)"
+              ? "선택한 $count개의 기록을 삭제하시겠습니까?\n(삭제된 기록은 복구할 수 없습니다.)"
               : "Delete $count selected items?\n(This action cannot be undone.)",
           style: const TextStyle(color: Colors.white70),
         ),
@@ -285,7 +285,7 @@ class _AchievedTimelineScreenState
                                     Expanded(
                                       child: Container(
                                         width: 2,
-                                        color: limeColor.withOpacity(0.3),
+                                        color: limeColor.withAlpha(77),
                                       ),
                                     ),
                                 ],
@@ -372,7 +372,7 @@ class _AchievedTimelineScreenState
                                                         ),
                                                     decoration: BoxDecoration(
                                                       color: Colors.white
-                                                          .withOpacity(0.05),
+                                                          .withAlpha(13),
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                             20,

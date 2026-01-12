@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class SavingModel {
   final String id;
   final String category;
@@ -26,7 +28,7 @@ class SavingModel {
 
     // 2. Critical Log
     if (parsedId.isEmpty || parsedId == 'null') {
-      print('CRITICAL: Map keys are: ${json.keys}');
+      debugPrint('CRITICAL: Map keys are: ${json.keys}');
     }
 
     return SavingModel(

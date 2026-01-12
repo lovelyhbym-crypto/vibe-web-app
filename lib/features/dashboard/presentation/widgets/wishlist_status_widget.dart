@@ -31,7 +31,7 @@ class WishlistStatusWidget extends ConsumerWidget {
             // Or mild glow as requested "All widgets... lime glow".
             boxShadow: [
               BoxShadow(
-                color: limeColor.withOpacity(0.05),
+                color: limeColor.withAlpha(13),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
