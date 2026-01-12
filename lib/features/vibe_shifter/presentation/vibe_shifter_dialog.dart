@@ -7,6 +7,7 @@ import '../../../core/ui/glass_card.dart';
 import '../../../core/ui/bouncy_button.dart';
 import 'shredder_mission_screen.dart';
 import 'asmr_mission_screen.dart';
+import '../../mission/presentation/pages/reality_awareness_screen.dart';
 
 class VibeShifterDialog extends StatefulWidget {
   const VibeShifterDialog({super.key});
@@ -168,8 +169,16 @@ class _VibeShifterDialogState extends State<VibeShifterDialog> {
                   builder: (context) => const AsmrMissionScreen(),
                 ),
               );
+            } else if (_selectedMission.title == '[현실 자각]') {
+              // Phase 4: Navigate to Reality Awareness Screen
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const RealityAwarenessScreen(),
+                ),
+              );
             }
           },
+
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             decoration: BoxDecoration(

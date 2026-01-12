@@ -6,28 +6,41 @@ import 'package:sensors_plus/sensors_plus.dart';
 
 part 'mission_provider.g.dart';
 
-enum MissionType { tap, shake }
+enum MissionType { tap, shake, realityCheck }
 
 class MissionState {
   final MissionType type;
   final double progress;
   final bool isCompleted;
+  final String? currentRealityMission;
+  final int timeLeft;
+  final bool isTimerRunning;
 
   MissionState({
     required this.type,
     this.progress = 0.0,
     this.isCompleted = false,
+    this.currentRealityMission,
+    this.timeLeft = 180,
+    this.isTimerRunning = false,
   });
 
   MissionState copyWith({
     MissionType? type,
     double? progress,
     bool? isCompleted,
+    String? currentRealityMission,
+    int? timeLeft,
+    bool? isTimerRunning,
   }) {
     return MissionState(
       type: type ?? this.type,
       progress: progress ?? this.progress,
       isCompleted: isCompleted ?? this.isCompleted,
+      currentRealityMission:
+          currentRealityMission ?? this.currentRealityMission,
+      timeLeft: timeLeft ?? this.timeLeft,
+      isTimerRunning: isTimerRunning ?? this.isTimerRunning,
     );
   }
 }
@@ -36,6 +49,26 @@ class MissionState {
 class Mission extends _$Mission {
   StreamSubscription? _accelerometerSubscription;
   Timer? _debugTimer;
+  Timer? _realityTimer;
+
+  static const List<String> realityMissions = [
+    '찬물 마시기',
+    '방 청소하기',
+    '플랭크 1분 하기',
+    '벽 밀기 1분',
+    '얼음 1분간 쥐고 있기',
+    '팔굽혀펴기 10회',
+    '스쿼트 20회',
+    '명상 3분',
+    '창문 열고 환기하기',
+    '스트레칭 하기',
+    '눈 감고 1분 있기',
+    '물 한 컵 천천히 마시기',
+    '제자리 뛰기 30초',
+    '거울 보고 웃기',
+    '심호흡 10번 하기',
+    '5-4-3-2-1 그라운딩',
+  ];
 
   @override
   MissionState build() {
@@ -50,6 +83,7 @@ class Mission extends _$Mission {
     ref.onDispose(() {
       _accelerometerSubscription?.cancel();
       _debugTimer?.cancel();
+      _realityTimer?.cancel();
     });
 
     return MissionState(type: type);
@@ -108,5 +142,39 @@ class Mission extends _$Mission {
     debugPrint(
       'Current Progress: ${updatedState.progress}',
     ); // DEBUG LOG to track UI updates
+  }
+
+  void startRealityMission() {
+    // 1. Select Random Mission
+    final random = Random();
+    final mission = realityMissions[random.nextInt(realityMissions.length)];
+
+    // 2. Reset State & Timer
+    _realityTimer?.cancel();
+    state = state.copyWith(
+      type: MissionType.realityCheck,
+      currentRealityMission: mission,
+      timeLeft: 180,
+      isTimerRunning: true,
+      progress: 0.0,
+      isCompleted: false,
+    );
+
+    // 3. Start Timer (3 minutes = 180 seconds)
+    _realityTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (state.timeLeft > 0) {
+        state = state.copyWith(timeLeft: state.timeLeft - 1);
+      } else {
+        stopTimer();
+        // Option: Auto-complete or fail? For now just stop.
+        // state = state.copyWith(isCompleted: true);
+      }
+    });
+  }
+
+  void stopTimer() {
+    _realityTimer?.cancel();
+    _realityTimer = null;
+    state = state.copyWith(isTimerRunning: false);
   }
 }

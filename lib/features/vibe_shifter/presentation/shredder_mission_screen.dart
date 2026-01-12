@@ -3,7 +3,9 @@ import 'dart:math' as math;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../mission/providers/mission_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/ui/glass_card.dart';
@@ -27,16 +29,17 @@ class DamageEntry {
   });
 }
 
-class ShredderMissionScreen extends StatefulWidget {
+class ShredderMissionScreen extends ConsumerStatefulWidget {
   const ShredderMissionScreen({super.key});
 
   @override
-  State<ShredderMissionScreen> createState() => _ShredderMissionScreenState();
+  ConsumerState<ShredderMissionScreen> createState() =>
+      _ShredderMissionScreenState();
 }
 
 enum _TargetType { none, image, text }
 
-class _ShredderMissionScreenState extends State<ShredderMissionScreen>
+class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
     with TickerProviderStateMixin {
   _TargetType _targetType = _TargetType.none;
   XFile? _targetImage;
@@ -59,10 +62,7 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
   @override
   void initState() {
     super.initState();
-    _shakeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
+    _shakeController = AnimationController(vsync: this);
   }
 
   @override
@@ -231,15 +231,122 @@ class _ShredderMissionScreenState extends State<ShredderMissionScreen>
           foregroundColor: Colors.white,
           elevation: 0,
         ),
-        body: SafeArea(
-          child: Center(
-            child: _targetType == _TargetType.none
-                ? _buildInputSelection()
-                : _buildDestructionZone(),
-          ),
-        ),
+        body: SafeArea(child: Center(child: _buildBody(context))),
       ),
     );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    final missionState = ref.watch(missionProvider);
+
+    if (missionState.type == MissionType.realityCheck) {
+      return _buildRealityCheckUI(missionState);
+    }
+
+    return _targetType == _TargetType.none
+        ? _buildInputSelection()
+        : _buildDestructionZone();
+  }
+
+  Widget _buildRealityCheckUI(MissionState state) {
+    // Format Seconds to MM:SS
+    final minutes = (state.timeLeft ~/ 60).toString().padLeft(2, '0');
+    final seconds = (state.timeLeft % 60).toString().padLeft(2, '0');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // 1. Icon
+          const Icon(
+            Icons.bolt_rounded,
+            size: 80,
+            color: Colors.yellowAccent,
+          ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
+
+          const SizedBox(height: 32),
+
+          // 2. Mission Text
+          Text(
+            state.currentRealityMission ?? '현실 자각 미션 로딩 중...',
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.2, end: 0),
+
+          const SizedBox(height: 16),
+          const Text(
+            '지금 바로 위 행동을 수행하며\n충동을 흘려보내세요.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white70, fontSize: 16),
+          ),
+
+          const SizedBox(height: 48),
+
+          // 3. Timer
+          Text(
+                '$minutes:$seconds',
+                style: const TextStyle(
+                  fontSize: 64,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.redAccent,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              )
+              .animate(onPlay: (c) => c.repeat())
+              .shimmer(duration: 2000.ms, color: Colors.white.withAlpha(50)),
+
+          const SizedBox(height: 64),
+
+          // 4. Complete Button
+          BouncyButton(
+            onTap: state.isTimerRunning ? _completeRealityMission : () {},
+            child: GlassCard(
+              width: double.infinity,
+              height: 60,
+              backgroundColor: state.isTimerRunning
+                  ? Colors.redAccent.withAlpha(200)
+                  : Colors.grey.withAlpha(100),
+              child: Center(
+                child: Text(
+                  '미션 완료',
+                  style: TextStyle(
+                    color: state.isTimerRunning ? Colors.white : Colors.white38,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _completeRealityMission() {
+    // 1. Stop Timer
+    ref.read(missionProvider.notifier).stopTimer();
+
+    // 2. Show Success Feedback
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('미션 성공! 충동을 이겨내셨습니다.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+
+    // 3. Safe Pop
+    if (mounted && context.canPop()) {
+      context.pop();
+    }
   }
 
   Widget _buildInputSelection() {

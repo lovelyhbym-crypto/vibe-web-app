@@ -11,6 +11,7 @@ import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/wishlist/presentation/achieved_timeline_screen.dart';
 import '../../features/wishlist/presentation/wishlist_detail_screen.dart';
 import '../../features/wishlist/domain/wishlist_model.dart';
+import '../../features/mission/presentation/pages/reality_awareness_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -66,6 +67,10 @@ GoRouter goRouter(Ref ref) {
           final item = state.extra as WishlistModel;
           return WishlistDetailScreen(item: item);
         },
+      ),
+      GoRoute(
+        path: '/reality-awareness',
+        builder: (context, state) => const RealityAwarenessScreen(),
       ),
     ],
   );
