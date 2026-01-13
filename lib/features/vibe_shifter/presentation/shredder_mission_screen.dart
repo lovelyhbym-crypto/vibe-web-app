@@ -62,7 +62,10 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
   @override
   void initState() {
     super.initState();
-    _shakeController = AnimationController(vsync: this);
+    _shakeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
   }
 
   @override
@@ -152,7 +155,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
   }
 
   void _onTapTarget(TapDownDetails details) {
-    if (_hp <= 0) return;
+    if (_hp <= 0 || _isNavigating) return;
 
     HapticFeedback.mediumImpact();
 
@@ -468,6 +471,8 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
 
     return Center(
       child: GestureDetector(
+        behavior: HitTestBehavior
+            .opaque, // Ensure touches are caught even on empty spaces
         onTapDown: _onTapTarget,
         child: SizedBox(
           width: 320,
@@ -520,16 +525,21 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
                             ),
 
                       // Simple Color Overlay
-                      Container(
-                        color: Colors.red.withAlpha(
-                          ((damagePercent * 0.7).clamp(0.0, 0.9) * 255).toInt(),
+                      IgnorePointer(
+                        child: Container(
+                          color: Colors.red.withAlpha(
+                            ((damagePercent * 0.7).clamp(0.0, 0.9) * 255)
+                                .toInt(),
+                          ),
                         ),
                       ),
 
                       // LIGHTWEIGHT CRACKS (No Blur, Just Lines)
-                      CustomPaint(
-                        painter: CrackPainter(_crackPaths),
-                        size: Size.infinite,
+                      IgnorePointer(
+                        child: CustomPaint(
+                          painter: CrackPainter(_crackPaths),
+                          size: Size.infinite,
+                        ),
                       ),
                     ],
                   ),
