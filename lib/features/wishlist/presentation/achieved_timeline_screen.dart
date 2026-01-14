@@ -7,8 +7,8 @@ import '../../saving/providers/saving_provider.dart';
 import '../../saving/domain/saving_model.dart';
 import '../providers/wishlist_provider.dart';
 import '../domain/wishlist_model.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/ui/glass_card.dart';
-import 'pages/achieved_detail_screen.dart';
 
 class AchievedTimelineScreen extends ConsumerStatefulWidget {
   const AchievedTimelineScreen({super.key});
@@ -178,6 +178,11 @@ class _AchievedTimelineScreenState
               ),
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.analytics_outlined),
+            onPressed: () => context.push('/wishlist/glory-report'),
+            tooltip: 'Glory Report',
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -227,12 +232,7 @@ class _AchievedTimelineScreenState
                           if (_isEditing) {
                             _toggleSelection(id);
                           } else {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    AchievedDetailScreen(item: goal),
-                              ),
-                            );
+                            context.push('/wishlist/detail', extra: goal);
                           }
                         },
                         child: IntrinsicHeight(

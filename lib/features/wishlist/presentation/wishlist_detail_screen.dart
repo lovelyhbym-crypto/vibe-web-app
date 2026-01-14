@@ -176,6 +176,14 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                             duration: const Duration(milliseconds: 400),
                             curve: Curves.easeOutExpo,
                             builder: (context, value, child) {
+                              // If achieved or fully saved, show full color
+                              if (item.isAchieved || progress >= 1.0) {
+                                return Image.network(
+                                  item.imageUrl!,
+                                  fit: BoxFit.cover,
+                                );
+                              }
+
                               return Stack(
                                 fit: StackFit.expand,
                                 children: [
@@ -397,8 +405,11 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               fontSize: 16,
                               height: 1.5,
                             ),
+                            readOnly: item.isAchieved || progress >= 1.0,
                             decoration: InputDecoration(
-                              hintText: "미래의 나에게 보내는 응원 메시지",
+                              hintText: (item.isAchieved || progress >= 1.0)
+                                  ? "달성 완료된 다짐입니다"
+                                  : "미래의 나에게 보내는 응원 메시지",
                               hintStyle: TextStyle(color: Colors.white30),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.zero,

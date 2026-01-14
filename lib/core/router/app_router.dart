@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import '../../features/settings/presentation/settings_screen.dart';
 import '../../features/wishlist/presentation/achieved_timeline_screen.dart';
 import '../../features/wishlist/presentation/wishlist_detail_screen.dart';
 import '../../features/wishlist/domain/wishlist_model.dart';
+import '../../features/wishlist/presentation/pages/glory_report_screen.dart';
 import '../../features/mission/presentation/pages/reality_awareness_screen.dart';
 
 part 'app_router.g.dart';
@@ -71,6 +73,10 @@ GoRouter goRouter(Ref ref) {
       GoRoute(
         path: '/reality-awareness',
         builder: (context, state) => const RealityAwarenessScreen(),
+      ),
+      GoRoute(
+        path: '/wishlist/glory-report',
+        builder: (context, state) => const GloryReportScreen(),
       ),
     ],
   );

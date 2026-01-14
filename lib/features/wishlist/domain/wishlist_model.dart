@@ -94,4 +94,35 @@ class WishlistModel {
       comment: comment ?? this.comment,
     );
   }
+
+  Map<String, int> calculateResistedCounts(List<dynamic> savings) {
+    if (savings.isEmpty) return {};
+
+    final start = createdAt;
+    final end = achievedAt ?? DateTime.now();
+
+    // Filter savings within the goal period
+    final relevantSavings = savings.where((s) {
+      // Handle both SavingModel and dynamic types safely if needed,
+      // but assuming SavingModel or similar structure with createdAt property
+      // We will access fields dynamically to avoid import cycles if SavingModel is in another package
+      // but ideally this should import SavingModel if architecture permits.
+      // For now, let's assume 's' has 'createdAt' and 'category'.
+      final sCreatedAt = (s is Map)
+          ? DateTime.parse(s['created_at'])
+          : (s as dynamic).createdAt as DateTime;
+
+      return sCreatedAt.isAfter(start.subtract(const Duration(seconds: 1))) &&
+          sCreatedAt.isBefore(end.add(const Duration(seconds: 1)));
+    }).toList();
+
+    final stats = <String, int>{};
+    for (final s in relevantSavings) {
+      final category = (s is Map)
+          ? s['category'] as String
+          : (s as dynamic).category as String;
+      stats.update(category, (value) => value + 1, ifAbsent: () => 1);
+    }
+    return stats;
+  }
 }
