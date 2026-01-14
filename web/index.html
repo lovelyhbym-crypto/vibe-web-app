@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -28,12 +29,43 @@
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="favicon.png" />
 
   <title>vive_app</title>
   <link rel="manifest" href="manifest.json">
 </head>
+
 <body>
   <script src="flutter_bootstrap.js" async></script>
+
+  <!-- iOS Web Sensor Permission Handler -->
+  <button id="sensor-btn" onclick="requestSensorPermission()"
+    style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%); z-index:9999; padding:12px 24px; background:rgba(255,59,48,0.9); color:white; border:none; border-radius:24px; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+    Enable Shake Sensor 📱
+  </button>
+
+  <script>
+    function requestSensorPermission() {
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              document.getElementById('sensor-btn').style.display = 'none';
+            } else {
+              alert('Permission denied. Shake will not work.');
+            }
+          })
+          .catch(console.error);
+      } else {
+        document.getElementById('sensor-btn').style.display = 'none';
+      }
+    }
+
+    // Show button only on iOS devices that require permission
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      document.getElementById('sensor-btn').style.display = 'block';
+    }
+  </script>
 </body>
+
 </html>

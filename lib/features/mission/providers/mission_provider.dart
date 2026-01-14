@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:math';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:shake/shake.dart'; // [NEW]
 
 part 'mission_provider.g.dart';
 
@@ -48,8 +49,14 @@ class MissionState {
 @riverpod
 class Mission extends _$Mission {
   StreamSubscription? _accelerometerSubscription;
+  ShakeDetector? _shakeDetector; // [NEW] Shake Detector
+  final _damageStreamController =
+      StreamController<void>.broadcast(); // [NEW] Event Stream
+
   Timer? _debugTimer;
   Timer? _realityTimer;
+
+  Stream<void> get damageStream => _damageStreamController.stream;
 
   static const List<String> realityMissions = [
     '찬물 마시기',
@@ -82,8 +89,10 @@ class Mission extends _$Mission {
     // Cleanup subscription when the provider is disposed
     ref.onDispose(() {
       _accelerometerSubscription?.cancel();
+      _shakeDetector?.stopListening(); // [NEW] Stop listening
       _debugTimer?.cancel();
       _realityTimer?.cancel();
+      _damageStreamController.close(); // [NEW] Close stream
     });
 
     return MissionState(type: type);
@@ -98,10 +107,23 @@ class Mission extends _$Mission {
   void _initShakeListener() {
     debugPrint('Initializing Shake Listener...'); // DEBUG LOG
 
+    // 1. [NEW] Shake Package (Works on Simulator Cmd+Shift+Z)
+    _shakeDetector = ShakeDetector.autoStart(
+      onPhoneShake: (_) {
+        debugPrint('Shake Detect (Package)!');
+        _triggerDamage(0.1); // Big damage on explicit shake
+      },
+      minimumShakeCount: 1,
+      shakeSlopTimeMS: 500,
+      shakeCountResetTime: 3000,
+      shakeThresholdGravity: 2.7,
+    );
+
+    // 2. Sensors Plus (Fine-grained control, works on Web/Real Device)
     // Switch to UserAccelerometer for better shake detection without gravity
     _accelerometerSubscription = userAccelerometerEventStream().listen((event) {
       // REQUIRED: Sensor Active Log
-      debugPrint('Sensor Active: ${event.x}, ${event.y}, ${event.z}');
+      // debugPrint('Sensor Active: ${event.x}, ${event.y}, ${event.z}');
 
       if (state.isCompleted) return;
 
@@ -111,19 +133,24 @@ class Mission extends _$Mission {
         event.x * event.x + event.y * event.y + event.z * event.z,
       );
 
-      // print('Shake detected: $acceleration'); // DEBUG LOG
-
       // Lower threshold for simulator/testing
       if (acceleration > 5.0) {
-        incrementProgress(0.05); // Increase progress by 5% on shake
+        // Debounce or reduce frequency could be added here
+        _triggerDamage(0.02); // Small damage on continuous shake
       }
     });
   }
 
   void tap() {
     if (state.type == MissionType.tap && !state.isCompleted) {
-      incrementProgress(0.1); // Increase progress by 10% on tap
+      _triggerDamage(0.1);
     }
+  }
+
+  // Unified Trigger Method
+  void _triggerDamage(double amount) {
+    incrementProgress(amount);
+    _damageStreamController.add(null); // Notify UI to show effects
   }
 
   void incrementProgress(double amount) {

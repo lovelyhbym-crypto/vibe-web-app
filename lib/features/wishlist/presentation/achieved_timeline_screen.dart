@@ -8,6 +8,7 @@ import '../../saving/domain/saving_model.dart';
 import '../providers/wishlist_provider.dart';
 import '../domain/wishlist_model.dart';
 import '../../../core/ui/glass_card.dart';
+import 'pages/achieved_detail_screen.dart';
 
 class AchievedTimelineScreen extends ConsumerStatefulWidget {
   const AchievedTimelineScreen({super.key});
@@ -222,9 +223,18 @@ class _AchievedTimelineScreenState
                       final stats = _calculateStats(goal, savings);
 
                       return GestureDetector(
-                        onTap: _isEditing
-                            ? () => _toggleSelection(id)
-                            : null, // Toggle selection on tap in edit mode
+                        onTap: () {
+                          if (_isEditing) {
+                            _toggleSelection(id);
+                          } else {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    AchievedDetailScreen(item: goal),
+                              ),
+                            );
+                          }
+                        },
                         child: IntrinsicHeight(
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,

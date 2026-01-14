@@ -169,18 +169,97 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
               flexibleSpace: FlexibleSpaceBar(
                 background: Hero(
                   tag: 'wishlist_img_${item.id}',
-                  child: item.imageUrl != null
-                      ? Image.network(item.imageUrl!, fit: BoxFit.cover)
-                      : Container(
-                          color: Colors.grey[900],
-                          child: const Center(
-                            child: Icon(
-                              Icons.image_not_supported,
-                              color: Colors.white24,
-                              size: 64,
+                  child: InteractiveViewer(
+                    child: item.imageUrl != null
+                        ? TweenAnimationBuilder<double>(
+                            tween: Tween<double>(end: progress),
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.easeOutExpo,
+                            builder: (context, value, child) {
+                              return Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  // 1층: 배경 (완벽한 흑백)
+                                  ColorFiltered(
+                                    colorFilter: const ColorFilter.matrix([
+                                      0.2126,
+                                      0.7152,
+                                      0.0722,
+                                      0,
+                                      0,
+                                      0.2126,
+                                      0.7152,
+                                      0.0722,
+                                      0,
+                                      0,
+                                      0.2126,
+                                      0.7152,
+                                      0.0722,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      0,
+                                      1,
+                                      0,
+                                    ]),
+                                    child: Image.network(
+                                      item.imageUrl!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  // 2층: 컬러 (ShaderMask로 왼쪽만 투명도 해제)
+                                  ShaderMask(
+                                    shaderCallback: (rect) {
+                                      return LinearGradient(
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                        stops: [value, value],
+                                        colors: const [
+                                          Colors.white,
+                                          Colors.transparent,
+                                        ],
+                                      ).createShader(rect);
+                                    },
+                                    blendMode: BlendMode.dstIn,
+                                    child: Image.network(
+                                      item.imageUrl!,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  // 3층: 스캔 라인 (위치 보정)
+                                  if (value < 1.0)
+                                    Align(
+                                      alignment: Alignment(value * 2 - 1, 0),
+                                      child: Container(
+                                        width: 2,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.yellowAccent,
+                                              blurRadius: 10,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
+                          )
+                        : Container(
+                            color: Colors.grey[900],
+                            child: const Center(
+                              child: Icon(
+                                Icons.image_not_supported,
+                                color: Colors.white24,
+                                size: 64,
+                              ),
                             ),
                           ),
-                        ),
+                  ),
                 ),
               ),
             ),
@@ -259,7 +338,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                     // Progress Bar
                     TweenAnimationBuilder<double>(
                       key: ValueKey(progress),
-                      tween: Tween<double>(begin: 0.0, end: progress),
+                      tween: Tween<double>(end: progress),
                       duration: const Duration(milliseconds: 1500),
                       curve: Curves.easeOutExpo,
                       builder: (context, value, child) {

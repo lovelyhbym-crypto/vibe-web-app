@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:intl/intl.dart';
 
+import 'pages/achieved_detail_screen.dart';
 import '../../../core/utils/i18n.dart';
 import '../providers/wishlist_provider.dart';
 
@@ -68,56 +69,106 @@ class AchievedGoalsScreen extends ConsumerWidget {
                 color: Theme.of(context).cardColor,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              AchievedDetailScreen(item: item),
+                        ),
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        // Thumbnail Image
+                        if (item.imageUrl != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 16.0),
+                            child: Hero(
+                              tag: 'achieved_img_${item.id}',
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  item.imageUrl!,
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 80,
+                                      height: 80,
+                                      color: Colors.grey[800],
+                                      child: const Icon(
+                                        Icons.image_not_supported,
+                                        color: Colors.white24,
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
                             ),
                           ),
-                          const Icon(
-                            Icons.emoji_events,
-                            color: Color(0xFFFFD700),
+                        // Content
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item.title,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.emoji_events,
+                                    color: Color(0xFFFFD700),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Achieved on ${DateFormat('yyyy.MM.dd').format(item.achievedAt ?? DateTime.now())}',
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    i18n.formatCurrency(item.totalGoal),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFFCCFF00),
+                                    ),
+                                  ),
+                                  const Text(
+                                    '100% COMPLETE',
+                                    style: TextStyle(
+                                      color: Color(0xFFFFD700),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Achieved on ${DateFormat('yyyy.MM.dd').format(item.achievedAt ?? DateTime.now())}',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            i18n.formatCurrency(item.totalGoal),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFCCFF00),
-                            ),
-                          ),
-                          const Text(
-                            '100% COMPLETE',
-                            style: TextStyle(
-                              color: Color(0xFFFFD700),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
