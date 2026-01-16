@@ -4,6 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/router/app_router.dart';
 
+import 'core/theme/app_theme.dart';
+import 'core/theme/theme_provider.dart';
+
 import 'package:vive_app/core/providers/locale_provider.dart';
 import 'core/utils/i18n.dart';
 import 'core/config/env_config.dart';
@@ -11,6 +14,7 @@ import 'core/config/env_config.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final apiKey = EnvConfig.geminiApiKey;
+
   debugPrint('DEBUG: GEMINI_API_KEY length: ${apiKey.length}');
   if (apiKey.isEmpty) debugPrint('DEBUG: GEMINI_API_KEY is EMPTY');
 
@@ -52,6 +56,7 @@ class MyApp extends ConsumerWidget {
     final router = ref.watch(goRouterProvider);
     final localeAsync = ref.watch(localeProvider);
     final locale = localeAsync.asData?.value ?? const Locale('ko');
+    final themeMode = ref.watch(themeNotifierProvider);
 
     return MaterialApp.router(
       title: 'Vive App',
@@ -65,32 +70,10 @@ class MyApp extends ConsumerWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        primaryColor: const Color(0xFFCCFF00), // Neon Green
-        scaffoldBackgroundColor: const Color(0xFF121212), // Deep Black
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFCCFF00),
-          secondary: Color(0xFFCCFF00),
-          surface: Color(0xFF1E1E1E),
-          onSurface: Colors.white,
-        ),
-        useMaterial3: true,
-        fontFamily: 'Pretendard',
-        cardColor: const Color(0xFF1E1E1E),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF121212),
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFCCFF00),
-            foregroundColor: Colors.black,
-            textStyle: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
+      // 2. 테마 엔진 연결!
+      // 이제 themeMode가 바뀔 때마다 AppTheme이 새로운 디자인을 배달합니다.
+      theme: AppTheme.getTheme(themeMode),
+
       routerConfig: router,
     );
   }

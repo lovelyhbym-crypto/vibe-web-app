@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/services/image_service.dart';
+import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/theme_provider.dart';
 import '../../../core/utils/i18n.dart';
 import '../../../../core/ui/bouncy_button.dart';
 import '../domain/wishlist_model.dart';
@@ -100,12 +102,15 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
   @override
   Widget build(BuildContext context) {
     final i18n = I18n.of(context);
+    final themeMode = ref.watch(themeNotifierProvider);
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+    final isPureFinance = themeMode == VibeThemeMode.pureFinance;
 
     return AlertDialog(
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: colors.surface,
       title: Text(
         i18n.wishlistAddTitle,
-        style: const TextStyle(color: Colors.white),
+        style: TextStyle(color: colors.textMain),
       ),
       content: SingleChildScrollView(
         child: Column(
@@ -118,9 +123,9 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
                 height: 150,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white10,
+                  color: isPureFinance ? colors.background : Colors.white10,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24),
+                  border: Border.all(color: colors.border),
                   image: _selectedImage != null
                       ? DecorationImage(
                           image: kIsWeb
@@ -135,16 +140,16 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
                 child: _selectedImage == null
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
+                        children: [
                           Icon(
                             Icons.add_a_photo,
-                            color: Colors.white54,
+                            color: colors.textSub,
                             size: 32,
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             '사진 등록',
-                            style: TextStyle(color: Colors.white54),
+                            style: TextStyle(color: colors.textSub),
                           ),
                         ],
                       )
@@ -156,31 +161,31 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
               controller: _titleController,
               decoration: InputDecoration(
                 labelText: i18n.itemNameLabel,
-                labelStyle: const TextStyle(color: Colors.white70),
-                enabledBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white30),
+                labelStyle: TextStyle(color: colors.textSub),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: colors.border),
                 ),
-                focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFCCFF00)),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: colors.accent),
                 ),
               ),
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: colors.textMain),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _priceController,
               decoration: InputDecoration(
                 labelText: i18n.priceLabel,
-                labelStyle: const TextStyle(color: Colors.white70),
-                enabledBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white30),
+                labelStyle: TextStyle(color: colors.textSub),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: colors.border),
                 ),
-                focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Color(0xFFCCFF00)),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: colors.accent),
                 ),
               ),
               keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: colors.textMain),
             ),
           ],
         ),
@@ -188,20 +193,28 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
       actions: [
         TextButton(
           onPressed: _isUploading ? null : () => context.pop(),
-          child: Text(
-            i18n.cancel,
-            style: const TextStyle(color: Colors.white60),
-          ),
+          child: Text(i18n.cancel, style: TextStyle(color: colors.textSub)),
         ),
         BouncyButton(
           onTap: _isUploading ? () {} : _submit,
           child: ElevatedButton(
             onPressed: _isUploading ? null : _submit,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFCCFF00),
-              foregroundColor: Colors.black,
+              backgroundColor: isPureFinance
+                  ? Colors.white
+                  : const Color(0xFFCCFF00),
+              foregroundColor: isPureFinance ? colors.textMain : Colors.black,
+              surfaceTintColor: Colors.transparent, // 방지: M3의 흰색 배경 위 보라색 색조
+              elevation: isPureFinance ? 2 : 0, // 하얀 배경에서 구분되도록 약간의 그림자 추가
+              shadowColor: Colors.black.withOpacity(0.1),
+              side: isPureFinance
+                  ? BorderSide(color: colors.border)
+                  : BorderSide.none,
               disabledBackgroundColor: Colors.grey[700],
               disabledForegroundColor: Colors.white38,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: _isUploading
                 ? const SizedBox(
@@ -212,7 +225,10 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : Text(i18n.add),
+                : Text(
+                    i18n.add,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
           ),
         ),
       ],

@@ -9,6 +9,8 @@ import '../providers/wishlist_provider.dart';
 import '../domain/wishlist_model.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/ui/glass_card.dart';
+import 'package:vive_app/core/theme/app_theme.dart';
+import 'package:vive_app/core/theme/theme_provider.dart';
 
 class AchievedTimelineScreen extends ConsumerStatefulWidget {
   const AchievedTimelineScreen({super.key});
@@ -150,8 +152,10 @@ class _AchievedTimelineScreenState
     final wishlistAsync = ref.watch(wishlistProvider);
     final savingsAsync = ref.watch(savingProvider);
     final i18n = I18n.of(context);
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+    final themeMode = ref.watch(themeNotifierProvider);
+    final isPureFinance = themeMode == VibeThemeMode.pureFinance;
 
-    // Color definitions
     const limeColor = Color(0xFFD4FF00);
     final cardColor = Theme.of(context).cardColor;
 
@@ -171,8 +175,8 @@ class _AchievedTimelineScreenState
               _isEditing
                   ? (i18n.isKorean ? '완료' : 'Done')
                   : (i18n.isKorean ? '편집' : 'Edit'),
-              style: const TextStyle(
-                color: limeColor,
+              style: TextStyle(
+                color: isPureFinance ? colors.textMain : Colors.yellow,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -258,19 +262,27 @@ class _AchievedTimelineScreenState
                                             shape: BoxShape.circle,
                                             border: Border.all(
                                               color: isSelected
-                                                  ? limeColor
-                                                  : Colors.white30,
+                                                  ? (isPureFinance
+                                                        ? colors.accent
+                                                        : limeColor)
+                                                  : (isPureFinance
+                                                        ? colors.border
+                                                        : Colors.white30),
                                               width: 2,
                                             ),
                                             color: isSelected
-                                                ? limeColor
+                                                ? (isPureFinance
+                                                      ? colors.accent
+                                                      : limeColor)
                                                 : Colors.transparent,
                                           ),
                                           child: isSelected
-                                              ? const Icon(
+                                              ? Icon(
                                                   Icons.check,
                                                   size: 16,
-                                                  color: Colors.black,
+                                                  color: isPureFinance
+                                                      ? Colors.white
+                                                      : Colors.black,
                                                 )
                                               : null,
                                         ),
@@ -285,8 +297,10 @@ class _AchievedTimelineScreenState
                                   Container(
                                     width: 12,
                                     height: 12,
-                                    decoration: const BoxDecoration(
-                                      color: limeColor,
+                                    decoration: BoxDecoration(
+                                      color: isPureFinance
+                                          ? colors.accent
+                                          : limeColor,
                                       shape: BoxShape.circle,
                                     ),
                                   ),
@@ -295,7 +309,9 @@ class _AchievedTimelineScreenState
                                     Expanded(
                                       child: Container(
                                         width: 2,
-                                        color: limeColor.withAlpha(77),
+                                        color: isPureFinance
+                                            ? colors.border
+                                            : limeColor.withAlpha(77),
                                       ),
                                     ),
                                 ],
@@ -325,13 +341,26 @@ class _AchievedTimelineScreenState
                                       Container(
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
-                                          color: cardColor,
+                                          color: isPureFinance
+                                              ? colors.surface
+                                              : cardColor,
                                           borderRadius: BorderRadius.circular(
                                             16,
                                           ),
                                           border: Border.all(
-                                            color: Colors.white10,
+                                            color: isPureFinance
+                                                ? colors.border
+                                                : Colors.white10,
                                           ),
+                                          boxShadow: isPureFinance
+                                              ? [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.05),
+                                                    blurRadius: 4,
+                                                  ),
+                                                ]
+                                              : null,
                                         ),
                                         child: Column(
                                           crossAxisAlignment:
@@ -342,28 +371,47 @@ class _AchievedTimelineScreenState
                                                 Expanded(
                                                   child: Text(
                                                     goal.title,
-                                                    style: const TextStyle(
+                                                    style: TextStyle(
                                                       fontSize: 18,
                                                       fontWeight:
                                                           FontWeight.bold,
-                                                      color: Colors.white,
+                                                      color: isPureFinance
+                                                          ? colors.textMain
+                                                          : Colors.white,
                                                     ),
                                                   ),
                                                 ),
-                                                const Icon(
-                                                  Icons.check_circle,
-                                                  color: limeColor,
-                                                  size: 20,
-                                                ),
+                                                if (isPureFinance)
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.all(2),
+                                                    decoration: BoxDecoration(
+                                                      color: colors.accent,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    child: const Icon(
+                                                      Icons.check,
+                                                      color: Colors.white,
+                                                      size: 14,
+                                                    ),
+                                                  )
+                                                else
+                                                  const Icon(
+                                                    Icons.check_circle,
+                                                    color: limeColor,
+                                                    size: 20,
+                                                  ),
                                               ],
                                             ),
                                             const SizedBox(height: 12),
                                             // Stats Chips
                                             if (stats.isNotEmpty) ...[
-                                              const Text(
+                                              Text(
                                                 'Resisted Temptations:',
                                                 style: TextStyle(
-                                                  color: Colors.white60,
+                                                  color: isPureFinance
+                                                      ? colors.textSub
+                                                      : Colors.white60,
                                                   fontSize: 12,
                                                 ),
                                               ),
@@ -381,14 +429,18 @@ class _AchievedTimelineScreenState
                                                           vertical: 4,
                                                         ),
                                                     decoration: BoxDecoration(
-                                                      color: Colors.white
-                                                          .withAlpha(13),
+                                                      color: isPureFinance
+                                                          ? colors.background
+                                                          : Colors.white
+                                                                .withAlpha(13),
                                                       borderRadius:
                                                           BorderRadius.circular(
                                                             20,
                                                           ),
                                                       border: Border.all(
-                                                        color: Colors.white10,
+                                                        color: isPureFinance
+                                                            ? colors.border
+                                                            : Colors.white10,
                                                       ),
                                                     ),
                                                     child: Row(
@@ -410,12 +462,20 @@ class _AchievedTimelineScreenState
                                                         ),
                                                         Text(
                                                           '${i18n.categoryName(e.key)} x${e.value}',
-                                                          style:
-                                                              const TextStyle(
-                                                                color: Colors
-                                                                    .white70,
-                                                                fontSize: 12,
-                                                              ),
+                                                          style: TextStyle(
+                                                            color: isPureFinance
+                                                                ? colors
+                                                                      .textMain
+                                                                : Colors
+                                                                      .white70,
+                                                            fontSize: 12,
+                                                            fontWeight:
+                                                                isPureFinance
+                                                                ? FontWeight
+                                                                      .w600
+                                                                : FontWeight
+                                                                      .normal,
+                                                          ),
                                                         ),
                                                       ],
                                                     ),

@@ -4,6 +4,7 @@ import '../../saving/presentation/saving_record_screen.dart';
 import '../../wishlist/presentation/wishlist_screen.dart';
 import '../../dashboard/presentation/dashboard_screen.dart';
 import '../providers/navigation_provider.dart';
+import 'package:vive_app/core/theme/app_theme.dart';
 
 class MainNavigationScreen extends ConsumerWidget {
   const MainNavigationScreen({super.key});
@@ -11,6 +12,7 @@ class MainNavigationScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(navigationIndexProvider);
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
 
     final screens = [
       const SavingRecordScreen(),
@@ -30,9 +32,9 @@ class MainNavigationScreen extends ConsumerWidget {
           highlightColor: Colors.transparent,
         ),
         child: BottomNavigationBar(
-          backgroundColor: const Color(0xFF1E1E1E),
-          selectedItemColor: const Color(0xFFD4FF00), // Lime
-          unselectedItemColor: Colors.white38,
+          backgroundColor: colors.surface,
+          selectedItemColor: colors.accent,
+          unselectedItemColor: colors.textSub,
           currentIndex: selectedIndex,
           onTap: onItemTapped,
           type: BottomNavigationBarType.fixed,

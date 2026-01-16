@@ -6,6 +6,8 @@ import '../../../core/ui/glass_card.dart';
 import '../../../core/utils/i18n.dart';
 import '../../wishlist/domain/wishlist_model.dart';
 import '../providers/wishlist_provider.dart';
+import 'package:vive_app/core/theme/theme_provider.dart';
+import 'package:vive_app/core/theme/app_theme.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {
   final WishlistModel item;
@@ -110,165 +112,137 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final i18n = I18n.of(context);
-    // Use the passed item for static data, but we could also watch the provider if we needed live updates
     final item = widget.item;
     final progress = item.totalGoal > 0
         ? (item.savedAmount / item.totalGoal).clamp(0.0, 1.0)
         : 0.0;
     final remaining = item.totalGoal - item.savedAmount;
 
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+    final themeMode = ref.watch(themeNotifierProvider);
+    final isPureFinance = themeMode == VibeThemeMode.pureFinance;
+
     return BackgroundGradient(
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isPureFinance ? colors.background : Colors.transparent,
         body: CustomScrollView(
           slivers: [
-            // Header Image
+            // App Bar
             SliverAppBar(
-              expandedHeight: MediaQuery.of(context).size.height * 0.4,
+              expandedHeight: item.imageUrl != null ? 300 : 60,
               pinned: true,
-              backgroundColor: Colors.transparent,
+              backgroundColor: isPureFinance
+                  ? colors.background
+                  : Colors.transparent,
               elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-                onPressed: () => context.pop(),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.black26,
-                  shape: const CircleBorder(),
+              leading: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_ios_new,
+                    color: isPureFinance ? Colors.black : Colors.black87,
+                  ),
+                  onPressed: () => context.pop(),
                 ),
               ),
               actions: [
-                // Save Button
-                AnimatedOpacity(
-                  opacity: _hasChanges ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: IgnorePointer(
-                    ignoring: !_hasChanges,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 16.0),
-                      child: IconButton(
-                        onPressed: _isSaving ? null : _saveComment,
-                        style: IconButton.styleFrom(
-                          backgroundColor: const Color(0xFFCCFF00),
-                          foregroundColor: Colors.black,
-                        ),
-                        icon: _isSaving
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.black,
-                                ),
-                              )
-                            : const Icon(Icons.check),
-                      ),
+                Container(
+                  margin: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: _isSaving ? null : _saveComment,
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.transparent,
                     ),
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.black,
+                            ),
+                          )
+                        : Icon(
+                            Icons.check,
+                            color: isPureFinance
+                                ? Colors.black
+                                : Colors.black87,
+                            size: 28,
+                          ),
                   ),
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(
-                background: Hero(
-                  tag: 'wishlist_img_${item.id}',
-                  child: InteractiveViewer(
-                    child: item.imageUrl != null
-                        ? TweenAnimationBuilder<double>(
-                            tween: Tween<double>(end: progress),
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.easeOutExpo,
-                            builder: (context, value, child) {
-                              // If achieved or fully saved, show full color
-                              if (item.isAchieved || progress >= 1.0) {
-                                return Image.network(
+                background: item.imageUrl != null
+                    ? TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0.0, end: progress),
+                        duration: const Duration(milliseconds: 1500),
+                        curve: Curves.easeOutExpo,
+                        builder: (context, value, child) {
+                          return Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              // (A) 베이스: 흑백 이미지
+                              ColorFiltered(
+                                colorFilter: const ColorFilter.matrix([
+                                  0.2126,
+                                  0.7152,
+                                  0.0722,
+                                  0,
+                                  0,
+                                  0.2126,
+                                  0.7152,
+                                  0.0722,
+                                  0,
+                                  0,
+                                  0.2126,
+                                  0.7152,
+                                  0.0722,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  0,
+                                  1,
+                                  0,
+                                ]),
+                                child: Image.network(
                                   item.imageUrl!,
                                   fit: BoxFit.cover,
-                                );
-                              }
-
-                              return Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  // 1층: 배경 (완벽한 흑백)
-                                  ColorFiltered(
-                                    colorFilter: const ColorFilter.matrix([
-                                      0.2126,
-                                      0.7152,
-                                      0.0722,
-                                      0,
-                                      0,
-                                      0.2126,
-                                      0.7152,
-                                      0.0722,
-                                      0,
-                                      0,
-                                      0.2126,
-                                      0.7152,
-                                      0.0722,
-                                      0,
-                                      0,
-                                      0,
-                                      0,
-                                      0,
-                                      1,
-                                      0,
-                                    ]),
-                                    child: Image.network(
-                                      item.imageUrl!,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  // 2층: 컬러 (ShaderMask로 왼쪽만 투명도 해제)
-                                  ShaderMask(
-                                    shaderCallback: (rect) {
-                                      return LinearGradient(
-                                        begin: Alignment.centerLeft,
-                                        end: Alignment.centerRight,
-                                        stops: [value, value],
-                                        colors: const [
-                                          Colors.white,
-                                          Colors.transparent,
-                                        ],
-                                      ).createShader(rect);
-                                    },
-                                    blendMode: BlendMode.dstIn,
-                                    child: Image.network(
-                                      item.imageUrl!,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                  // 3층: 스캔 라인 (위치 보정)
-                                  if (value < 1.0)
-                                    Align(
-                                      alignment: Alignment(value * 2 - 1, 0),
-                                      child: Container(
-                                        width: 2,
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.yellowAccent,
-                                              blurRadius: 10,
-                                              spreadRadius: 2,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              );
-                            },
-                          )
-                        : Container(
-                            color: Colors.grey[900],
-                            child: const Center(
-                              child: Icon(
-                                Icons.image_not_supported,
-                                color: Colors.white24,
-                                size: 64,
+                                ),
                               ),
-                            ),
-                          ),
-                  ),
-                ),
+                              // (B) 오버레이: ShaderMask를 통한 컬러 복원
+                              ShaderMask(
+                                shaderCallback: (rect) {
+                                  return LinearGradient(
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                    stops: [value, value],
+                                    colors: const [
+                                      Colors.white,
+                                      Colors.transparent,
+                                    ],
+                                  ).createShader(rect);
+                                },
+                                blendMode: BlendMode.dstIn,
+                                child: Image.network(
+                                  item.imageUrl!,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      )
+                    : null,
               ),
             ),
 
@@ -282,10 +256,10 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                     // Title
                     Text(
                       item.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: isPureFinance ? colors.textMain : Colors.white,
                         height: 1.2,
                       ),
                     ),
@@ -302,15 +276,19 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                             Text(
                               '총 가격',
                               style: TextStyle(
-                                color: Colors.grey[400],
+                                color: isPureFinance
+                                    ? colors.textSub
+                                    : Colors.grey[400],
                                 fontSize: 14,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               i18n.formatCurrency(item.totalGoal),
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: isPureFinance
+                                    ? colors.textMain
+                                    : Colors.white,
                                 fontSize: 20,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -323,15 +301,21 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                             Text(
                               '남은 금액',
                               style: TextStyle(
-                                color: Colors.grey[400],
+                                color: isPureFinance
+                                    ? colors.textSub
+                                    : Colors.grey[400],
                                 fontSize: 14,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               i18n.formatCurrency(remaining),
-                              style: const TextStyle(
-                                color: Color(0xFFCCFF00), // Lime
+                              style: TextStyle(
+                                color: isPureFinance
+                                    ? colors.textMain
+                                    : const Color(
+                                        0xFFCCFF00,
+                                      ), // Pure: Black, Cyber: Lime
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -344,44 +328,47 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                     const SizedBox(height: 24),
 
                     // Progress Bar
-                    TweenAnimationBuilder<double>(
-                      key: ValueKey(progress),
-                      tween: Tween<double>(end: progress),
-                      duration: const Duration(milliseconds: 1500),
-                      curve: Curves.easeOutExpo,
-                      builder: (context, value, child) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  '${(value * 100).toInt()}% 달성',
-                                  style: const TextStyle(color: Colors.white70),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            LinearProgressIndicator(
-                              value: value,
-                              backgroundColor: Colors.grey[800],
-                              color: const Color(0xFFCCFF00),
-                              minHeight: 12,
-                              borderRadius: BorderRadius.circular(6),
+                            Text(
+                              '${(progress * 100).toInt()}% 달성',
+                              style: TextStyle(
+                                color: isPureFinance
+                                    ? colors.textMain
+                                    : Colors.white70,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ],
-                        );
-                      },
+                        ),
+                        const SizedBox(height: 8),
+                        LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: isPureFinance
+                              ? colors.border
+                              : Colors.grey[800],
+                          color: isPureFinance
+                              ? colors.accent
+                              : const Color(
+                                  0xFFCCFF00,
+                                ), // Pure: Blue, Cyber: Lime
+                          minHeight: 12,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ],
                     ),
 
                     const SizedBox(height: 40),
 
                     // Comment Section (Editable)
-                    const Text(
+                    Text(
                       '나의 다짐',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: isPureFinance ? colors.textMain : Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -400,8 +387,10 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                             controller: _commentController,
                             maxLines: 4,
                             minLines: 1,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: isPureFinance
+                                  ? colors.textMain
+                                  : Colors.white,
                               fontSize: 16,
                               height: 1.5,
                             ),
@@ -410,11 +399,23 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               hintText: (item.isAchieved || progress >= 1.0)
                                   ? "달성 완료된 다짐입니다"
                                   : "미래의 나에게 보내는 응원 메시지",
-                              hintStyle: TextStyle(color: Colors.white30),
+                              hintStyle: TextStyle(
+                                color: isPureFinance
+                                    ? colors.textSub
+                                    : Colors.white30,
+                              ),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.zero,
+                              fillColor: isPureFinance
+                                  ? colors.surface
+                                  : Colors.transparent,
+                              filled: isPureFinance,
                             ),
-                            cursorColor: const Color(0xFFCCFF00),
+                            cursorColor: isPureFinance
+                                ? colors.textSub
+                                : const Color(
+                                    0xFFCCFF00,
+                                  ), // Pure: Grey, Cyber: Lime
                           ),
                           if (_hasChanges)
                             Padding(
@@ -422,8 +423,12 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               child: Text(
                                 '저장하려면 상단 체크 버튼을 눌러주세요',
                                 style: TextStyle(
-                                  color: const Color(0xFFCCFF00).withAlpha(179),
-                                  fontSize: 12,
+                                  color: isPureFinance
+                                      ? colors.textSub
+                                      : const Color(0xFFCCFF00).withAlpha(
+                                          179,
+                                        ), // Pure: Grey, Cyber: Lime
+                                  fontSize: 13,
                                 ),
                               ),
                             ),

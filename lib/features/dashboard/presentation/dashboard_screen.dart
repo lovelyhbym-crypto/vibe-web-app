@@ -11,16 +11,17 @@ import 'package:go_router/go_router.dart';
 import '../../wishlist/providers/wishlist_provider.dart';
 import '../../../core/utils/i18n.dart';
 
-import '../../../core/ui/background_gradient.dart';
+import 'package:vive_app/core/theme/app_theme.dart';
 
 import '../providers/dashboard_provider.dart';
 import '../providers/savings_period_provider.dart';
 import '../../wishlist/domain/wishlist_model.dart';
 import '../providers/total_saved_provider.dart';
 import '../providers/achievement_provider.dart';
-import '../../../core/ui/glass_card.dart';
 import '../../home/providers/navigation_provider.dart';
 import '../../vibe_shifter/presentation/vibe_shifter_dialog.dart';
+
+import 'package:vive_app/core/theme/theme_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -66,134 +67,109 @@ class DashboardScreen extends ConsumerWidget {
     final activeGoals =
         wishlistAsync.asData?.value.where((w) => !w.isAchieved).toList() ?? [];
 
-    return BackgroundGradient(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: Text(
-            i18n.dashboardTitle,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () => context.push('/settings'),
-            ),
-          ],
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          foregroundColor: Colors.white,
+    // [New] Get current theme colors
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+
+    return Scaffold(
+      backgroundColor: colors.background,
+      appBar: AppBar(
+        title: Text(
+          i18n.dashboardTitle,
+          style: TextStyle(color: colors.textMain, fontWeight: FontWeight.bold),
         ),
-        body: dashboardAsync.when(
-          data: (data) => RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(dashboardProvider);
-              ref.invalidate(wishlistProvider);
-            },
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _PeriodSelector(),
-                  const SizedBox(height: 16),
-                  const SizedBox(height: 16),
-
-                  // Top: Total Saved Card
-                  _SummaryCard(totalSaved: totalSaved)
-                      .animate()
-                      .fadeIn(duration: 600.ms)
-                      .slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
-
-                  const SizedBox(height: 24),
-
-                  // [NEW] Goal Progress Slider
-                  if (activeGoals.isNotEmpty) ...[
-                    _GoalCarousel(
-                          wishlist: activeGoals,
-                          averageDailySavings: data.averageDailySavings,
-                          navIndex: navIndex, // Pass navIndex
-                        )
-                        .animate()
-                        .fadeIn(delay: 100.ms)
-                        .slideX(begin: 0.1, end: 0),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // Middle: Weekly Trend
-                  if (data.totalSaved > 0)
-                    _WeeklyTrendChart(weeklyData: data.weeklyTrend)
-                        .animate()
-                        .fadeIn(delay: 200.ms)
-                        .slideX(begin: 0.1, end: 0),
-
-                  const SizedBox(height: 24),
-
-                  // Bottom: Category Pie
-                  if (data.totalSaved > 0)
-                    _CategoryPieChart(categoryData: data.categoryBreakdown)
-                        .animate()
-                        .fadeIn(delay: 400.ms)
-                        .slideX(begin: -0.1, end: 0),
-
-                  const SizedBox(height: 100),
-                ],
-              ),
-            ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings, color: colors.textMain),
+            onPressed: () => context.push('/settings'),
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => Center(child: Text('Error: $err')),
-        ),
-        floatingActionButton: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.redAccent.withAlpha(128),
-                blurRadius: 20,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child:
-              FloatingActionButton(
-                    heroTag: 'dashboard_sos_fab',
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => const VibeShifterDialog(),
-                      );
-                    },
-                    backgroundColor: Colors.redAccent.withAlpha(204),
-                    shape: const CircleBorder(),
-                    child: const Text(
-                      'SOS',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                        shadows: [
-                          BoxShadow(color: Colors.pinkAccent, blurRadius: 8),
-                          BoxShadow(color: Colors.red, blurRadius: 12),
-                        ],
-                      ),
-                    ),
-                  )
-                  .animate(onPlay: (c) => c.repeat(reverse: true))
-                  .scale(
-                    begin: const Offset(1, 1),
-                    end: const Offset(1.1, 1.1),
-                    duration: 800.ms,
-                    curve: Curves.easeInOut,
-                  )
-                  .then()
-                  .shimmer(
-                    duration: 1200.ms,
-                    color: Colors.white54,
-                    delay: 2000.ms,
-                  ),
-        ),
+        ],
+        backgroundColor: colors.background,
+        elevation: 0,
+        iconTheme: IconThemeData(color: colors.textMain),
       ),
+      body: dashboardAsync.when(
+        data: (data) => RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(dashboardProvider);
+            ref.invalidate(wishlistProvider);
+          },
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _PeriodSelector(),
+                const SizedBox(height: 16),
+                const SizedBox(height: 16),
+
+                // Top: Total Saved Card
+                _SummaryCard(totalSaved: totalSaved)
+                    .animate()
+                    .fadeIn(duration: 600.ms)
+                    .slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
+
+                const SizedBox(height: 24),
+
+                // [NEW] Goal Progress Slider
+                if (activeGoals.isNotEmpty) ...[
+                  _GoalCarousel(
+                    wishlist: activeGoals,
+                    averageDailySavings: data.averageDailySavings,
+                    navIndex: navIndex, // Pass navIndex
+                  ).animate().fadeIn(delay: 100.ms).slideX(begin: 0.1, end: 0),
+                  const SizedBox(height: 24),
+                ],
+
+                // Middle: Weekly Trend
+                if (data.totalSaved > 0)
+                  _WeeklyTrendChart(
+                    weeklyData: data.weeklyTrend,
+                  ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1, end: 0),
+
+                const SizedBox(height: 24),
+
+                // Bottom: Category Pie
+                if (data.totalSaved > 0)
+                  _CategoryPieChart(
+                    categoryData: data.categoryBreakdown,
+                  ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1, end: 0),
+
+                const SizedBox(height: 100),
+              ],
+            ),
+          ),
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
+      ),
+      floatingActionButton:
+          FloatingActionButton(
+                heroTag: 'dashboard_sos_fab',
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const VibeShifterDialog(),
+                  );
+                },
+                backgroundColor: colors.danger,
+                elevation: 0,
+                shape: const CircleBorder(),
+                child: const Text(
+                  'SOS',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+              )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(1.1, 1.1),
+                duration: 800.ms,
+                curve: Curves.easeInOut,
+              ),
     );
   }
 
@@ -202,6 +178,11 @@ class DashboardScreen extends ConsumerWidget {
     MilestoneEvent event,
     WidgetRef ref,
   ) {
+    final theme = Theme.of(context);
+    final vibeTheme = theme.extension<VibeThemeExtension>();
+    final colors = vibeTheme?.colors;
+    final isPureFinance = colors is PureFinanceColors;
+
     Color neonColor;
     String icon;
     if (event.milestone >= 80) {
@@ -241,10 +222,15 @@ class DashboardScreen extends ConsumerWidget {
               ],
             ),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: const Color(0xFF1E1E1E),
+            backgroundColor: isPureFinance
+                ? colors!.surface
+                : const Color(0xFF1E1E1E),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: neonColor, width: 2),
+              side: BorderSide(
+                color: isPureFinance ? (colors!.border) : neonColor,
+                width: isPureFinance ? 1 : 2,
+              ),
             ),
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -276,17 +262,19 @@ class _PeriodSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedPeriod = ref.watch(savingsPeriodProvider);
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white10,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colors.border),
       ),
       child: CupertinoSlidingSegmentedControl<SavingsPeriod>(
         backgroundColor: Colors.transparent,
-        thumbColor: Colors.white24,
+        thumbColor: colors.accent,
         groupValue: selectedPeriod,
         children: {
           for (var period in SavingsPeriod.values)
@@ -296,8 +284,8 @@ class _PeriodSelector extends ConsumerWidget {
                 period.label,
                 style: TextStyle(
                   color: selectedPeriod == period
-                      ? const Color(0xFFD4FF00)
-                      : Colors.white60,
+                      ? Colors.white
+                      : colors.textSub,
                   fontWeight: selectedPeriod == period
                       ? FontWeight.bold
                       : FontWeight.normal,
@@ -329,6 +317,11 @@ class _SummaryCard extends ConsumerWidget {
       navigationIndexProvider,
     ); // Watch nav index locally
 
+    // Theme logic
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+    final themeMode = ref.watch(themeNotifierProvider);
+    final isPureFinance = themeMode == VibeThemeMode.pureFinance;
+
     String labelText;
     switch (period) {
       case SavingsPeriod.total:
@@ -342,17 +335,30 @@ class _SummaryCard extends ConsumerWidget {
         break;
     }
 
-    return GlassCard(
+    return Container(
       padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colors.border),
+        boxShadow: isPureFinance
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
       child: Column(
         children: [
           Text(
             labelText,
-            style: TextStyle(color: Colors.grey[400], fontSize: 16),
+            style: TextStyle(color: colors.textSub, fontSize: 16),
           ),
           const SizedBox(height: 8),
           TweenAnimationBuilder<double>(
-            // key: Added navIndex to force rebuild when tab changes
             key: ValueKey('${totalSaved}_$navIndex'),
             tween: Tween<double>(begin: 0, end: totalSaved),
             duration: const Duration(milliseconds: 1500),
@@ -360,8 +366,8 @@ class _SummaryCard extends ConsumerWidget {
             builder: (context, value, child) {
               return Text(
                 i18n.formatCurrency(value),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: colors.textMain,
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
                 ),
@@ -372,7 +378,7 @@ class _SummaryCard extends ConsumerWidget {
           Text(
             i18n.keepResisting,
             style: TextStyle(
-              color: Theme.of(context).primaryColor,
+              color: isPureFinance ? colors.textMain : colors.accent,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -486,8 +492,12 @@ class _PageIndicator extends StatelessWidget {
               height: 8,
               decoration: BoxDecoration(
                 color: selected
-                    ? Theme.of(context).primaryColor
-                    : Colors.white24,
+                    ? Theme.of(
+                        context,
+                      ).extension<VibeThemeExtension>()!.colors.accent
+                    : Theme.of(
+                        context,
+                      ).extension<VibeThemeExtension>()!.colors.border,
                 borderRadius: BorderRadius.circular(4),
               ),
             );
@@ -509,11 +519,8 @@ class _WishlistProgressCard extends StatelessWidget {
     required this.navIndex,
   });
 
-  Color _getProgressColor(double progress) {
-    if (progress >= 1.0) return Colors.greenAccent;
-    if (progress >= 0.7) return const Color(0xFFCCFF00); // Lime/Yellow
-    if (progress >= 0.4) return Colors.orangeAccent;
-    return Colors.redAccent;
+  Color _getProgressColor(double progress, VibeColors colors) {
+    return colors.accent;
   }
 
   @override
@@ -524,16 +531,31 @@ class _WishlistProgressCard extends StatelessWidget {
     final progress = (saved / total).clamp(0.0, 1.0);
     final remaining = total - saved;
 
+    // Theme logic
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+    final isPureFinance =
+        Theme.of(context).cardTheme.elevation ==
+        2; // Hacky or use provider, but provider is not available unless I convert to ConsumerWidget
+
     DateTime? prediction;
     if (remaining > 0 && averageDailySavings > 0) {
       final daysToFinish = (remaining / averageDailySavings).ceil();
       prediction = DateTime.now().add(Duration(days: daysToFinish));
     }
 
-    final progressColor = _getProgressColor(progress);
+    // Adjust progress color based on theme or keep custom logic but adapt
+    final progressColor = _getProgressColor(progress, colors);
 
-    return GlassCard(
+    return Container(
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.border),
+        boxShadow: isPureFinance
+            ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]
+            : null,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -543,15 +565,15 @@ class _WishlistProgressCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: colors.textMain,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Icon(Icons.flag, color: Colors.grey[400]),
+              Icon(Icons.flag, color: colors.textSub),
             ],
           ),
           const Spacer(),
@@ -568,13 +590,12 @@ class _WishlistProgressCard extends StatelessWidget {
               ),
               Text(
                 '₩${saved.toStringAsFixed(0)} / ₩${total.toStringAsFixed(0)}',
-                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                style: TextStyle(color: colors.textSub, fontSize: 12),
               ),
             ],
           ),
           const SizedBox(height: 8),
           TweenAnimationBuilder<double>(
-            // key: Added navIndex to force rebuild
             key: ValueKey('${progress}_$navIndex'),
             tween: Tween<double>(begin: 0.0, end: progress),
             duration: const Duration(milliseconds: 1500),
@@ -582,7 +603,7 @@ class _WishlistProgressCard extends StatelessWidget {
             builder: (context, value, child) {
               return LinearProgressIndicator(
                 value: value,
-                backgroundColor: Colors.grey[800],
+                backgroundColor: colors.textSub.withOpacity(0.1),
                 color: progressColor,
                 minHeight: 12,
                 borderRadius: BorderRadius.circular(6),
@@ -594,7 +615,7 @@ class _WishlistProgressCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: progressColor.withValues(alpha: 0.1),
+                color: progressColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -626,18 +647,30 @@ class _WeeklyTrendChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+    // Simple check for pure finance (light mode usually)
+    final isPureFinance = Theme.of(context).brightness == Brightness.light;
+
+    return Container(
       height: 250,
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.border),
+        boxShadow: isPureFinance
+            ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]
+            : null,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Weekly Trend',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: colors.textMain,
             ),
           ),
           const SizedBox(height: 20),
@@ -667,7 +700,7 @@ class _WeeklyTrendChart extends StatelessWidget {
                               '6d ago',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.grey[600],
+                                color: colors.textSub,
                               ),
                             );
                           case 3:
@@ -675,7 +708,7 @@ class _WeeklyTrendChart extends StatelessWidget {
                               '3d ago',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.grey[600],
+                                color: colors.textSub,
                               ),
                             );
                           case 6:
@@ -683,7 +716,7 @@ class _WeeklyTrendChart extends StatelessWidget {
                               'Today',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.grey[600],
+                                color: colors.textSub,
                               ),
                             );
                         }
@@ -701,15 +734,15 @@ class _WeeklyTrendChart extends StatelessWidget {
                         .map((e) => FlSpot(e.key.toDouble(), e.value))
                         .toList(),
                     isCurved: true,
-                    color: Theme.of(context).primaryColor,
+                    color: isPureFinance ? colors.accent : colors.accent,
                     barWidth: 3,
                     isStrokeCapRound: true,
                     dotData: FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: Theme.of(
-                        context,
-                      ).primaryColor.withValues(alpha: 0.05),
+                      color: isPureFinance
+                          ? colors.accent.withOpacity(0.05)
+                          : colors.accent.withOpacity(0.05),
                     ),
                   ),
                 ],
@@ -732,6 +765,9 @@ class _CategoryPieChart extends StatelessWidget {
     if (categoryData.isEmpty) return const SizedBox.shrink();
 
     final i18n = I18n.of(context);
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+    final isPureFinance = Theme.of(context).brightness == Brightness.light;
+
     final sections = categoryData.entries.map((e) {
       final index = categoryData.keys.toList().indexOf(e.key);
       final color = [
@@ -755,18 +791,26 @@ class _CategoryPieChart extends StatelessWidget {
       );
     }).toList();
 
-    return GlassCard(
+    return Container(
       height: 300,
       padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.border),
+        boxShadow: isPureFinance
+            ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]
+            : null,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Top Temptations',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: colors.textMain,
             ),
           ),
           const SizedBox(height: 20),
@@ -817,6 +861,10 @@ class _MilestoneDialogState extends State<_MilestoneDialog> {
   @override
   Widget build(BuildContext context) {
     final isSuccess = widget.event.milestone == 100;
+    final theme = Theme.of(context);
+    final vibeTheme = theme.extension<VibeThemeExtension>();
+    final colors = vibeTheme?.colors;
+    final isPureFinance = colors is PureFinanceColors;
 
     return Stack(
       alignment: Alignment.center,
@@ -825,7 +873,7 @@ class _MilestoneDialogState extends State<_MilestoneDialog> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          backgroundColor: Theme.of(context).cardColor,
+          backgroundColor: colors?.surface ?? theme.dialogBackgroundColor,
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
@@ -841,10 +889,10 @@ class _MilestoneDialogState extends State<_MilestoneDialog> {
                 Text(
                       widget.event.message,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: colors?.textMain ?? Colors.white,
                       ),
                     )
                     .animate()
@@ -860,9 +908,15 @@ class _MilestoneDialogState extends State<_MilestoneDialog> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isSuccess
-                        ? const Color(0xFFFFD700)
-                        : Theme.of(context).primaryColor, // Gold for success
-                    foregroundColor: Colors.black,
+                        ? (isPureFinance
+                              ? (colors!.accent)
+                              : const Color(0xFFFFD700))
+                        : (isPureFinance
+                              ? (colors!.border)
+                              : theme.primaryColor),
+                    foregroundColor: isSuccess
+                        ? Colors.white
+                        : colors?.textMain,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -870,8 +924,12 @@ class _MilestoneDialogState extends State<_MilestoneDialog> {
                       horizontal: 24,
                       vertical: 12,
                     ),
+                    elevation: 0,
                   ),
-                  child: Text(isSuccess ? '승리 기록하러 가기' : '확인'),
+                  child: Text(
+                    isSuccess ? '승리 기록하러 가기' : '확인',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
