@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:math' as math;
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -442,10 +443,15 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
                     children: [
                       // Content
                       _targetType == _TargetType.image
-                          ? Image.file(
-                              File(_targetImage!.path),
-                              fit: BoxFit.cover,
-                            )
+                          ? (kIsWeb
+                                ? Image.network(
+                                    _targetImage!.path,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    File(_targetImage!.path),
+                                    fit: BoxFit.cover,
+                                  ))
                           : Center(
                               child: Text(
                                 _targetText ?? '',

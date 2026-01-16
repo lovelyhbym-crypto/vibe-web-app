@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "vibe_app",
+            "request": "launch",
+            "type": "dart",
+            "toolArgs": [
+                "--dart-define=GEMINI_API_KEY=AIzaSyCEz5h58Q_9LplzfBLQvJ8981lm0ok3zLg"
+            ]
+        }
+    ]
+}

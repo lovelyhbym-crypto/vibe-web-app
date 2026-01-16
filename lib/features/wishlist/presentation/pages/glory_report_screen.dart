@@ -77,106 +77,198 @@ class _GloryReportScreenState extends ConsumerState<GloryReportScreen> {
 
             _isGlitching
                 ? _buildGlitchOverlay()
-                : Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        // 1. Resilience
-                        Expanded(
-                          child: _BlueprintSection(
-                            title:
-                                "SYSTEM INTEGRITY", // [THEME] Updated Section 1
-                            subtitle: "Gravity Resistance Coefficient",
-                            isUnlocked: reportState.has30Savings,
-                            icon: Icons.shield,
-                            unlockedContent:
-                                "30개의 노이즈를 제거하고\n완벽한 시스템을 유지 중입니다.", // [THEME] Updated Desc
-                            lockedContent:
-                                "DATA MISSING: Need more resistance data (30+ Savings)",
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+                : SafeArea(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 1. Resilience
+                            _BlueprintSection(
+                              title:
+                                  "SYSTEM INTEGRITY", // [THEME] Updated Section 1
+                              subtitle: "Gravity Resistance Coefficient",
+                              isUnlocked: reportState.has30Savings,
+                              icon: Icons.shield,
+                              unlockedContent:
+                                  "30개의 노이즈를 제거하고\n완벽한 시스템을 유지 중입니다.", // [THEME] Updated Desc
+                              lockedContent:
+                                  "DATA MISSING: Need more resistance data (30+ Savings)",
+                            ),
+                            const SizedBox(height: 16),
 
-                        // 2. Breakthrough
-                        Expanded(
-                          child: _BlueprintSection(
-                            title: "ASSET SECURED", // [THEME] Updated Section 2
-                            subtitle: "Escape Velocity Achievement",
-                            isUnlocked: reportState.hasAchieved,
-                            icon: Icons.rocket_launch,
-                            unlockedContent:
-                                "첫 번째 핵심 자산이\n안전하게 확보되었습니다.", // [THEME] Updated Desc
-                            lockedContent:
-                                "DATA MISSING: No successful launch recorded (Achieve 1 Goal)",
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+                            // 2. Breakthrough
+                            _BlueprintSection(
+                              title:
+                                  "ASSET SECURED", // [THEME] Updated Section 2
+                              subtitle: "Escape Velocity Achievement",
+                              isUnlocked: reportState.hasAchieved,
+                              icon: Icons.rocket_launch,
+                              unlockedContent:
+                                  "첫 번째 핵심 자산이\n안전하게 확보되었습니다.", // [THEME] Updated Desc
+                              lockedContent:
+                                  "DATA MISSING: No successful launch recorded (Achieve 1 Goal)",
+                            ),
+                            const SizedBox(height: 16),
 
-                        // 3. Consistency
-                        Expanded(
-                          child: _BlueprintSection(
-                            title: "SYNC RATE", // [THEME] Updated Section 3
-                            subtitle: "Temporal Stability",
-                            isUnlocked: reportState.has3ConsecutiveDays,
-                            icon: Icons.access_time_filled,
-                            unlockedContent:
-                                "일상과 목표의 동기화가\n흔들림 없이 유지되고 있습니다.", // [THEME] Updated Desc
-                            lockedContent:
-                                "DATA MISSING: Signal unstable (Save 3 days in a row)",
-                          ),
-                        ),
+                            // 3. Consistency
+                            _BlueprintSection(
+                              title: "SYNC RATE", // [THEME] Updated Section 3
+                              subtitle: "Temporal Stability",
+                              isUnlocked: reportState.has3ConsecutiveDays,
+                              icon: Icons.access_time_filled,
+                              unlockedContent:
+                                  "일상과 목표의 동기화가\n흔들림 없이 유지되고 있습니다.", // [THEME] Updated Desc
+                              lockedContent:
+                                  "DATA MISSING: Signal unstable (Save 3 days in a row)",
+                            ),
 
-                        const SizedBox(height: 32),
-                        if (reportState.isReady)
-                          Column(
-                            children: [
-                              TextButton(
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            "Accessing Deep Archive...",
+                            const SizedBox(height: 32),
+                            if (reportState.isReady)
+                              Column(
+                                children: [
+                                  if (reportState.aiReportText.isNotEmpty)
+                                    _buildAiReportView(reportState.aiReportText)
+                                  else if (reportState.isLoadingAi)
+                                    const Text(
+                                          "Accessing Deep Archive...",
+                                          style: TextStyle(
+                                            color: limeColor,
+                                            fontFamily: 'Courier',
+                                            letterSpacing: 2,
                                           ),
+                                        )
+                                        .animate(onPlay: (c) => c.repeat())
+                                        .shimmer(
+                                          duration: 1000.ms,
+                                          color: Colors.white,
+                                        )
+                                  else
+                                    TextButton(
+                                          onPressed: () {
+                                            ref
+                                                .read(
+                                                  gloryReportProvider.notifier,
+                                                )
+                                                .generateAiReport();
+                                          },
+                                          child: const Text(
+                                            "ACCESS FULL REPORT >",
+                                            style: TextStyle(
+                                              color: limeColor,
+                                              letterSpacing: 2,
+                                            ),
+                                          ),
+                                        )
+                                        .animate(onPlay: (c) => c.repeat())
+                                        .shimmer(
+                                          duration: 2000.ms,
+                                          color: Colors.white,
                                         ),
-                                      );
-                                    },
-                                    child: const Text(
-                                      "ACCESS FULL REPORT >",
-                                      style: TextStyle(
-                                        color: limeColor,
-                                        letterSpacing: 2,
-                                      ),
+                                  const SizedBox(height: 20),
+                                  const Text(
+                                    "당신은 오늘, 어제보다 더 가벼워졌습니다.", // [THEME] Footer
+                                    style: TextStyle(
+                                      color: Colors.white54,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w300,
+                                      letterSpacing: 1.0,
                                     ),
-                                  )
-                                  .animate(onPlay: (c) => c.repeat())
-                                  .shimmer(
-                                    duration: 2000.ms,
-                                    color: Colors.white,
+                                  ).animate().fadeIn(
+                                    delay: 2000.ms,
+                                    duration: 1000.ms,
                                   ),
-                              const SizedBox(height: 20),
-                              const Text(
-                                "당신은 오늘, 어제보다 더 가벼워졌습니다.", // [THEME] Footer
-                                style: TextStyle(
-                                  color: Colors.white54,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w300,
-                                  letterSpacing: 1.0,
-                                ),
-                              ).animate().fadeIn(
-                                delay: 2000.ms,
-                                duration: 1000.ms,
+                                  const SizedBox(height: 100), // 하단 여유 공간 확보
+                                ],
                               ),
-                            ],
-                          ),
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildAiReportView(String text) {
+    final List<InlineSpan> spans = [];
+    // Regex to capture **bold** or [Headline]
+    final regex = RegExp(r'(\*\*(.*?)\*\*|\[(.*?)\])');
+
+    int lastIndex = 0;
+
+    for (final match in regex.allMatches(text)) {
+      // Add text before match
+      if (match.start > lastIndex) {
+        spans.add(TextSpan(text: text.substring(lastIndex, match.start)));
+      }
+
+      final fullMatch = match.group(0)!;
+
+      if (fullMatch.startsWith('**')) {
+        // Bold content (Neon Lime)
+        spans.add(
+          TextSpan(
+            text: match.group(2),
+            style: const TextStyle(
+              color: Color(0xFFCCFF00),
+              fontWeight: FontWeight.bold,
+              shadows: [
+                BoxShadow(
+                  color: Color(0xFFCCFF00),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+          ),
+        );
+      } else if (fullMatch.startsWith('[')) {
+        // Headline (Cyan)
+        spans.add(
+          TextSpan(
+            text: "\n$fullMatch\n",
+            style: const TextStyle(
+              color: Colors.cyanAccent,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              height: 2.0,
+            ),
+          ),
+        );
+      }
+
+      lastIndex = match.end;
+    }
+
+    // Remaining text
+    if (lastIndex < text.length) {
+      spans.add(TextSpan(text: text.substring(lastIndex)));
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 14,
+            height: 1.6,
+          ),
+          children: spans,
+        ),
+      ),
+    ).animate().fadeIn(duration: 1500.ms).slideY(begin: 0.1, end: 0);
   }
 
   Widget _buildGlitchOverlay() {

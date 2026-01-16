@@ -6,9 +6,14 @@ import 'core/router/app_router.dart';
 
 import 'package:vive_app/core/providers/locale_provider.dart';
 import 'core/utils/i18n.dart';
+import 'core/config/env_config.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final apiKey = EnvConfig.geminiApiKey;
+  debugPrint('DEBUG: GEMINI_API_KEY length: ${apiKey.length}');
+  if (apiKey.isEmpty) debugPrint('DEBUG: GEMINI_API_KEY is EMPTY');
+
   // await Firebase.initializeApp(); // Temporarily disabled until properly configured for Web
 
   await Supabase.initialize(
