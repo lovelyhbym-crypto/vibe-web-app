@@ -219,6 +219,13 @@ class GloryReportNotifier extends StateNotifier<GloryReportState> {
       }
     }
   }
+
+  void resetReport() {
+    state = state.copyWith(
+      aiReportText: "새로운 분석을 시작할 데이터가 없습니다.",
+      isLoadingAi: false,
+    );
+  }
 }
 
 final gloryReportProvider =

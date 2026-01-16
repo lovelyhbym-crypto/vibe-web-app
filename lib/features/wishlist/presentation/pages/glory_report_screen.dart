@@ -91,7 +91,7 @@ class _GloryReportScreenState extends ConsumerState<GloryReportScreen> {
                           icon: Icons.shield,
                           unlockedContent: "30개의 노이즈를 제거하고\n완벽한 시스템을 유지 중입니다.",
                           lockedContent:
-                              "DATA MISSING: Need more resistance data (30+ Savings)",
+                              "데이터 부족: 더 많은 절제 데이터가 필요합니다 (절약 30회 이상)",
                         ),
                         const SizedBox(height: 16),
 
@@ -102,8 +102,7 @@ class _GloryReportScreenState extends ConsumerState<GloryReportScreen> {
                           isUnlocked: reportState.hasAchieved,
                           icon: Icons.rocket_launch,
                           unlockedContent: "첫 번째 핵심 자산이\n안전하게 확보되었습니다.",
-                          lockedContent:
-                              "DATA MISSING: No successful launch recorded (Achieve 1 Goal)",
+                          lockedContent: "데이터 부족: 달성한 목표가 없습니다",
                         ),
                         const SizedBox(height: 16),
 
@@ -114,8 +113,7 @@ class _GloryReportScreenState extends ConsumerState<GloryReportScreen> {
                           isUnlocked: reportState.has3ConsecutiveDays,
                           icon: Icons.access_time_filled,
                           unlockedContent: "일상과 목표의 동기화가\n흔들림 없이 유지되고 있습니다.",
-                          lockedContent:
-                              "DATA MISSING: Signal unstable (Save 3 days in a row)",
+                          lockedContent: "데이터 부족: 3일 연속 절약 기록이 필요합니다",
                         ),
 
                         const SizedBox(height: 32),

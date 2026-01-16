@@ -125,6 +125,30 @@ class SavingNotifier extends _$SavingNotifier {
       throw Exception('Failed to delete saving record: $e');
     }
   }
+
+  Future<void> deleteAllSavings() async {
+    final authNotifier = ref.read(authProvider.notifier);
+    final user = ref.read(authProvider).asData?.value;
+
+    if (authNotifier.isGuest || user == null) {
+      _guestSavings.clear();
+      state = AsyncValue.data([]);
+      return;
+    }
+
+    try {
+      await ref
+          .read(supabaseProvider)
+          .from('savings')
+          .delete()
+          .eq('user_id', user.id);
+
+      state = const AsyncValue.data([]);
+    } catch (e) {
+      debugPrint('Error in deleteAllSavings: $e');
+      throw Exception('Failed to delete all savings: $e');
+    }
+  }
 }
 
 final savingProvider = savingNotifierProvider;

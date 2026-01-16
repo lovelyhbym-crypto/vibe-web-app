@@ -324,6 +324,31 @@ class WishlistNotifier extends _$WishlistNotifier {
       throw Exception('Failed to add funds: $e');
     }
   }
+
+  Future<void> deleteAllWishlists() async {
+    final authNotifier = ref.read(authProvider.notifier);
+    final user = ref.read(authProvider).asData?.value;
+
+    if (authNotifier.isGuest || user == null) {
+      _guestWishlist.clear();
+      state = AsyncValue.data([]);
+      return;
+    }
+
+    try {
+      debugPrint('Deleting ALL wishlist items for user: ${user.id}');
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .delete()
+          .eq('user_id', user.id);
+
+      state = const AsyncValue.data([]);
+    } catch (e) {
+      debugPrint('Error deleting all wishlists: $e');
+      throw Exception('Failed to delete all wishlists: $e');
+    }
+  }
 }
 
 final wishlistProvider = wishlistNotifierProvider;
