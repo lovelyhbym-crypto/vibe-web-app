@@ -76,116 +76,105 @@ class _GloryReportScreenState extends ConsumerState<GloryReportScreen> {
               const Positioned.fill(child: _ParticleOverlay()),
 
             _isGlitching
-                ? _buildGlitchOverlay()
+                ? SingleChildScrollView(child: _buildGlitchOverlay())
                 : SafeArea(
-                    child: SingleChildScrollView(
+                    child: ListView(
+                      padding: const EdgeInsets.all(16.0),
                       physics: const BouncingScrollPhysics(),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 1. Resilience
-                            _BlueprintSection(
-                              title:
-                                  "SYSTEM INTEGRITY", // [THEME] Updated Section 1
-                              subtitle: "Gravity Resistance Coefficient",
-                              isUnlocked: reportState.has30Savings,
-                              icon: Icons.shield,
-                              unlockedContent:
-                                  "30개의 노이즈를 제거하고\n완벽한 시스템을 유지 중입니다.", // [THEME] Updated Desc
-                              lockedContent:
-                                  "DATA MISSING: Need more resistance data (30+ Savings)",
-                            ),
-                            const SizedBox(height: 16),
-
-                            // 2. Breakthrough
-                            _BlueprintSection(
-                              title:
-                                  "ASSET SECURED", // [THEME] Updated Section 2
-                              subtitle: "Escape Velocity Achievement",
-                              isUnlocked: reportState.hasAchieved,
-                              icon: Icons.rocket_launch,
-                              unlockedContent:
-                                  "첫 번째 핵심 자산이\n안전하게 확보되었습니다.", // [THEME] Updated Desc
-                              lockedContent:
-                                  "DATA MISSING: No successful launch recorded (Achieve 1 Goal)",
-                            ),
-                            const SizedBox(height: 16),
-
-                            // 3. Consistency
-                            _BlueprintSection(
-                              title: "SYNC RATE", // [THEME] Updated Section 3
-                              subtitle: "Temporal Stability",
-                              isUnlocked: reportState.has3ConsecutiveDays,
-                              icon: Icons.access_time_filled,
-                              unlockedContent:
-                                  "일상과 목표의 동기화가\n흔들림 없이 유지되고 있습니다.", // [THEME] Updated Desc
-                              lockedContent:
-                                  "DATA MISSING: Signal unstable (Save 3 days in a row)",
-                            ),
-
-                            const SizedBox(height: 32),
-                            if (reportState.isReady)
-                              Column(
-                                children: [
-                                  if (reportState.aiReportText.isNotEmpty)
-                                    _buildAiReportView(reportState.aiReportText)
-                                  else if (reportState.isLoadingAi)
-                                    const Text(
-                                          "Accessing Deep Archive...",
-                                          style: TextStyle(
-                                            color: limeColor,
-                                            fontFamily: 'Courier',
-                                            letterSpacing: 2,
-                                          ),
-                                        )
-                                        .animate(onPlay: (c) => c.repeat())
-                                        .shimmer(
-                                          duration: 1000.ms,
-                                          color: Colors.white,
-                                        )
-                                  else
-                                    TextButton(
-                                          onPressed: () {
-                                            ref
-                                                .read(
-                                                  gloryReportProvider.notifier,
-                                                )
-                                                .generateAiReport();
-                                          },
-                                          child: const Text(
-                                            "ACCESS FULL REPORT >",
-                                            style: TextStyle(
-                                              color: limeColor,
-                                              letterSpacing: 2,
-                                            ),
-                                          ),
-                                        )
-                                        .animate(onPlay: (c) => c.repeat())
-                                        .shimmer(
-                                          duration: 2000.ms,
-                                          color: Colors.white,
-                                        ),
-                                  const SizedBox(height: 20),
-                                  const Text(
-                                    "당신은 오늘, 어제보다 더 가벼워졌습니다.", // [THEME] Footer
-                                    style: TextStyle(
-                                      color: Colors.white54,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w300,
-                                      letterSpacing: 1.0,
-                                    ),
-                                  ).animate().fadeIn(
-                                    delay: 2000.ms,
-                                    duration: 1000.ms,
-                                  ),
-                                  const SizedBox(height: 100), // 하단 여유 공간 확보
-                                ],
-                              ),
-                          ],
+                      children: [
+                        // 1. Resilience
+                        _BlueprintSection(
+                          title:
+                              "SYSTEM INTEGRITY", // [THEME] Updated Section 1
+                          subtitle: "Gravity Resistance Coefficient",
+                          isUnlocked: reportState.has30Savings,
+                          icon: Icons.shield,
+                          unlockedContent: "30개의 노이즈를 제거하고\n완벽한 시스템을 유지 중입니다.",
+                          lockedContent:
+                              "DATA MISSING: Need more resistance data (30+ Savings)",
                         ),
-                      ),
+                        const SizedBox(height: 16),
+
+                        // 2. Breakthrough
+                        _BlueprintSection(
+                          title: "ASSET SECURED", // [THEME] Updated Section 2
+                          subtitle: "Escape Velocity Achievement",
+                          isUnlocked: reportState.hasAchieved,
+                          icon: Icons.rocket_launch,
+                          unlockedContent: "첫 번째 핵심 자산이\n안전하게 확보되었습니다.",
+                          lockedContent:
+                              "DATA MISSING: No successful launch recorded (Achieve 1 Goal)",
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 3. Consistency
+                        _BlueprintSection(
+                          title: "SYNC RATE", // [THEME] Updated Section 3
+                          subtitle: "Temporal Stability",
+                          isUnlocked: reportState.has3ConsecutiveDays,
+                          icon: Icons.access_time_filled,
+                          unlockedContent: "일상과 목표의 동기화가\n흔들림 없이 유지되고 있습니다.",
+                          lockedContent:
+                              "DATA MISSING: Signal unstable (Save 3 days in a row)",
+                        ),
+
+                        const SizedBox(height: 32),
+                        if (reportState.isReady)
+                          Column(
+                            children: [
+                              if (reportState.aiReportText.isNotEmpty)
+                                _buildAiReportView(reportState.aiReportText)
+                              else if (reportState.isLoadingAi)
+                                const Text(
+                                      "Accessing Deep Archive...",
+                                      style: TextStyle(
+                                        color: limeColor,
+                                        fontFamily: 'Courier',
+                                        letterSpacing: 2,
+                                      ),
+                                    )
+                                    .animate(onPlay: (c) => c.repeat())
+                                    .shimmer(
+                                      duration: 1000.ms,
+                                      color: Colors.white,
+                                    )
+                              else
+                                TextButton(
+                                      onPressed: () {
+                                        ref
+                                            .read(gloryReportProvider.notifier)
+                                            .generateAiReport();
+                                      },
+                                      child: const Text(
+                                        "ACCESS FULL REPORT >",
+                                        style: TextStyle(
+                                          color: limeColor,
+                                          letterSpacing: 2,
+                                        ),
+                                      ),
+                                    )
+                                    .animate(onPlay: (c) => c.repeat())
+                                    .shimmer(
+                                      duration: 2000.ms,
+                                      color: Colors.white,
+                                    ),
+                              const SizedBox(height: 20),
+                              const Text(
+                                "당신은 오늘, 어제보다 더 가벼워졌습니다.", // [THEME] Footer
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w300,
+                                  letterSpacing: 1.0,
+                                ),
+                              ).animate().fadeIn(
+                                delay: 2000.ms,
+                                duration: 1000.ms,
+                              ),
+                              const SizedBox(height: 100), // 하단 여유 공간 확보
+                            ],
+                          ),
+                      ],
                     ),
                   ),
           ],
@@ -204,7 +193,14 @@ class _GloryReportScreenState extends ConsumerState<GloryReportScreen> {
     for (final match in regex.allMatches(text)) {
       // Add text before match
       if (match.start > lastIndex) {
-        spans.add(TextSpan(text: text.substring(lastIndex, match.start)));
+        spans.add(
+          TextSpan(
+            text: text.substring(lastIndex, match.start),
+            style: const TextStyle(
+              height: 1.6, // [FIX] Line height optimization
+            ),
+          ),
+        );
       }
 
       final fullMatch = match.group(0)!;
@@ -216,7 +212,8 @@ class _GloryReportScreenState extends ConsumerState<GloryReportScreen> {
             text: match.group(2),
             style: const TextStyle(
               color: Color(0xFFCCFF00),
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w700, // [FIX] Bold emphasis
+              height: 1.6, // [FIX] Line height optimization
               shadows: [
                 BoxShadow(
                   color: Color(0xFFCCFF00),
@@ -247,7 +244,14 @@ class _GloryReportScreenState extends ConsumerState<GloryReportScreen> {
 
     // Remaining text
     if (lastIndex < text.length) {
-      spans.add(TextSpan(text: text.substring(lastIndex)));
+      spans.add(
+        TextSpan(
+          text: text.substring(lastIndex),
+          style: const TextStyle(
+            height: 1.6, // [FIX] Line height optimization
+          ),
+        ),
+      );
     }
 
     return Container(
@@ -263,7 +267,7 @@ class _GloryReportScreenState extends ConsumerState<GloryReportScreen> {
           style: const TextStyle(
             color: Colors.white,
             fontSize: 14,
-            height: 1.6,
+            height: 1.6, // [FIX] Global line height default
           ),
           children: spans,
         ),
