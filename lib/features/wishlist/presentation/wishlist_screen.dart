@@ -244,7 +244,9 @@ class WishlistScreen extends ConsumerWidget {
                                       return LinearProgressIndicator(
                                         value: value,
                                         backgroundColor: colors.border,
-                                        color: const Color(0xFF003366),
+                                        color: isPureFinance
+                                            ? colors.accent
+                                            : const Color(0xFFD4FF00),
                                         minHeight: 8,
                                         borderRadius: BorderRadius.circular(4),
                                       );
@@ -411,7 +413,7 @@ class WishlistScreen extends ConsumerWidget {
                                               backgroundColor: Colors.grey[800],
                                               color: isPureFinance
                                                   ? colors.accent
-                                                  : const Color(0xFF003366),
+                                                  : const Color(0xFFD4FF00),
                                               minHeight: 8,
                                               borderRadius:
                                                   BorderRadius.circular(4),

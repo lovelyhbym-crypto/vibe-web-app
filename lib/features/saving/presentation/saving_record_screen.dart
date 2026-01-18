@@ -12,6 +12,7 @@ import 'package:vive_app/features/saving/providers/category_provider.dart';
 import 'package:vive_app/features/saving/providers/saving_provider.dart';
 import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
 import 'package:vive_app/core/theme/theme_provider.dart';
+import 'package:vive_app/features/dashboard/providers/achievement_provider.dart';
 
 class SavingRecordScreen extends ConsumerStatefulWidget {
   const SavingRecordScreen({super.key});
@@ -168,47 +169,53 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
           if (mounted) {
             FocusScope.of(context).unfocus();
 
-            // Show Success Message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('🎉', style: TextStyle(fontSize: 18)),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        filledCount > 0
-                            ? '$filledCount개의 목표가 동시에 채워졌습니다!'
-                            : (i18n.isKorean
-                                  ? '성공적으로 저축했습니다!'
-                                  : 'Saved successfully!'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+            // [FIX] 만약 마일스톤 이벤트가 발생했다면 일반 저축 완료 배너는 띄우지 않음
+            final milestoneState = ref.read(achievementNotifierProvider);
+            final hasMilestone = milestoneState.asData?.value != null;
+
+            if (!hasMilestone && mounted) {
+              // Show Success Message (Only if no milestone)
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('🎉', style: TextStyle(fontSize: 18)),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          filledCount > 0
+                              ? '$filledCount개의 목표가 동시에 채워졌습니다!'
+                              : (i18n.isKorean
+                                    ? '성공적으로 저축했습니다!'
+                                    : 'Saved successfully!'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
+                    ],
+                  ),
+                  backgroundColor: isPureFinance
+                      ? colors!.surface
+                      : const Color(0xFF1A1A1A),
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.all(20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: BorderSide(
+                      color: isPureFinance
+                          ? (colors!.border)
+                          : Colors.greenAccent,
+                      width: isPureFinance ? 1 : 2,
                     ),
-                  ],
-                ),
-                backgroundColor: isPureFinance
-                    ? colors!.surface
-                    : const Color(0xFF1A1A1A),
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.all(20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    color: isPureFinance
-                        ? (colors!.border)
-                        : Colors.greenAccent,
-                    width: isPureFinance ? 1 : 2,
                   ),
                 ),
-              ),
-            );
+              );
+            }
           }
         }
       }

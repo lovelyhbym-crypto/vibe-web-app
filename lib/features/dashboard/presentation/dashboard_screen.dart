@@ -178,61 +178,61 @@ class DashboardScreen extends ConsumerWidget {
     MilestoneEvent event,
     WidgetRef ref,
   ) {
-    final colors = Theme.of(context).extension<VibeThemeExtension>()?.colors;
-    final isPure = colors is PureFinanceColors;
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+    final isPureFinance = colors is PureFinanceColors;
 
-    // 1. Clear existing banners to prevent duplicates
-    ScaffoldMessenger.of(context).clearSnackBars();
+    // 1. 기존 배너를 즉시 제거하여 공백/중복 현상 해결
+    ScaffoldMessenger.of(context).removeCurrentSnackBar();
 
-    Color milestoneBg;
+    Color neonColor;
     if (event.milestone >= 80) {
-      milestoneBg = Colors.amberAccent; // Neon Yellow/Orange
+      neonColor = const Color(0xFF00FF00); // 네온 초록
     } else if (event.milestone >= 50) {
-      milestoneBg = const Color(0xFF00FFFF); // Neon Cyan
+      neonColor = const Color(0xFFD4FF00); // 네온 노랑
     } else {
-      milestoneBg = colors?.accent ?? Colors.blueAccent;
+      neonColor = colors.accent;
     }
 
     ScaffoldMessenger.of(context)
         .showSnackBar(
           SnackBar(
             behavior: SnackBarBehavior.floating,
-            backgroundColor: isPure
-                ? colors!.surface
-                : (event.milestone >= 50
-                      ? milestoneBg
-                      : const Color(0xFF1E1E1E)),
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            backgroundColor: isPureFinance
+                ? colors.surface
+                : (event.milestone >= 50 ? neonColor : const Color(0xFF1E1E1E)),
+            margin: const EdgeInsets.all(16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: isPureFinance ? colors.border : neonColor,
+                width: 2,
+              ),
             ),
-            content: SizedBox(
-              width: MediaQuery.of(context).size.width,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    event.milestone >= 50 ? '🏆' : '🎉',
-                    style: const TextStyle(fontSize: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  Flexible(
-                    fit: FlexFit.loose,
-                    child: Text(
-                      event.message,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 14,
-                        color: isPure
-                            ? colors!.textMain
-                            : (event.milestone >= 50
-                                  ? Colors.black
-                                  : Colors.white),
-                      ),
+            content: Row(
+              mainAxisSize: MainAxisSize.min, // 레이아웃 에러 방지
+              children: [
+                Text(
+                  event.milestone >= 50 ? '🏆' : '🎉',
+                  style: const TextStyle(fontSize: 28),
+                ),
+                const SizedBox(width: 16),
+                Flexible(
+                  fit: FlexFit.loose,
+                  child: Text(
+                    event.message,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      // [시인성 핵심] 토스에선 진회색, 사이버펑크 밝은 배경에선 검정색 글씨
+                      color: isPureFinance
+                          ? colors.textMain
+                          : (event.milestone >= 50
+                                ? Colors.black
+                                : Colors.white),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
             duration: const Duration(seconds: 2, milliseconds: 500),
           ),
@@ -587,7 +587,7 @@ class _WishlistProgressCard extends StatelessWidget {
                 '${(progress * 100).toInt()}%',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: progressColor,
+                  color: isPureFinance ? colors.textMain : Colors.white,
                   fontSize: 24,
                 ),
               ),
@@ -607,7 +607,9 @@ class _WishlistProgressCard extends StatelessWidget {
               return LinearProgressIndicator(
                 value: value,
                 backgroundColor: colors.textSub.withOpacity(0.1),
-                color: isPureFinance ? colors.accent : const Color(0xFF00FFFF),
+                color: isPureFinance
+                    ? colors.accent
+                    : const Color(0xFFD4FF00), // 토스는 밝은 블루, 사이버펑크는 네온 노랑
                 minHeight: 12,
                 borderRadius: BorderRadius.circular(6),
               );
