@@ -43,6 +43,7 @@ class SavingNotifier extends _$SavingNotifier {
     required String category,
     required dynamic amount,
     required DateTime createdAt,
+    List<String> wishlistIds = const [],
   }) async {
     final authNotifier = ref.read(authProvider.notifier);
     final user = ref.read(authProvider).asData?.value;
@@ -57,6 +58,7 @@ class SavingNotifier extends _$SavingNotifier {
         category: category,
         amount: parsedAmount,
         createdAt: createdAt,
+        wishlistIds: wishlistIds,
       );
       _guestSavings.insert(0, newItem);
       state = AsyncValue.data([..._guestSavings]);
@@ -69,6 +71,7 @@ class SavingNotifier extends _$SavingNotifier {
         category: category,
         amount: parsedAmount,
         createdAt: createdAt,
+        wishlistIds: wishlistIds,
       );
 
       final response = await ref

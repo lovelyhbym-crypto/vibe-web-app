@@ -8,6 +8,7 @@ class WishlistModel {
   final bool isAchieved;
   final DateTime? achievedAt;
   final DateTime createdAt;
+  final DateTime? targetDate;
   final String? comment;
 
   WishlistModel({
@@ -19,9 +20,36 @@ class WishlistModel {
     this.imageUrl,
     this.isAchieved = false,
     this.achievedAt,
+    this.targetDate,
     DateTime? createdAt,
     this.comment,
   }) : createdAt = createdAt ?? DateTime.now();
+
+  /// (totalGoal - savedAmount) / (남은 일수)를 계산
+  /// 남은 일수가 0 이하이거나 targetDate가 없으면 적절히 처리
+  double get dailyQuota {
+    if (targetDate == null || isAchieved) return 0;
+
+    final remainingAmount = totalGoal - savedAmount;
+    if (remainingAmount <= 0) return 0;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(
+      targetDate!.year,
+      targetDate!.month,
+      targetDate!.day,
+    );
+
+    final daysLeft = target.difference(today).inDays;
+
+    if (daysLeft <= 0) {
+      // 이미 목표 날짜이거나 지난 경우, 남은 금액 전체가 오늘의 할당량
+      return remainingAmount;
+    }
+
+    return remainingAmount / daysLeft;
+  }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = {
@@ -34,6 +62,10 @@ class WishlistModel {
       'created_at': createdAt.toIso8601String(),
       'comment': comment,
     };
+
+    if (targetDate != null) {
+      data['target_date'] = targetDate!.toIso8601String();
+    }
 
     // Only include achieved_at if it exists and is not null
     if (achievedAt != null) {
@@ -59,6 +91,9 @@ class WishlistModel {
           double.tryParse(json['saved_amount']?.toString() ?? '0') ?? 0.0,
       imageUrl: json['image_url'] as String?,
       isAchieved: json['is_achieved'] as bool? ?? false,
+      targetDate: json['target_date'] != null
+          ? DateTime.parse(json['target_date'] as String)
+          : null,
       achievedAt: json['achieved_at'] != null
           ? DateTime.parse(json['achieved_at'] as String)
           : null,
@@ -78,6 +113,7 @@ class WishlistModel {
     String? imageUrl,
     bool? isAchieved,
     DateTime? achievedAt,
+    DateTime? targetDate,
     DateTime? createdAt,
     String? comment,
   }) {
@@ -90,6 +126,7 @@ class WishlistModel {
       imageUrl: imageUrl ?? this.imageUrl,
       isAchieved: isAchieved ?? this.isAchieved,
       achievedAt: achievedAt ?? this.achievedAt,
+      targetDate: targetDate ?? this.targetDate,
       createdAt: createdAt ?? this.createdAt,
       comment: comment ?? this.comment,
     );

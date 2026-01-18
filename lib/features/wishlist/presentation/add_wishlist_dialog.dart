@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/services/image_service.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -27,6 +28,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
   final _imageService = ImageService();
 
   XFile? _selectedImage;
+  DateTime? _targetDate;
   bool _isUploading = false;
 
   @override
@@ -41,6 +43,39 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
     if (image != null) {
       setState(() {
         _selectedImage = image;
+      });
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _targetDate ?? now.add(const Duration(days: 30)),
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 3650)), // 10 years
+      builder: (context, child) {
+        final colors = Theme.of(
+          context,
+        ).extension<VibeThemeExtension>()!.colors;
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: colors.accent,
+              onPrimary: Colors.black,
+              surface: colors.surface,
+              onSurface: colors.textMain,
+            ),
+            dialogBackgroundColor: colors.background,
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        _targetDate = pickedDate;
       });
     }
   }
@@ -68,6 +103,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
         price: price,
         totalGoal: price, // Assuming goal equals price for now
         imageUrl: imageUrl,
+        targetDate: _targetDate,
       );
 
       await ref.read(wishlistProvider.notifier).addWishlist(newItem);
@@ -186,6 +222,39 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
               ),
               keyboardType: TextInputType.number,
               style: TextStyle(color: colors.textMain),
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: _pickDate,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 4,
+                ),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: colors.border)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 20, color: colors.textSub),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _targetDate == null
+                            ? '목표 달성일 (기한 없음)'
+                            : '달성일: ${DateFormat('yyyy-MM-dd').format(_targetDate!)}',
+                        style: TextStyle(
+                          color: _targetDate == null
+                              ? colors.textSub
+                              : colors.textMain,
+                        ),
+                      ),
+                    ),
+                    Icon(Icons.chevron_right, color: colors.textSub),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

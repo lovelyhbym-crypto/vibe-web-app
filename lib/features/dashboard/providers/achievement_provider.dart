@@ -61,47 +61,54 @@ class AchievementNotifier extends _$AchievementNotifier {
 
       final percent = ((item.savedAmount / item.totalGoal) * 100).floor();
 
-      // Check milestones in descending order of priority
-      final milestones = [100, 80, 50, 20];
+      // Explicitly check from highest to lowest milestone
+      int? targetMilestone;
+      if (percent >= 100) {
+        targetMilestone = 100;
+      } else if (percent >= 80) {
+        targetMilestone = 80;
+      } else if (percent >= 50) {
+        targetMilestone = 50;
+      } else if (percent >= 20) {
+        targetMilestone = 20;
+      }
 
-      for (final milestone in milestones) {
-        if (percent >= milestone) {
-          final key = 'milestone_${item.id}_$milestone';
-          final alreadyNotified = prefs.getBool(key) ?? false;
+      if (targetMilestone != null) {
+        final milestone = targetMilestone;
+        final key = 'milestone_${item.id}_$milestone';
+        final alreadyNotified = prefs.getBool(key) ?? false;
 
-          // Check if already in queue to prevent double addition in same session
-          final inQueue = _eventQueue.any(
-            (e) => e.goalId == item.id.toString() && e.milestone == milestone,
+        // Check if already in queue to prevent double addition in same session
+        final inQueue = _eventQueue.any(
+          (e) => e.goalId == item.id.toString() && e.milestone == milestone,
+        );
+
+        if (!alreadyNotified && !inQueue) {
+          // Mark as notified in Prefs immediately to prevent re-trigger
+          await prefs.setBool(key, true);
+
+          // Mark lower milestones as done
+          final milestones = [100, 80, 50, 20];
+          for (final lower in milestones.where((m) => m < milestone)) {
+            await prefs.setBool('milestone_${item.id}_$lower', true);
+          }
+
+          final messages = MilestoneMessages.getMessages(
+            milestone,
+            languageCode,
           );
+          if (messages.isNotEmpty) {
+            final randomMsg = messages[Random().nextInt(messages.length)];
+            final finalMsg = randomMsg.replaceAll('{goalName}', item.title);
 
-          if (!alreadyNotified && !inQueue) {
-            // Mark as notified in Prefs immediately to prevent re-trigger
-            await prefs.setBool(key, true);
-
-            // Mark lower milestones as done
-            for (final lower in milestones.where((m) => m < milestone)) {
-              await prefs.setBool('milestone_${item.id}_$lower', true);
-            }
-
-            final messages = MilestoneMessages.getMessages(
-              milestone,
-              languageCode,
+            _eventQueue.add(
+              MilestoneEvent(
+                message: finalMsg,
+                milestone: milestone,
+                goalId: item.id.toString(),
+                goalName: item.title,
+              ),
             );
-            if (messages.isNotEmpty) {
-              final randomMsg = messages[Random().nextInt(messages.length)];
-              final finalMsg = randomMsg.replaceAll('{goalName}', item.title);
-
-              _eventQueue.add(
-                MilestoneEvent(
-                  message: finalMsg,
-                  milestone: milestone,
-                  goalId: item.id.toString(),
-                  goalName: item.title,
-                ),
-              );
-            }
-            // Stop checking lower milestones for this item once highest reached
-            break;
           }
         }
       }

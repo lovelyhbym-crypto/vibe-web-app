@@ -39,9 +39,9 @@ class CyberpunkColors implements VibeColors {
   @override
   Color get textSub => const Color(0xFFAAAAAA);
   @override
-  Color get accent => const Color(0xFF00FFC2); // Neon Cyan
+  Color get accent => const Color(0xFFD4FF00); // Signature Neon Yellow/Lime
   @override
-  Color get success => const Color(0xFF00FF00); // Neon Green
+  Color get success => const Color(0xFF00FFFF); // Neon Cyan / Gauge Color
   @override
   Color get danger => const Color(0xFFFF003C); // Neon Red
   @override
@@ -61,9 +61,9 @@ class PureFinanceColors implements VibeColors {
   @override
   Color get textSub => const Color(0xFF8B95A1); // 보조 텍스트 - 중간 회색
   @override
-  Color get accent => const Color(0xFF0064FF); // 토스 블루
+  Color get accent => const Color(0xFF3182F6); // Brighter Toss Blue
   @override
-  Color get success => const Color(0xFF3182F6); // Soft Blue (유지 or 변경 요청없음) -> 유지
+  Color get success => const Color(0xFF008D00); // Standard Green
   @override
   Color get danger => const Color(0xFFF04452); // Soft Red (유지)
   @override

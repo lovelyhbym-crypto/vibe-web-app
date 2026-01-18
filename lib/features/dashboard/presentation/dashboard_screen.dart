@@ -178,62 +178,62 @@ class DashboardScreen extends ConsumerWidget {
     MilestoneEvent event,
     WidgetRef ref,
   ) {
-    final theme = Theme.of(context);
-    final vibeTheme = theme.extension<VibeThemeExtension>();
-    final colors = vibeTheme?.colors;
-    final isPureFinance = colors is PureFinanceColors;
+    final colors = Theme.of(context).extension<VibeThemeExtension>()?.colors;
+    final isPure = colors is PureFinanceColors;
 
-    Color neonColor;
-    String icon;
+    // 1. Clear existing banners to prevent duplicates
+    ScaffoldMessenger.of(context).clearSnackBars();
+
+    Color milestoneBg;
     if (event.milestone >= 80) {
-      neonColor = Colors.redAccent;
-      icon = '🔥';
+      milestoneBg = Colors.amberAccent; // Neon Yellow/Orange
     } else if (event.milestone >= 50) {
-      neonColor = Colors.cyanAccent;
-      icon = '🏆';
+      milestoneBg = const Color(0xFF00FFFF); // Neon Cyan
     } else {
-      neonColor = Colors.purpleAccent;
-      icon = '🎉';
+      milestoneBg = colors?.accent ?? Colors.blueAccent;
     }
 
     ScaffoldMessenger.of(context)
         .showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                Text(icon, style: const TextStyle(fontSize: 28))
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .scale(
-                      begin: const Offset(1, 1),
-                      end: const Offset(1.2, 1.2),
-                      duration: 600.ms,
-                    ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    event.message,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
             behavior: SnackBarBehavior.floating,
-            backgroundColor: isPureFinance
+            backgroundColor: isPure
                 ? colors!.surface
-                : const Color(0xFF1E1E1E),
+                : (event.milestone >= 50
+                      ? milestoneBg
+                      : const Color(0xFF1E1E1E)),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(
-                color: isPureFinance ? (colors!.border) : neonColor,
-                width: isPureFinance ? 1 : 2,
+            ),
+            content: SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    event.milestone >= 50 ? '🏆' : '🎉',
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: Text(
+                      event.message,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 14,
+                        color: isPure
+                            ? colors!.textMain
+                            : (event.milestone >= 50
+                                  ? Colors.black
+                                  : Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             duration: const Duration(seconds: 2, milliseconds: 500),
           ),
         )
@@ -263,6 +263,7 @@ class _PeriodSelector extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedPeriod = ref.watch(savingsPeriodProvider);
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+    final isPureFinance = colors is PureFinanceColors;
 
     return Container(
       width: double.infinity,
@@ -284,7 +285,7 @@ class _PeriodSelector extends ConsumerWidget {
                 period.label,
                 style: TextStyle(
                   color: selectedPeriod == period
-                      ? Colors.white
+                      ? (isPureFinance ? Colors.white : colors.background)
                       : colors.textSub,
                   fontWeight: selectedPeriod == period
                       ? FontWeight.bold
@@ -519,8 +520,12 @@ class _WishlistProgressCard extends StatelessWidget {
     required this.navIndex,
   });
 
-  Color _getProgressColor(double progress, VibeColors colors) {
-    return colors.accent;
+  Color _getProgressColor(
+    double progress,
+    VibeColors colors,
+    bool isPureFinance,
+  ) {
+    return isPureFinance ? colors.accent : colors.success;
   }
 
   @override
@@ -533,9 +538,7 @@ class _WishlistProgressCard extends StatelessWidget {
 
     // Theme logic
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
-    final isPureFinance =
-        Theme.of(context).cardTheme.elevation ==
-        2; // Hacky or use provider, but provider is not available unless I convert to ConsumerWidget
+    final isPureFinance = colors is PureFinanceColors;
 
     DateTime? prediction;
     if (remaining > 0 && averageDailySavings > 0) {
@@ -543,8 +546,8 @@ class _WishlistProgressCard extends StatelessWidget {
       prediction = DateTime.now().add(Duration(days: daysToFinish));
     }
 
-    // Adjust progress color based on theme or keep custom logic but adapt
-    final progressColor = _getProgressColor(progress, colors);
+    // Adjust progress color based on theme
+    final progressColor = _getProgressColor(progress, colors, isPureFinance);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -604,7 +607,7 @@ class _WishlistProgressCard extends StatelessWidget {
               return LinearProgressIndicator(
                 value: value,
                 backgroundColor: colors.textSub.withOpacity(0.1),
-                color: progressColor,
+                color: isPureFinance ? colors.accent : const Color(0xFF00FFFF),
                 minHeight: 12,
                 borderRadius: BorderRadius.circular(6),
               );

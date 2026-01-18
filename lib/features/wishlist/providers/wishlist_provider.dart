@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:vive_app/core/network/supabase_client.dart';
@@ -18,6 +19,8 @@ final selectedWishlistIndexProvider =
     NotifierProvider<SelectedWishlistIndexNotifier, int>(
       SelectedWishlistIndexNotifier.new,
     );
+
+final selectedWishlistIdsProvider = StateProvider<List<String>>((ref) => []);
 
 @Riverpod(keepAlive: true)
 class WishlistNotifier extends _$WishlistNotifier {
@@ -261,68 +264,93 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
   }
 
-  Future<String?> addFundsToSelectedItem(double amount) async {
+  /// 확장된 addFundsToSelectedItems: 여러 위시리스트에 동시에 정액을 추가
+  Future<void> addFundsToSelectedItems(
+    double amount,
+    List<String> selectedIds,
+  ) async {
+    if (selectedIds.isEmpty) return;
+
     final wishlist = await future;
-    if (wishlist.isEmpty) return null;
+    if (wishlist.isEmpty) return;
 
-    final selectedIndex = ref.read(selectedWishlistIndexProvider);
-    // Safety check: if index is out of bounds, default to 0 or return null
-    if (selectedIndex < 0 || selectedIndex >= wishlist.length) return null;
-
-    final targetItem = wishlist[selectedIndex];
     final authNotifier = ref.read(authProvider.notifier);
     final user = ref.read(authProvider).asData?.value;
 
-    final updatedAmount = targetItem.savedAmount + amount;
-    final isNowAchieved =
-        updatedAmount >= targetItem.totalGoal && !targetItem.isAchieved;
-    final achievedAt = isNowAchieved ? DateTime.now() : targetItem.achievedAt;
-
-    if (authNotifier.isGuest || user == null) {
-      final index = _guestWishlist.indexWhere((i) => i.id == targetItem.id);
-      if (index != -1) {
-        _guestWishlist[index] = targetItem.copyWith(
+    // 1. Optimistic Update를 위한 새로운 리스트 생성
+    final updatedList = wishlist.map((item) {
+      if (selectedIds.contains(item.id)) {
+        final updatedAmount = item.savedAmount + amount;
+        final isNowAchieved =
+            updatedAmount >= item.totalGoal && !item.isAchieved;
+        return item.copyWith(
           savedAmount: updatedAmount,
-          isAchieved: isNowAchieved ? true : targetItem.isAchieved,
-          achievedAt: achievedAt,
+          isAchieved: isNowAchieved ? true : item.isAchieved,
+          achievedAt: isNowAchieved ? DateTime.now() : item.achievedAt,
         );
-        state = AsyncValue.data([..._guestWishlist]);
-        return targetItem.title;
       }
-      return null;
-    }
+      return item;
+    }).toList();
 
-    // Optimistic Update
-    final updatedList = List<WishlistModel>.from(wishlist);
-    updatedList[selectedIndex] = targetItem.copyWith(
-      savedAmount: updatedAmount,
-      isAchieved: isNowAchieved ? true : targetItem.isAchieved,
-      achievedAt: achievedAt,
-    );
+    // 로컬 상태 즉시 업데이트 (Optimistic)
     state = AsyncValue.data(updatedList);
 
-    try {
-      final updates = <String, dynamic>{'saved_amount': updatedAmount.toInt()};
-      if (isNowAchieved) {
-        updates['is_achieved'] = true;
-        updates['achieved_at'] = achievedAt?.toIso8601String();
+    // 게스트 모드 처리
+    if (authNotifier.isGuest || user == null) {
+      for (var i = 0; i < _guestWishlist.length; i++) {
+        if (selectedIds.contains(_guestWishlist[i].id)) {
+          final original = _guestWishlist[i];
+          final updatedAmount = original.savedAmount + amount;
+          final isNowAchieved =
+              updatedAmount >= original.totalGoal && !original.isAchieved;
+
+          _guestWishlist[i] = original.copyWith(
+            savedAmount: updatedAmount,
+            isAchieved: isNowAchieved ? true : original.isAchieved,
+            achievedAt: isNowAchieved ? DateTime.now() : original.achievedAt,
+          );
+        }
       }
-
-      await ref
-          .read(supabaseProvider)
-          .from('wishlists')
-          .update(updates)
-          .eq('id', targetItem.id!);
-
-      // No need to invalidateSelf() if optimistic update is successful and accurate
-      // ref.invalidateSelf();
-      return targetItem.title;
-    } catch (e) {
-      // Revert state on error if needed, or invalidate to re-fetch truth
-      ref.invalidateSelf();
-      debugPrint('Error in addFundsToSelectedItem: $e');
-      throw Exception('Failed to add funds: $e');
+      return;
     }
+
+    try {
+      // 2. Supabase Parallel Update
+      await Future.wait(
+        updatedList.where((item) => selectedIds.contains(item.id)).map((item) {
+          final updates = <String, dynamic>{
+            'saved_amount': item.savedAmount.toInt(),
+          };
+          if (item.isAchieved) {
+            updates['is_achieved'] = true;
+            updates['achieved_at'] = item.achievedAt?.toIso8601String();
+          }
+          return ref
+              .read(supabaseProvider)
+              .from('wishlists')
+              .update(updates)
+              .eq('id', item.id!);
+        }),
+      );
+    } catch (e) {
+      // 에러 시 상태 복구
+      ref.invalidateSelf();
+      debugPrint('Error in addFundsToSelectedItems: $e');
+      throw Exception('Failed to add funds to selected items: $e');
+    }
+  }
+
+  // Deprecated: selection logic is now handled by addFundsToSelectedItems
+  Future<String?> addFundsToSelectedItem(double amount) async {
+    final selectedIndex = ref.read(selectedWishlistIndexProvider);
+    final wishlist = state.valueOrNull ?? [];
+    if (selectedIndex < 0 || selectedIndex >= wishlist.length) return null;
+
+    final targetId = wishlist[selectedIndex].id;
+    if (targetId == null) return null;
+
+    await addFundsToSelectedItems(amount, [targetId]);
+    return wishlist[selectedIndex].title;
   }
 
   Future<void> deleteAllWishlists() async {

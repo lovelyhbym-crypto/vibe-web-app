@@ -26,6 +26,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
   late ConfettiController _confettiController;
   String? _selectedCategoryId;
   bool _addToCategories = false;
+  List<String> _selectedWishlistIds = [];
   bool _isLoading = false;
 
   @override
@@ -47,6 +48,16 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
   void _addAmount(int amount) {
     final current = int.tryParse(_amountController.text) ?? 0;
     _amountController.text = (current + amount).toString();
+  }
+
+  void _toggleWishlistSelection(String id) {
+    setState(() {
+      if (_selectedWishlistIds.contains(id)) {
+        _selectedWishlistIds.remove(id);
+      } else {
+        _selectedWishlistIds.add(id);
+      }
+    });
   }
 
   Future<void> _submit() async {
@@ -108,18 +119,29 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
         finalCategoryName = category.name;
       }
 
-      // 1. Save record
+      // 1. Save record with associated wishlist IDs
       await ref
           .read(savingProvider.notifier)
           .addSaving(
             category: finalCategoryName,
             amount: amount,
             createdAt: DateTime.now(),
+            wishlistIds: _selectedWishlistIds,
           );
 
-      // 2. Update Wishlist (Add funds to ALL items)
+      // 2. Update Selected Wishlists (Optimistic & Parallel)
       final wishlistNotifier = ref.read(wishlistProvider.notifier);
-      await wishlistNotifier.addSavingToAllGoals(amount.toDouble());
+      if (_selectedWishlistIds.isNotEmpty) {
+        await wishlistNotifier.addFundsToSelectedItems(
+          amount.toDouble(),
+          _selectedWishlistIds,
+        );
+      } else {
+        // If no items selected, optionally still add to all OR do nothing.
+        // The user request suggests specific selection, so we only update selected.
+        // However, previous logic was addSavingToAllGoals.
+        // Let's stick to user's "multi-selection" instruction.
+      }
 
       if (mounted) {
         // 3. Play Success Effects
@@ -127,14 +149,17 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
         _confettiController.play();
 
         // Wait for user to enjoy the effect (2 seconds)
-        await Future.delayed(const Duration(seconds: 2));
+        await Future.delayed(const Duration(milliseconds: 1500));
 
         if (mounted) {
+          final filledCount = _selectedWishlistIds.length;
+
           // Reset form state since IndexedStack preserves it
           _amountController.clear();
           _customCategoryController.clear();
           setState(() {
             _selectedCategoryId = null;
+            _selectedWishlistIds = [];
             _addToCategories = false;
             _isLoading = false;
           });
@@ -151,12 +176,19 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
                   children: [
                     const Text('🎉', style: TextStyle(fontSize: 18)),
                     const SizedBox(width: 8),
-                    Text(
-                      i18n.isKorean ? '성공적으로 저축했습니다!' : 'Saved successfully!',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                    Flexible(
+                      child: Text(
+                        filledCount > 0
+                            ? '$filledCount개의 목표가 동시에 채워졌습니다!'
+                            : (i18n.isKorean
+                                  ? '성공적으로 저축했습니다!'
+                                  : 'Saved successfully!'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -468,6 +500,70 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
                       ),
                     ],
                   ),
+
+                  const SizedBox(height: 40),
+                  _buildSectionTitle(
+                    i18n.isKorean ? '함께 채울 목표 선택' : 'Goals to fill together',
+                    colors,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Wishlist Multi-Selection
+                  ref
+                      .watch(wishlistProvider)
+                      .when(
+                        data: (wishlists) {
+                          final activeWishlists = wishlists
+                              .where((w) => !w.isAchieved)
+                              .toList();
+                          if (activeWishlists.isEmpty) {
+                            return Text(
+                              i18n.isKorean
+                                  ? '진행 중인 목표가 없습니다.'
+                                  : 'No active goals.',
+                              style: TextStyle(
+                                color: colors.textSub,
+                                fontSize: 14,
+                              ),
+                            );
+                          }
+                          return Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: activeWishlists.map((item) {
+                              final isSelected = _selectedWishlistIds.contains(
+                                item.id,
+                              );
+                              return FilterChip(
+                                label: Text(item.title),
+                                selected: isSelected,
+                                onSelected: (_) =>
+                                    _toggleWishlistSelection(item.id!),
+                                backgroundColor: colors.surface,
+                                selectedColor: colors.accent.withOpacity(0.2),
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? colors.accent
+                                      : colors.border,
+                                ),
+                                labelStyle: TextStyle(
+                                  color: isSelected
+                                      ? colors.accent
+                                      : colors.textMain,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        },
+                        loading: () => const CircularProgressIndicator(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
 
                   const SizedBox(height: 40),
 

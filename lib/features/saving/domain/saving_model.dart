@@ -6,11 +6,14 @@ class SavingModel {
   final int amount;
   final DateTime createdAt;
 
+  final List<String> wishlistIds;
+
   SavingModel({
     required this.id,
     required this.category,
     required this.amount,
     required this.createdAt,
+    this.wishlistIds = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -18,6 +21,7 @@ class SavingModel {
       'category': category,
       'amount': amount,
       'created_at': createdAt.toIso8601String(),
+      'wishlist_ids': wishlistIds,
     };
   }
 
@@ -38,6 +42,11 @@ class SavingModel {
       category: json['category'] as String,
       amount: int.tryParse(json['amount']?.toString() ?? '0') ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
+      wishlistIds:
+          (json['wishlist_ids'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
     );
   }
 }

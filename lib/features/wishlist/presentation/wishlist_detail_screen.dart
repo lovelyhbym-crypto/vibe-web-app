@@ -253,17 +253,128 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title
-                    Text(
-                      item.title,
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: isPureFinance ? colors.textMain : Colors.white,
-                        height: 1.2,
-                      ),
+                    // Title and D-Day Badge
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.title,
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: isPureFinance
+                                  ? colors.textMain
+                                  : Colors.white,
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                        if (item.targetDate != null && !item.isAchieved)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colors.accent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: colors.accent,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Text(
+                              () {
+                                final now = DateTime.now();
+                                final today = DateTime(
+                                  now.year,
+                                  now.month,
+                                  now.day,
+                                );
+                                final target = DateTime(
+                                  item.targetDate!.year,
+                                  item.targetDate!.month,
+                                  item.targetDate!.day,
+                                );
+                                final days = target.difference(today).inDays;
+                                if (days == 0) return 'D-Day';
+                                if (days < 0) return '기한 도과';
+                                return 'D-$days';
+                              }(),
+                              style: TextStyle(
+                                color: colors.accent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 24),
+
+                    // Daily Goal Section (Secondary Color Highlight)
+                    if (item.targetDate != null &&
+                        !item.isAchieved &&
+                        item.dailyQuota > 0)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 32),
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: isPureFinance
+                              ? colors.accent.withOpacity(0.05)
+                              : Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isPureFinance
+                                ? colors.accent.withOpacity(0.3)
+                                : colors.border,
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: colors.accent.withOpacity(0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.rocket_launch,
+                                color: colors.accent,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '목표를 위해 오늘 아껴야 할 금액',
+                                    style: TextStyle(
+                                      color: isPureFinance
+                                          ? colors.textSub
+                                          : Colors.white70,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    i18n.formatCurrency(item.dailyQuota),
+                                    style: TextStyle(
+                                      color: colors.accent,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
 
                     // Price Info
                     Row(
@@ -313,9 +424,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               style: TextStyle(
                                 color: isPureFinance
                                     ? colors.textMain
-                                    : const Color(
-                                        0xFFCCFF00,
-                                      ), // Pure: Black, Cyber: Lime
+                                    : colors
+                                          .success, // Pure: Black, Cyber: Cyan (Gauge)
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -351,11 +461,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                           backgroundColor: isPureFinance
                               ? colors.border
                               : Colors.grey[800],
-                          color: isPureFinance
-                              ? colors.accent
-                              : const Color(
-                                  0xFFCCFF00,
-                                ), // Pure: Blue, Cyber: Lime
+                          color: isPureFinance ? colors.accent : colors.success,
                           minHeight: 12,
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -413,9 +519,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                             ),
                             cursorColor: isPureFinance
                                 ? colors.textSub
-                                : const Color(
-                                    0xFFCCFF00,
-                                  ), // Pure: Grey, Cyber: Lime
+                                : colors
+                                      .success, // Pure: Grey, Cyber: Cyan (Gauge)
                           ),
                           if (_hasChanges)
                             Padding(
@@ -425,7 +530,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                                 style: TextStyle(
                                   color: isPureFinance
                                       ? colors.textSub
-                                      : const Color(0xFFCCFF00).withAlpha(
+                                      : colors.success.withAlpha(
                                           179,
                                         ), // Pure: Grey, Cyber: Lime
                                   fontSize: 13,
