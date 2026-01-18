@@ -10,6 +10,7 @@ class WishlistModel {
   final DateTime createdAt;
   final DateTime? targetDate;
   final String? comment;
+  final bool isRepresentative;
 
   WishlistModel({
     this.id,
@@ -23,6 +24,7 @@ class WishlistModel {
     this.targetDate,
     DateTime? createdAt,
     this.comment,
+    this.isRepresentative = false,
   }) : createdAt = createdAt ?? DateTime.now();
 
   /// (totalGoal - savedAmount) / (남은 일수)를 계산
@@ -61,6 +63,7 @@ class WishlistModel {
       'is_achieved': isAchieved,
       'created_at': createdAt.toIso8601String(),
       'comment': comment,
+      'is_representative': isRepresentative,
     };
 
     if (targetDate != null) {
@@ -101,6 +104,7 @@ class WishlistModel {
           ? DateTime.parse(json['created_at'] as String)
           : null,
       comment: json['comment'] as String?,
+      isRepresentative: json['is_representative'] as bool? ?? false,
     );
   }
 
@@ -116,6 +120,7 @@ class WishlistModel {
     DateTime? targetDate,
     DateTime? createdAt,
     String? comment,
+    bool? isRepresentative,
   }) {
     return WishlistModel(
       id: id ?? this.id,
@@ -129,6 +134,7 @@ class WishlistModel {
       targetDate: targetDate ?? this.targetDate,
       createdAt: createdAt ?? this.createdAt,
       comment: comment ?? this.comment,
+      isRepresentative: isRepresentative ?? this.isRepresentative,
     );
   }
 

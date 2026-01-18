@@ -227,6 +227,25 @@ class WishlistScreen extends ConsumerWidget {
                                                 color: colors.textMain,
                                               ),
                                             ),
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        icon: Icon(
+                                          item.isRepresentative
+                                              ? Icons.star
+                                              : Icons.star_border,
+                                          color: item.isRepresentative
+                                              ? Colors.amber
+                                              : colors.textSub,
+                                          size: 22,
+                                        ),
+                                        onPressed: () {
+                                          ref
+                                              .read(wishlistProvider.notifier)
+                                              .setRepresentative(item.id!);
+                                        },
+                                      ),
                                     ],
                                   ),
                                   const SizedBox(height: 12),
@@ -394,6 +413,30 @@ class WishlistScreen extends ConsumerWidget {
                                                       color: colors.textMain,
                                                     ),
                                                   ),
+                                            const SizedBox(width: 8),
+                                            IconButton(
+                                              padding: EdgeInsets.zero,
+                                              constraints:
+                                                  const BoxConstraints(),
+                                              icon: Icon(
+                                                item.isRepresentative
+                                                    ? Icons.star
+                                                    : Icons.star_border,
+                                                color: item.isRepresentative
+                                                    ? Colors.amber
+                                                    : Colors.white70,
+                                                size: 22,
+                                              ),
+                                              onPressed: () {
+                                                ref
+                                                    .read(
+                                                      wishlistProvider.notifier,
+                                                    )
+                                                    .setRepresentative(
+                                                      item.id!,
+                                                    );
+                                              },
+                                            ),
                                           ],
                                         ),
                                         const SizedBox(height: 12),

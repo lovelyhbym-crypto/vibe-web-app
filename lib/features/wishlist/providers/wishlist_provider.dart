@@ -377,6 +377,40 @@ class WishlistNotifier extends _$WishlistNotifier {
       throw Exception('Failed to delete all wishlists: $e');
     }
   }
+
+  Future<void> setRepresentative(String id) async {
+    final user = ref.read(authProvider).asData?.value;
+
+    try {
+      if (user != null) {
+        // 1. 모든 항목의 is_representative를 false로 일괄 업데이트
+        await ref
+            .read(supabaseProvider)
+            .from('wishlists')
+            .update({'is_representative': false})
+            .eq('user_id', user.id); // 전체 업데이트 (해당 유저 기준)
+
+        // 2. 선택한 항목만 true로 업데이트
+        await ref
+            .read(supabaseProvider)
+            .from('wishlists')
+            .update({'is_representative': true})
+            .eq('id', id);
+      } else {
+        // Guest mode support
+        for (var i = 0; i < _guestWishlist.length; i++) {
+          _guestWishlist[i] = _guestWishlist[i].copyWith(
+            isRepresentative: _guestWishlist[i].id == id,
+          );
+        }
+      }
+
+      ref.invalidateSelf(); // 상태 새로고침
+    } catch (e) {
+      debugPrint('Error in setRepresentative: $e');
+      throw Exception('Failed to set representative goal: $e');
+    }
+  }
 }
 
 final wishlistProvider = wishlistNotifierProvider;

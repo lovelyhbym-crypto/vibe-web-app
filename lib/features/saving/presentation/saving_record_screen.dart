@@ -27,7 +27,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
   late ConfettiController _confettiController;
   String? _selectedCategoryId;
   bool _addToCategories = false;
-  List<String> _selectedWishlistIds = [];
+  String? _selectedWishlistId;
   bool _isLoading = false;
 
   @override
@@ -51,12 +51,12 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
     _amountController.text = (current + amount).toString();
   }
 
-  void _toggleWishlistSelection(String id) {
+  void _selectWishlist(String id) {
     setState(() {
-      if (_selectedWishlistIds.contains(id)) {
-        _selectedWishlistIds.remove(id);
+      if (_selectedWishlistId == id) {
+        _selectedWishlistId = null;
       } else {
-        _selectedWishlistIds.add(id);
+        _selectedWishlistId = id;
       }
     });
   }
@@ -124,16 +124,17 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
             category: finalCategoryName,
             amount: amount,
             createdAt: DateTime.now(),
-            wishlistIds: _selectedWishlistIds,
+            wishlistIds: _selectedWishlistId != null
+                ? [_selectedWishlistId!]
+                : [],
           );
 
       // 2. 위시리스트 금액 업데이트
       final wishlistNotifier = ref.read(wishlistProvider.notifier);
-      if (_selectedWishlistIds.isNotEmpty) {
-        await wishlistNotifier.addFundsToSelectedItems(
-          amount.toDouble(),
-          _selectedWishlistIds,
-        );
+      if (_selectedWishlistId != null) {
+        await wishlistNotifier.addFundsToSelectedItems(amount.toDouble(), [
+          _selectedWishlistId!,
+        ]);
       }
 
       if (mounted) {
@@ -157,7 +158,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
           _customCategoryController.clear();
           setState(() {
             _selectedCategoryId = null;
-            _selectedWishlistIds = [];
+            _selectedWishlistId = null;
             _addToCategories = false;
             _isLoading = false;
           });
@@ -224,6 +225,28 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
     final i18n = I18n.of(context);
     final categoriesAsync = ref.watch(categoryProvider);
     final categories = categoriesAsync.asData?.value ?? [];
+
+    // [수정된 스마트 동기화 로직]
+    ref.listen(wishlistProvider, (previous, next) {
+      if (next is AsyncData) {
+        final wishlists = next.asData!.value;
+        if (wishlists.isEmpty) return;
+
+        // 1. 현재 활성화된(달성 전) 목표들 중 '대표'를 찾음
+        final activeWishlists = wishlists.where((w) => !w.isAchieved).toList();
+        if (activeWishlists.isEmpty) return;
+
+        final currentRep = activeWishlists.firstWhere(
+          (w) => w.isRepresentative,
+          orElse: () => activeWishlists.first,
+        );
+
+        // 2. [핵심] 현재 선택된 ID가 실제 '대표'와 다르다면 강제 동기화
+        if (_selectedWishlistId != currentRep.id) {
+          setState(() => _selectedWishlistId = currentRep.id);
+        }
+      }
+    });
 
     // Theme Access
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
@@ -503,6 +526,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
                           final activeWishlists = wishlists
                               .where((w) => !w.isAchieved)
                               .toList();
+
                           if (activeWishlists.isEmpty) {
                             return Text(
                               i18n.isKorean
@@ -518,14 +542,11 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
                             spacing: 8,
                             runSpacing: 8,
                             children: activeWishlists.map((item) {
-                              final isSelected = _selectedWishlistIds.contains(
-                                item.id,
-                              );
+                              final isSelected = _selectedWishlistId == item.id;
                               return FilterChip(
                                 label: Text(item.title),
                                 selected: isSelected,
-                                onSelected: (_) =>
-                                    _toggleWishlistSelection(item.id!),
+                                onSelected: (_) => _selectWishlist(item.id!),
                                 backgroundColor: colors.surface,
                                 selectedColor: colors.accent.withOpacity(0.2),
                                 side: BorderSide(
