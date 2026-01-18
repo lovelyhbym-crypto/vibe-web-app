@@ -424,8 +424,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               style: TextStyle(
                                 color: isPureFinance
                                     ? colors.textMain
-                                    : colors
-                                          .success, // Pure: Black, Cyber: Cyan (Gauge)
+                                    : Colors.white,
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -461,7 +460,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                           backgroundColor: isPureFinance
                               ? colors.border
                               : Colors.grey[800],
-                          color: isPureFinance ? colors.accent : colors.success,
+                          color: isPureFinance
+                              ? colors.accent
+                              : const Color(0xFFD4FF00), // 밝은 네온 노랑/초록으로 통일
                           minHeight: 12,
                           borderRadius: BorderRadius.circular(6),
                         ),

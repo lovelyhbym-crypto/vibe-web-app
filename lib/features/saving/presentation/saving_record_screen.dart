@@ -68,15 +68,13 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
     final vibeTheme = theme.extension<VibeThemeExtension>();
     final colors = vibeTheme?.colors;
     final isPureFinance = colors is PureFinanceColors;
-
     final i18n = I18n.of(context);
 
-    // Sanitize input: remove commas and spaces
+    // 입력값 정제
     final cleanText = _amountController.text
         .replaceAll(',', '')
         .replaceAll(' ', '')
         .trim();
-    // Use int.tryParse for strict integer parsing as requested
     final amount = int.tryParse(cleanText);
 
     if (_selectedCategoryId == null || amount == null || amount <= 0) {
@@ -93,9 +91,9 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
     });
 
     try {
+      // 카테고리 처리 로직
       String finalCategoryName = '';
       final categories = ref.read(categoryProvider).value ?? [];
-
       if (_selectedCategoryId == 'other') {
         final customName = _customCategoryController.text.trim();
         if (customName.isEmpty) {
@@ -108,7 +106,6 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
           return;
         }
         finalCategoryName = customName;
-
         if (_addToCategories) {
           await ref.read(categoryProvider.notifier).addCategory(customName);
         }
@@ -120,7 +117,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
         finalCategoryName = category.name;
       }
 
-      // 1. Save record with associated wishlist IDs
+      // 1. 저축 데이터 저장
       await ref
           .read(savingProvider.notifier)
           .addSaving(
@@ -130,32 +127,32 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
             wishlistIds: _selectedWishlistIds,
           );
 
-      // 2. Update Selected Wishlists (Optimistic & Parallel)
+      // 2. 위시리스트 금액 업데이트
       final wishlistNotifier = ref.read(wishlistProvider.notifier);
       if (_selectedWishlistIds.isNotEmpty) {
         await wishlistNotifier.addFundsToSelectedItems(
           amount.toDouble(),
           _selectedWishlistIds,
         );
-      } else {
-        // If no items selected, optionally still add to all OR do nothing.
-        // The user request suggests specific selection, so we only update selected.
-        // However, previous logic was addSavingToAllGoals.
-        // Let's stick to user's "multi-selection" instruction.
       }
 
       if (mounted) {
-        // 3. Play Success Effects
+        // [변경 1] 상태 업데이트 감지를 위해 500ms 대기 (안정성 확보)
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // 마일스톤 발생 여부 확인
+        final hasMilestone =
+            ref.read(achievementNotifierProvider).asData?.value != null;
+
+        // 이펙트 실행
         HapticFeedback.mediumImpact();
         _confettiController.play();
 
-        // Wait for user to enjoy the effect (2 seconds)
+        // 사용자 경험을 위해 1.5초 대기
         await Future.delayed(const Duration(milliseconds: 1500));
 
         if (mounted) {
-          final filledCount = _selectedWishlistIds.length;
-
-          // Reset form state since IndexedStack preserves it
+          // 입력폼 초기화
           _amountController.clear();
           _customCategoryController.clear();
           setState(() {
@@ -164,73 +161,56 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
             _addToCategories = false;
             _isLoading = false;
           });
+          FocusScope.of(context).unfocus();
 
-          // Hide keyboard
-          if (mounted) {
-            FocusScope.of(context).unfocus();
-
-            // [FIX] 만약 마일스톤 이벤트가 발생했다면 일반 저축 완료 배너는 띄우지 않음
-            final milestoneState = ref.read(achievementNotifierProvider);
-            final hasMilestone = milestoneState.asData?.value != null;
-
-            if (!hasMilestone && mounted) {
-              // Show Success Message (Only if no milestone)
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text('🎉', style: TextStyle(fontSize: 18)),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          filledCount > 0
-                              ? '$filledCount개의 목표가 동시에 채워졌습니다!'
-                              : (i18n.isKorean
-                                    ? '성공적으로 저축했습니다!'
-                                    : 'Saved successfully!'),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+          // [변경 2] 마일스톤이 없을 때만 일반 배너 표시
+          if (!hasMilestone) {
+            // 기존 스낵바 정리
+            ScaffoldMessenger.of(context).clearSnackBars();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('🎉', style: TextStyle(fontSize: 18)),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        // [변경 3] 문구 단순화: "성공적으로 저축했습니다!"로 고정
+                        i18n.isKorean ? '성공적으로 저축했습니다!' : 'Saved successfully!',
+                        style: TextStyle(
+                          // 테마별 텍스트 가시성 확보
+                          color: colors?.textMain ?? Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                  backgroundColor: isPureFinance
-                      ? colors!.surface
-                      : const Color(0xFF1A1A1A),
-                  behavior: SnackBarBehavior.floating,
-                  margin: const EdgeInsets.all(20),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    side: BorderSide(
-                      color: isPureFinance
-                          ? (colors!.border)
-                          : Colors.greenAccent,
-                      width: isPureFinance ? 1 : 2,
                     ),
+                  ],
+                ),
+                backgroundColor: isPureFinance
+                    ? colors.surface
+                    : const Color(0xFF1A1A1A),
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.all(20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(
+                    color: isPureFinance ? colors.border : Colors.greenAccent,
+                    width: isPureFinance ? 1 : 2,
                   ),
                 ),
-              );
-            }
+              ),
+            );
           }
         }
       }
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        // Friendly error message
-        String message = i18n.isKorean
-            ? '저장 중 오류가 발생했습니다. 입력값을 확인해주세요.'
-            : 'Failed to save. Please check your input.';
-
-        if (e.toString().contains('ID 유실') ||
-            e.toString().contains('null ID')) {
-          message = '서버 응답 오류: ID 유실';
-        }
+        String message = i18n.isKorean ? '저장 중 오류가 발생했습니다.' : 'Failed to save.';
+        if (e.toString().contains('ID 유실')) message = '서버 응답 오류: ID 유실';
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message), backgroundColor: Colors.red),
