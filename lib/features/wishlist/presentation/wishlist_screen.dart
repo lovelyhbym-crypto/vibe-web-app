@@ -391,10 +391,11 @@ class WishlistScreen extends ConsumerWidget {
                                             return Hero(
                                               tag: 'wishlist_img_${item.id}',
                                               child: Stack(
-                                                fit: StackFit.expand,
                                                 children: [
-                                                  // (A) 베이스: 흑백 이미지
-                                                  buildImage(true),
+                                                  // (A) 베이스: 흑백 이미지 (자유 정렬 구조)
+                                                  Positioned.fill(
+                                                    child: buildImage(true),
+                                                  ),
 
                                                   // (B) 전경: 컬러 이미지 (진행률만큼 왼쪽에서 오른쪽으로)
                                                   ClipRect(

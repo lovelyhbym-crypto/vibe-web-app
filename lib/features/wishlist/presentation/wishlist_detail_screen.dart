@@ -415,9 +415,10 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                             }
 
                             return Stack(
-                              fit: StackFit.expand,
                               children: [
-                                buildUnifiedImage(true), // 바닥: 흑백
+                                Positioned.fill(
+                                  child: buildUnifiedImage(true), // 바닥: 흑백
+                                ),
                                 ClipRect(
                                   child: Align(
                                     alignment: Alignment.centerLeft,

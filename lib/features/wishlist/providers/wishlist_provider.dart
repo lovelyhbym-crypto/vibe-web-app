@@ -278,11 +278,20 @@ class WishlistNotifier extends _$WishlistNotifier {
     final index = previousList.indexWhere((item) => item.id == id);
     if (index == -1) return;
 
+    final newPrice = price ?? previousList[index].price;
+    final newSavedAmount = previousList[index].savedAmount;
+    final isNowAchieved =
+        newSavedAmount >= newPrice && !previousList[index].isAchieved;
+
     final updatedItem = previousList[index].copyWith(
       title: title ?? previousList[index].title,
-      price: price ?? previousList[index].price,
+      price: newPrice,
       targetDate: targetDate ?? previousList[index].targetDate,
       imageUrl: imageUrl ?? previousList[index].imageUrl,
+      isAchieved: isNowAchieved ? true : previousList[index].isAchieved,
+      achievedAt: isNowAchieved
+          ? DateTime.now()
+          : previousList[index].achievedAt,
     );
 
     final updatedList = List<WishlistModel>.from(previousList);
@@ -306,6 +315,11 @@ class WishlistNotifier extends _$WishlistNotifier {
       if (targetDate != null)
         updates['target_date'] = targetDate.toIso8601String();
       if (imageUrl != null) updates['image_url'] = imageUrl;
+
+      if (isNowAchieved) {
+        updates['is_achieved'] = true;
+        updates['achieved_at'] = updatedItem.achievedAt?.toIso8601String();
+      }
 
       if (updates.isEmpty) return;
 
