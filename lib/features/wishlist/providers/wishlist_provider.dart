@@ -264,6 +264,63 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
   }
 
+  Future<void> updateWishlist(
+    String id, {
+    String? title,
+    double? price,
+    DateTime? targetDate,
+    String? imageUrl,
+  }) async {
+    final authNotifier = ref.read(authProvider.notifier);
+    final user = ref.read(authProvider).asData?.value;
+
+    final previousList = state.valueOrNull ?? [];
+    final index = previousList.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final updatedItem = previousList[index].copyWith(
+      title: title ?? previousList[index].title,
+      price: price ?? previousList[index].price,
+      targetDate: targetDate ?? previousList[index].targetDate,
+      imageUrl: imageUrl ?? previousList[index].imageUrl,
+    );
+
+    final updatedList = List<WishlistModel>.from(previousList);
+    updatedList[index] = updatedItem;
+
+    // Optimistic Update
+    state = AsyncValue.data(updatedList);
+
+    if (authNotifier.isGuest || user == null) {
+      final guestIndex = _guestWishlist.indexWhere((item) => item.id == id);
+      if (guestIndex != -1) {
+        _guestWishlist[guestIndex] = updatedItem;
+      }
+      return;
+    }
+
+    try {
+      final updates = <String, dynamic>{};
+      if (title != null) updates['title'] = title;
+      if (price != null) updates['price'] = price.toInt();
+      if (targetDate != null)
+        updates['target_date'] = targetDate.toIso8601String();
+      if (imageUrl != null) updates['image_url'] = imageUrl;
+
+      if (updates.isEmpty) return;
+
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .update(updates)
+          .eq('id', id);
+    } catch (e) {
+      ref.invalidateSelf();
+      debugPrint('Error updating wishlist: $e');
+      throw Exception('Failed to update wishlist: $e');
+    }
+  }
+
   /// 확장된 addFundsToSelectedItems: 여러 위시리스트에 동시에 정액을 추가
   Future<void> addFundsToSelectedItems(
     double amount,
