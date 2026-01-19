@@ -39,7 +39,6 @@ class WishlistScreen extends ConsumerWidget {
           ),
         ],
       ),
-      // Background color handled by Theme
       body: wishlistAsync.when(
         data: (wishlist) {
           final activeWishlist = wishlist
@@ -49,19 +48,10 @@ class WishlistScreen extends ConsumerWidget {
               )
               .toList();
 
-          // Log filtering results
-          if (activeWishlist.length <
-              wishlist.where((i) => !i.isAchieved).length) {
-            debugPrint(
-              'Filtered out ${wishlist.where((i) => !i.isAchieved).length - activeWishlist.length} items with null IDs',
-            );
-          }
-
           final achievedCount = wishlist
               .where((item) => item.isAchieved)
               .length;
 
-          // Widget for the Achievement Banner
           Widget buildBanner() {
             return GestureDetector(
               onTap: () => context.push('/achieved-goals'),
@@ -70,15 +60,9 @@ class WishlistScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: colors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: colors.border),
-                  boxShadow: isPureFinance
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                          ),
-                        ]
-                      : null,
+                  border: isPureFinance
+                      ? null
+                      : Border.all(color: colors.border),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -160,15 +144,9 @@ class WishlistScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: colors.surface,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: colors.border),
-                              boxShadow: isPureFinance
-                                  ? [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
-                                        blurRadius: 10,
-                                      ),
-                                    ]
-                                  : null,
+                              border: isPureFinance
+                                  ? null
+                                  : Border.all(color: colors.border),
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
@@ -180,53 +158,27 @@ class WishlistScreen extends ConsumerWidget {
                                         MainAxisAlignment.spaceBetween,
                                     children: [
                                       Expanded(
-                                        child: Row(
-                                          children: [
-                                            Flexible(
-                                              child: Text(
-                                                item.title,
-                                                style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: colors.textMain,
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
+                                        child: Text(
+                                          item.title,
+                                          style: TextStyle(
+                                            fontSize: isPureFinance ? 17 : 18,
+                                            fontWeight: FontWeight.w600,
+                                            color: isPureFinance
+                                                ? const Color(0xFF191F28)
+                                                : colors.textMain,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      // Price Badge (No Image Case)
-                                      isPureFinance
-                                          ? Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 4,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.grey[200],
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                i18n.formatCurrency(item.price),
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: colors.textMain,
-                                                ),
-                                              ),
-                                            )
-                                          : Text(
-                                              i18n.formatCurrency(item.price),
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.bold,
-                                                color: colors.textMain,
-                                              ),
-                                            ),
+                                      Text(
+                                        i18n.formatCurrency(item.price),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: colors.textMain,
+                                        ),
+                                      ),
                                       const SizedBox(width: 8),
                                       IconButton(
                                         padding: EdgeInsets.zero,
@@ -236,15 +188,13 @@ class WishlistScreen extends ConsumerWidget {
                                               ? Icons.star
                                               : Icons.star_border,
                                           color: item.isRepresentative
-                                              ? Colors.amber
+                                              ? const Color(0xFFFFC107)
                                               : colors.textSub,
                                           size: 22,
                                         ),
-                                        onPressed: () {
-                                          ref
-                                              .read(wishlistProvider.notifier)
-                                              .setRepresentative(item.id!);
-                                        },
+                                        onPressed: () => ref
+                                            .read(wishlistProvider.notifier)
+                                            .setRepresentative(item.id!),
                                       ),
                                     ],
                                   ),
@@ -266,44 +216,58 @@ class WishlistScreen extends ConsumerWidget {
                                         color: isPureFinance
                                             ? colors.accent
                                             : const Color(0xFFD4FF00),
-                                        minHeight: 8,
-                                        borderRadius: BorderRadius.circular(4),
+                                        minHeight: isPureFinance ? 3.0 : 3.0,
+                                        borderRadius: BorderRadius.circular(
+                                          isPureFinance ? 2.0 : 2.0,
+                                        ),
                                       );
                                     },
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 8),
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
+                                      Text(
+                                        '${(progress * 100).toInt()}% ${i18n.achieved}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isPureFinance
+                                              ? Colors.grey[500]
+                                              : colors.textSub,
+                                        ),
+                                      ),
                                       RichText(
                                         text: TextSpan(
                                           children: [
                                             TextSpan(
-                                              text:
-                                                  '${(progress * 100).toInt()}%',
+                                              text: '남은 금액: ',
                                               style: TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: const Color(0xFF333D4B),
+                                                color: isPureFinance
+                                                    ? const Color(0xFF8B95A1)
+                                                    : Colors.white60,
+                                                fontSize: isPureFinance
+                                                    ? 12
+                                                    : 11,
+                                                fontWeight: isPureFinance
+                                                    ? FontWeight.normal
+                                                    : FontWeight.w400,
                                               ),
                                             ),
                                             TextSpan(
-                                              text: ' ${i18n.achieved}',
+                                              text: i18n.formatCurrency(
+                                                item.totalGoal -
+                                                    item.savedAmount,
+                                              ),
                                               style: TextStyle(
+                                                color: isPureFinance
+                                                    ? colors.textMain
+                                                    : const Color(0xFFD4FF00),
                                                 fontSize: 12,
-                                                color: colors.textSub,
+                                                fontWeight: FontWeight.bold,
                                               ),
                                             ),
                                           ],
-                                        ),
-                                      ),
-                                      Text(
-                                        '남은 금액: ${i18n.formatCurrency(item.totalGoal - item.savedAmount)}',
-                                        style: TextStyle(
-                                          color: colors.textMain,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
                                         ),
                                       ),
                                     ],
@@ -317,48 +281,50 @@ class WishlistScreen extends ConsumerWidget {
                               horizontal: 16,
                               vertical: 6,
                             ),
-                            child: Card(
-                              elevation: 0,
-                              clipBehavior: Clip.antiAlias,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(color: colors.border),
-                              ),
-                              color: Theme.of(context).cardColor,
-                              child: Stack(
-                                children: [
-                                  Positioned.fill(
+                            decoration: BoxDecoration(
+                              color: colors.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: isPureFinance
+                                  ? null
+                                  : Border.all(color: colors.border),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(12),
+                                  ),
+                                  child: SizedBox(
+                                    height: 160,
+                                    width: double.infinity,
                                     child: Hero(
                                       tag: 'wishlist_img_${item.id}',
                                       child: LayoutBuilder(
                                         builder: (context, constraints) {
-                                          final double width =
-                                              constraints.maxWidth;
-                                          final double height =
-                                              constraints.maxHeight;
-
+                                          final w = constraints.maxWidth;
+                                          final h = constraints.maxHeight;
                                           return Stack(
                                             children: [
-                                              // (A) 바닥: 100% 흑백 이미지 (꽉 채움)
                                               Positioned.fill(
                                                 child: ColorFiltered(
                                                   colorFilter:
                                                       const ColorFilter.matrix([
-                                                        0.2126,
-                                                        0.7152,
-                                                        0.0722,
+                                                        0.2,
+                                                        0.5,
+                                                        0.1,
                                                         0,
+                                                        -30,
+                                                        0.2,
+                                                        0.5,
+                                                        0.1,
                                                         0,
-                                                        0.2126,
-                                                        0.7152,
-                                                        0.0722,
+                                                        -30,
+                                                        0.2,
+                                                        0.5,
+                                                        0.1,
                                                         0,
-                                                        0,
-                                                        0.2126,
-                                                        0.7152,
-                                                        0.0722,
-                                                        0,
-                                                        0,
+                                                        -30,
                                                         0,
                                                         0,
                                                         0,
@@ -367,13 +333,12 @@ class WishlistScreen extends ConsumerWidget {
                                                       ]),
                                                   child: Image.network(
                                                     item.imageUrl!,
-                                                    width: width,
-                                                    height: height,
+                                                    width: w,
+                                                    height: h,
                                                     fit: BoxFit.cover,
                                                   ),
                                                 ),
                                               ),
-                                              // (B) 위: 달성률만큼 왼쪽에서 차오르는 컬러 이미지
                                               ClipRect(
                                                 child: Align(
                                                   alignment:
@@ -381,8 +346,8 @@ class WishlistScreen extends ConsumerWidget {
                                                   widthFactor: progress,
                                                   child: Image.network(
                                                     item.imageUrl!,
-                                                    width: width,
-                                                    height: height,
+                                                    width: w,
+                                                    height: h,
                                                     fit: BoxFit.cover,
                                                   ),
                                                 ),
@@ -393,158 +358,146 @@ class WishlistScreen extends ConsumerWidget {
                                       ),
                                     ),
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Row(
-                                                children: [
-                                                  Flexible(
-                                                    child: Text(
-                                                      item.title,
-                                                      style: const TextStyle(
-                                                        fontSize: 18,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        color: Colors.white,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                ],
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              item.title,
+                                              style: TextStyle(
+                                                fontSize: isPureFinance
+                                                    ? 17
+                                                    : 18,
+                                                fontWeight: FontWeight.w600,
+                                                color: isPureFinance
+                                                    ? const Color(0xFF191F28)
+                                                    : Colors.white,
                                               ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                            const SizedBox(width: 8),
-                                            isPureFinance
-                                                ? ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
-                                                    child: BackdropFilter(
-                                                      filter: ImageFilter.blur(
-                                                        sigmaX: 5,
-                                                        sigmaY: 5,
-                                                      ),
-                                                      child: Container(
-                                                        padding:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 10,
-                                                              vertical: 4,
-                                                            ),
-                                                        color: Colors.white
-                                                            .withOpacity(0.4),
-                                                        child: Text(
-                                                          i18n.formatCurrency(
-                                                            item.price,
-                                                          ),
-                                                          style: TextStyle(
-                                                            fontSize: 16,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            color:
-                                                                colors.textMain,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                : Text(
-                                                    i18n.formatCurrency(
-                                                      item.price,
-                                                    ),
-                                                    style: TextStyle(
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: colors.textMain,
-                                                    ),
-                                                  ),
-                                            const SizedBox(width: 8),
-                                            IconButton(
-                                              padding: EdgeInsets.zero,
-                                              constraints:
-                                                  const BoxConstraints(),
-                                              icon: Icon(
-                                                item.isRepresentative
-                                                    ? Icons.star
-                                                    : Icons.star_border,
-                                                color: item.isRepresentative
-                                                    ? Colors.amber
-                                                    : Colors.white70,
-                                                size: 22,
-                                              ),
-                                              onPressed: () {
-                                                ref
-                                                    .read(
-                                                      wishlistProvider.notifier,
-                                                    )
-                                                    .setRepresentative(
-                                                      item.id!,
-                                                    );
-                                              },
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            i18n.formatCurrency(item.price),
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: colors.textMain,
                                             ),
-                                          ],
+                                          ),
+                                          const SizedBox(width: 8),
+                                          IconButton(
+                                            padding: EdgeInsets.zero,
+                                            constraints: const BoxConstraints(),
+                                            icon: Icon(
+                                              item.isRepresentative
+                                                  ? Icons.star
+                                                  : Icons.star_border,
+                                              color: item.isRepresentative
+                                                  ? const Color(0xFFFFC107)
+                                                  : isPureFinance
+                                                  ? Colors.grey[400]
+                                                  : Colors.white70,
+                                              size: 22,
+                                            ),
+                                            onPressed: () => ref
+                                                .read(wishlistProvider.notifier)
+                                                .setRepresentative(item.id!),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      TweenAnimationBuilder<double>(
+                                        key: ValueKey(progress),
+                                        tween: Tween<double>(
+                                          begin: 0.0,
+                                          end: progress,
                                         ),
-                                        const SizedBox(height: 12),
-                                        TweenAnimationBuilder<double>(
-                                          key: ValueKey(progress),
-                                          tween: Tween<double>(
-                                            begin: 0.0,
-                                            end: progress,
-                                          ),
-                                          duration: const Duration(
-                                            milliseconds: 1500,
-                                          ),
-                                          curve: Curves.easeOutExpo,
-                                          builder: (context, value, child) {
-                                            return LinearProgressIndicator(
-                                              value: value,
-                                              backgroundColor: Colors.grey[800],
+                                        duration: const Duration(
+                                          milliseconds: 1500,
+                                        ),
+                                        curve: Curves.easeOutExpo,
+                                        builder: (context, value, child) {
+                                          return LinearProgressIndicator(
+                                            value: value,
+                                            backgroundColor: isPureFinance
+                                                ? colors.border
+                                                : Colors.grey[800],
+                                            color: isPureFinance
+                                                ? colors.accent
+                                                : const Color(0xFFD4FF00),
+                                            minHeight: 3.0,
+                                            borderRadius: BorderRadius.circular(
+                                              2.0,
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            '${(progress * 100).toInt()}% ${i18n.achieved}',
+                                            style: TextStyle(
+                                              fontSize: 12,
                                               color: isPureFinance
-                                                  ? colors.accent
-                                                  : const Color(0xFFD4FF00),
-                                              minHeight: 8,
-                                              borderRadius:
-                                                  BorderRadius.circular(4),
-                                            );
-                                          },
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              '${(progress * 100).toInt()}% ${i18n.achieved}',
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.white60,
-                                              ),
+                                                  ? Colors.grey[500]
+                                                  : Colors.white60,
                                             ),
-                                            Text(
-                                              '남은 금액: ${i18n.formatCurrency(item.totalGoal - item.savedAmount)}',
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 12,
-                                              ),
+                                          ),
+                                          RichText(
+                                            text: TextSpan(
+                                              children: [
+                                                TextSpan(
+                                                  text: '남은 금액: ',
+                                                  style: TextStyle(
+                                                    color: isPureFinance
+                                                        ? const Color(
+                                                            0xFF8B95A1,
+                                                          )
+                                                        : Colors.white60,
+                                                    fontSize: isPureFinance
+                                                        ? 12
+                                                        : 11,
+                                                    fontWeight: isPureFinance
+                                                        ? FontWeight.normal
+                                                        : FontWeight.w400,
+                                                  ),
+                                                ),
+                                                TextSpan(
+                                                  text: i18n.formatCurrency(
+                                                    item.totalGoal -
+                                                        item.savedAmount,
+                                                  ),
+                                                  style: TextStyle(
+                                                    color: isPureFinance
+                                                        ? colors.textMain
+                                                        : const Color(
+                                                            0xFFD4FF00,
+                                                          ),
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           );
 
@@ -554,39 +507,27 @@ class WishlistScreen extends ConsumerWidget {
                       child: cardcontent,
                     );
 
-                    if (item.id == null) {
-                      return card;
-                    }
+                    if (item.id == null) return card;
 
                     return Dismissible(
-                      // Ensure key is never null or duplicate
                       key: ValueKey(item.id ?? DateTime.now().toString()),
                       direction: DismissDirection.endToStart,
                       confirmDismiss: (direction) async {
-                        if (item.id == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('오류: ID가 없는 항목입니다.')),
-                          );
-                          return false;
-                        }
-
+                        if (item.id == null) return false;
                         final confirmed = await _showDeleteConfirmation(
                           context,
                         );
                         if (confirmed != true) return false;
-
                         try {
-                          // Call delete with STRICT synchronization
                           await ref
                               .read(wishlistProvider.notifier)
                               .deleteWishlist(item.id!);
-
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('목표가 삭제되었습니다.')),
                             );
                           }
-                          return true; // Triggers UI removal
+                          return true;
                         } catch (e) {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -596,11 +537,8 @@ class WishlistScreen extends ConsumerWidget {
                               ),
                             );
                           }
-                          return false; // Snaps back
+                          return false;
                         }
-                      },
-                      onDismissed: (_) {
-                        // handled in confirmDismiss and state update
                       },
                       background: Container(
                         alignment: Alignment.centerRight,
@@ -621,9 +559,7 @@ class WishlistScreen extends ConsumerWidget {
                     child: buildBanner(),
                   ),
                 ),
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 80),
-                ), // Bottom padding for FAB
+                const SliverToBoxAdapter(child: SizedBox(height: 80)),
               ],
             ],
           );
@@ -638,13 +574,32 @@ class WishlistScreen extends ConsumerWidget {
       ),
       floatingActionButton: BouncyButton(
         onTap: () => _showAddDialog(context, ref),
-        child: FloatingActionButton(
-          heroTag: 'wishlist_add_fab',
-          onPressed: () => _showAddDialog(context, ref),
-          backgroundColor: isPureFinance ? colors.accent : colors.accent,
-          elevation: 0,
-          shape: const CircleBorder(),
-          child: const Icon(Icons.add, color: Colors.white),
+        child: Container(
+          decoration: isPureFinance
+              ? null
+              : BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: colors.accent.withOpacity(0.5),
+                      blurRadius: 15,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+          child: FloatingActionButton(
+            heroTag: 'wishlist_add_fab',
+            onPressed: () => _showAddDialog(context, ref),
+            backgroundColor: isPureFinance
+                ? colors.accent
+                : const Color(0xFFD4FF00),
+            elevation: 0,
+            shape: const CircleBorder(),
+            child: Icon(
+              Icons.add,
+              color: isPureFinance ? Colors.white : Colors.black,
+            ),
+          ),
         ),
       ),
     );
@@ -671,8 +626,7 @@ class WishlistScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: colors.danger),
-            child: const Text('삭제'),
+            child: const Text('삭제', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),

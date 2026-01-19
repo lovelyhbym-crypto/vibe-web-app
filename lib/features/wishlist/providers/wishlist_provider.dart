@@ -278,20 +278,20 @@ class WishlistNotifier extends _$WishlistNotifier {
     final index = previousList.indexWhere((item) => item.id == id);
     if (index == -1) return;
 
-    final newPrice = price ?? previousList[index].price;
-    final newSavedAmount = previousList[index].savedAmount;
-    final isNowAchieved =
-        newSavedAmount >= newPrice && !previousList[index].isAchieved;
+    final originalItem = previousList[index];
+    final newTotalGoal = price ?? originalItem.totalGoal;
+    final isNowAchieved = originalItem.savedAmount >= newTotalGoal;
 
-    final updatedItem = previousList[index].copyWith(
-      title: title ?? previousList[index].title,
-      price: newPrice,
-      targetDate: targetDate ?? previousList[index].targetDate,
-      imageUrl: imageUrl ?? previousList[index].imageUrl,
-      isAchieved: isNowAchieved ? true : previousList[index].isAchieved,
-      achievedAt: isNowAchieved
+    final updatedItem = originalItem.copyWith(
+      title: title ?? originalItem.title,
+      price: price ?? originalItem.price,
+      totalGoal: newTotalGoal,
+      targetDate: targetDate ?? originalItem.targetDate,
+      imageUrl: imageUrl ?? originalItem.imageUrl,
+      isAchieved: isNowAchieved,
+      achievedAt: (isNowAchieved && !originalItem.isAchieved)
           ? DateTime.now()
-          : previousList[index].achievedAt,
+          : (isNowAchieved ? originalItem.achievedAt : null),
     );
 
     final updatedList = List<WishlistModel>.from(previousList);
@@ -311,15 +311,17 @@ class WishlistNotifier extends _$WishlistNotifier {
     try {
       final updates = <String, dynamic>{};
       if (title != null) updates['title'] = title;
-      if (price != null) updates['price'] = price.toInt();
+      if (price != null) {
+        updates['price'] = price.toInt();
+        updates['total_goal'] = price.toInt();
+      }
       if (targetDate != null)
         updates['target_date'] = targetDate.toIso8601String();
       if (imageUrl != null) updates['image_url'] = imageUrl;
 
-      if (isNowAchieved) {
-        updates['is_achieved'] = true;
-        updates['achieved_at'] = updatedItem.achievedAt?.toIso8601String();
-      }
+      // [핵심] 달성 상태 항상 명시적 업데이트
+      updates['is_achieved'] = isNowAchieved;
+      updates['achieved_at'] = updatedItem.achievedAt?.toIso8601String();
 
       if (updates.isEmpty) return;
 

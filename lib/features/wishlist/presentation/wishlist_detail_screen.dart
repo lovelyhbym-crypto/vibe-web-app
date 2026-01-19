@@ -241,8 +241,17 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // [추가] 프로바이더에서 현재 아이템의 최신 상태를 실시간으로 감시
+    final wishlistState = ref.watch(wishlistProvider);
+    final item = wishlistState.maybeWhen(
+      data: (list) => list.firstWhere(
+        (e) => e.id == widget.item.id,
+        orElse: () => widget.item,
+      ),
+      orElse: () => widget.item,
+    );
+
     final i18n = I18n.of(context);
-    final item = widget.item;
     final progress = item.totalGoal > 0
         ? (item.savedAmount / item.totalGoal).clamp(0.0, 1.0)
         : 0.0;
@@ -273,13 +282,15 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
               leading: Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: isPureFinance
+                      ? Colors.white.withOpacity(0.9)
+                      : Colors.black.withOpacity(0.5),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
                   icon: Icon(
                     Icons.arrow_back_ios_new,
-                    color: isPureFinance ? Colors.black : Colors.black87,
+                    color: isPureFinance ? Colors.black : colors.accent,
                   ),
                   onPressed: () => context.pop(),
                 ),
@@ -289,13 +300,15 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                 Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
+                    color: isPureFinance
+                        ? Colors.white.withOpacity(0.9)
+                        : Colors.black.withOpacity(0.5),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
                     icon: Icon(
                       _isEditing ? Icons.close : Icons.edit,
-                      color: Colors.black87,
+                      color: isPureFinance ? Colors.black87 : colors.accent,
                       size: 24,
                     ),
                     onPressed: () {
@@ -321,23 +334,29 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                   Container(
                     margin: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
+                      color: isPureFinance
+                          ? Colors.white.withOpacity(0.9)
+                          : Colors.black.withOpacity(0.5),
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
                       onPressed: _isSaving ? null : _saveChanges,
                       icon: _isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.black,
+                                color: isPureFinance
+                                    ? Colors.black
+                                    : colors.accent,
                               ),
                             )
-                          : const Icon(
+                          : Icon(
                               Icons.check,
-                              color: Colors.black87,
+                              color: isPureFinance
+                                  ? Colors.black87
+                                  : colors.accent,
                               size: 28,
                             ),
                     ),
@@ -387,26 +406,10 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               if (isGrayscale) {
                                 return ColorFiltered(
                                   colorFilter: const ColorFilter.matrix([
-                                    0.2126,
-                                    0.7152,
-                                    0.0722,
-                                    0,
-                                    0,
-                                    0.2126,
-                                    0.7152,
-                                    0.0722,
-                                    0,
-                                    0,
-                                    0.2126,
-                                    0.7152,
-                                    0.0722,
-                                    0,
-                                    0,
-                                    0,
-                                    0,
-                                    0,
-                                    1,
-                                    0,
+                                    0.21, 0.72, 0.07, 0, -50, // Red
+                                    0.21, 0.72, 0.07, 0, -50, // Green
+                                    0.21, 0.72, 0.07, 0, -50, // Blue
+                                    0, 0, 0, 1, 0, // Alpha
                                   ]),
                                   child: img,
                                 );
@@ -504,21 +507,29 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               ? TextField(
                                   controller: _titleController,
                                   style: TextStyle(
-                                    fontSize: 32,
+                                    fontSize: 24,
                                     fontWeight: FontWeight.bold,
-                                    color: isPureFinance
-                                        ? colors.textMain
-                                        : Colors.white,
-                                    height: 1.2,
+                                    color: colors.textMain,
                                   ),
                                   decoration: InputDecoration(
-                                    hintText: '목표 이름',
-                                    hintStyle: TextStyle(
-                                      color: isPureFinance
-                                          ? colors.textSub
-                                          : Colors.white30,
+                                    labelText: '목표 이름 수정', // 라벨 부여
+                                    filled: true,
+                                    fillColor: isPureFinance
+                                        ? colors.surface
+                                        : Colors.white.withOpacity(0.1),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
-                                    border: InputBorder.none,
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: colors.accent.withOpacity(0.5),
+                                      ),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
                                   ),
                                 )
                               : Text(

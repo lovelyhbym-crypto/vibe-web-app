@@ -540,30 +540,90 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
                           }
                           return Wrap(
                             spacing: 8,
-                            runSpacing: 8,
+                            runSpacing: 10,
                             children: activeWishlists.map((item) {
                               final isSelected = _selectedWishlistId == item.id;
-                              return FilterChip(
-                                label: Text(item.title),
-                                selected: isSelected,
-                                onSelected: (_) => _selectWishlist(item.id!),
-                                backgroundColor: colors.surface,
-                                selectedColor: colors.accent.withOpacity(0.2),
-                                side: BorderSide(
-                                  color: isSelected
-                                      ? colors.accent
-                                      : colors.border,
-                                ),
-                                labelStyle: TextStyle(
-                                  color: isSelected
-                                      ? colors.accent
-                                      : colors.textMain,
-                                  fontWeight: isSelected
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                              return GestureDetector(
+                                onTap: () => _selectWishlist(item.id!),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  width:
+                                      (MediaQuery.of(context).size.width - 56) /
+                                      2, // 2-column style
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 16,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isPureFinance
+                                        ? (isSelected
+                                              ? colors.accent.withOpacity(0.08)
+                                              : colors.surface)
+                                        : Colors.black, // 배경을 어둡게 하여 눈부심 방지
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: isSelected
+                                        ? Border.all(
+                                            color: isPureFinance
+                                                ? colors.accent
+                                                : const Color(
+                                                    0xFFD4FF00,
+                                                  ), // 선택 시 그린 네온 테두리
+                                            width: 2,
+                                          )
+                                        : Border.all(
+                                            color: isPureFinance
+                                                ? colors.border
+                                                : Colors.white10,
+                                          ),
+                                    boxShadow: (isSelected && !isPureFinance)
+                                        ? [
+                                            BoxShadow(
+                                              color: const Color(
+                                                0xFFD4FF00,
+                                              ).withOpacity(0.3),
+                                              blurRadius: 8,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          item.title,
+                                          style: TextStyle(
+                                            color: isSelected
+                                                ? (isPureFinance
+                                                      ? colors.accent
+                                                      : const Color(0xFFD4FF00))
+                                                : (isPureFinance
+                                                      ? colors.textMain
+                                                      : Colors.white70),
+                                            fontWeight: isSelected
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                            fontSize: 14,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        isSelected
+                                            ? Icons.check_circle
+                                            : Icons.circle_outlined,
+                                        size: 20,
+                                        color: isSelected
+                                            ? (isPureFinance
+                                                  ? colors.accent
+                                                  : const Color(0xFFD4FF00))
+                                            : (isPureFinance
+                                                  ? colors.textSub
+                                                  : Colors.white24),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               );
                             }).toList(),
@@ -583,7 +643,9 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
                       onPressed: _isLoading ? null : _submit,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: colors.accent,
-                        foregroundColor: Colors.white,
+                        foregroundColor: isPureFinance
+                            ? Colors.white
+                            : Colors.black,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
