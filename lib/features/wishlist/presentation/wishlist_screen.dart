@@ -328,14 +328,89 @@ class WishlistScreen extends ConsumerWidget {
                               child: Stack(
                                 children: [
                                   Positioned.fill(
-                                    child: Hero(
-                                      tag: 'wishlist_img_${item.id}',
-                                      child: Image.network(
-                                        item.imageUrl!,
-                                        fit: BoxFit.cover,
-                                        color: Colors.black.withAlpha(128),
-                                        colorBlendMode: BlendMode.darken,
-                                      ),
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final double width =
+                                            constraints.maxWidth;
+                                        final double height =
+                                            constraints.maxHeight;
+
+                                        return TweenAnimationBuilder<double>(
+                                          key: ValueKey(item.savedAmount),
+                                          tween: Tween<double>(
+                                            begin: 0.0,
+                                            end: progress,
+                                          ),
+                                          duration: const Duration(
+                                            milliseconds: 1200,
+                                          ),
+                                          curve: Curves.easeOutExpo,
+                                          builder: (context, animValue, child) {
+                                            // 공통 이미지 빌더 (필터 충돌 제거)
+                                            Widget buildImage(
+                                              bool isGrayscale,
+                                            ) {
+                                              final img = Image.network(
+                                                item.imageUrl!,
+                                                width: width,
+                                                height: height,
+                                                fit: BoxFit.cover,
+                                              );
+
+                                              if (isGrayscale) {
+                                                return ColorFiltered(
+                                                  colorFilter:
+                                                      const ColorFilter.matrix([
+                                                        0.2126,
+                                                        0.7152,
+                                                        0.0722,
+                                                        0,
+                                                        0,
+                                                        0.2126,
+                                                        0.7152,
+                                                        0.0722,
+                                                        0,
+                                                        0,
+                                                        0.2126,
+                                                        0.7152,
+                                                        0.0722,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        0,
+                                                        1,
+                                                        0,
+                                                      ]),
+                                                  child: img,
+                                                );
+                                              }
+                                              return img;
+                                            }
+
+                                            return Hero(
+                                              tag: 'wishlist_img_${item.id}',
+                                              child: Stack(
+                                                fit: StackFit.expand,
+                                                children: [
+                                                  // (A) 베이스: 흑백 이미지
+                                                  buildImage(true),
+
+                                                  // (B) 전경: 컬러 이미지 (진행률만큼 왼쪽에서 오른쪽으로)
+                                                  ClipRect(
+                                                    child: Align(
+                                                      alignment:
+                                                          Alignment.centerLeft,
+                                                      widthFactor: animValue,
+                                                      child: buildImage(false),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        );
+                                      },
                                     ),
                                   ),
                                   Padding(
