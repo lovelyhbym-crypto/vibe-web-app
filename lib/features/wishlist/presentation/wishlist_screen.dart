@@ -328,37 +328,20 @@ class WishlistScreen extends ConsumerWidget {
                               child: Stack(
                                 children: [
                                   Positioned.fill(
-                                    child: LayoutBuilder(
-                                      builder: (context, constraints) {
-                                        final double width =
-                                            constraints.maxWidth;
-                                        final double height =
-                                            constraints.maxHeight;
+                                    child: Hero(
+                                      tag: 'wishlist_img_${item.id}',
+                                      child: LayoutBuilder(
+                                        builder: (context, constraints) {
+                                          final double width =
+                                              constraints.maxWidth;
+                                          final double height =
+                                              constraints.maxHeight;
 
-                                        return TweenAnimationBuilder<double>(
-                                          key: ValueKey(item.savedAmount),
-                                          tween: Tween<double>(
-                                            begin: 0.0,
-                                            end: progress,
-                                          ),
-                                          duration: const Duration(
-                                            milliseconds: 1200,
-                                          ),
-                                          curve: Curves.easeOutExpo,
-                                          builder: (context, animValue, child) {
-                                            // 공통 이미지 빌더 (필터 충돌 제거)
-                                            Widget buildImage(
-                                              bool isGrayscale,
-                                            ) {
-                                              final img = Image.network(
-                                                item.imageUrl!,
-                                                width: width,
-                                                height: height,
-                                                fit: BoxFit.cover,
-                                              );
-
-                                              if (isGrayscale) {
-                                                return ColorFiltered(
+                                          return Stack(
+                                            children: [
+                                              // (A) 바닥: 100% 흑백 이미지 (꽉 채움)
+                                              Positioned.fill(
+                                                child: ColorFiltered(
                                                   colorFilter:
                                                       const ColorFilter.matrix([
                                                         0.2126,
@@ -382,36 +365,32 @@ class WishlistScreen extends ConsumerWidget {
                                                         1,
                                                         0,
                                                       ]),
-                                                  child: img,
-                                                );
-                                              }
-                                              return img;
-                                            }
-
-                                            return Hero(
-                                              tag: 'wishlist_img_${item.id}',
-                                              child: Stack(
-                                                children: [
-                                                  // (A) 베이스: 흑백 이미지 (자유 정렬 구조)
-                                                  Positioned.fill(
-                                                    child: buildImage(true),
+                                                  child: Image.network(
+                                                    item.imageUrl!,
+                                                    width: width,
+                                                    height: height,
+                                                    fit: BoxFit.cover,
                                                   ),
-
-                                                  // (B) 전경: 컬러 이미지 (진행률만큼 왼쪽에서 오른쪽으로)
-                                                  ClipRect(
-                                                    child: Align(
-                                                      alignment:
-                                                          Alignment.centerLeft,
-                                                      widthFactor: animValue,
-                                                      child: buildImage(false),
-                                                    ),
-                                                  ),
-                                                ],
+                                                ),
                                               ),
-                                            );
-                                          },
-                                        );
-                                      },
+                                              // (B) 위: 달성률만큼 왼쪽에서 차오르는 컬러 이미지
+                                              ClipRect(
+                                                child: Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  widthFactor: progress,
+                                                  child: Image.network(
+                                                    item.imageUrl!,
+                                                    width: width,
+                                                    height: height,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      ),
                                     ),
                                   ),
                                   Padding(
