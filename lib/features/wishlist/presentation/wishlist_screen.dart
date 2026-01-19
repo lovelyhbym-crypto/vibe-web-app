@@ -60,9 +60,6 @@ class WishlistScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: colors.surface,
                   borderRadius: BorderRadius.circular(16),
-                  border: isPureFinance
-                      ? null
-                      : Border.all(color: colors.border),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -74,21 +71,21 @@ class WishlistScreen extends ConsumerWidget {
                           "나의 성공 기록",
                           style: TextStyle(
                             color: colors.textMain,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           "총 $achievedCount개의 목표 달성 완료",
-                          style: TextStyle(color: colors.textSub, fontSize: 14),
+                          style: TextStyle(color: colors.textSub, fontSize: 12),
                         ),
                       ],
                     ),
                     Icon(
                       Icons.arrow_forward_ios,
-                      color: colors.accent,
-                      size: 18,
+                      color: isPureFinance ? colors.textSub : colors.accent,
+                      size: 16,
                     ),
                   ],
                 ),
@@ -144,9 +141,6 @@ class WishlistScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: colors.surface,
                               borderRadius: BorderRadius.circular(12),
-                              border: isPureFinance
-                                  ? null
-                                  : Border.all(color: colors.border),
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(16.0),
@@ -161,7 +155,7 @@ class WishlistScreen extends ConsumerWidget {
                                         child: Text(
                                           item.title,
                                           style: TextStyle(
-                                            fontSize: isPureFinance ? 17 : 18,
+                                            fontSize: 16,
                                             fontWeight: FontWeight.w600,
                                             color: isPureFinance
                                                 ? const Color(0xFF191F28)
@@ -174,7 +168,7 @@ class WishlistScreen extends ConsumerWidget {
                                       Text(
                                         i18n.formatCurrency(item.price),
                                         style: TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 15,
                                           fontWeight: FontWeight.bold,
                                           color: colors.textMain,
                                         ),
@@ -214,11 +208,11 @@ class WishlistScreen extends ConsumerWidget {
                                         value: value,
                                         backgroundColor: colors.border,
                                         color: isPureFinance
-                                            ? colors.accent
+                                            ? colors.textMain
                                             : const Color(0xFFD4FF00),
-                                        minHeight: isPureFinance ? 3.0 : 3.0,
+                                        minHeight: 3.0,
                                         borderRadius: BorderRadius.circular(
-                                          isPureFinance ? 2.0 : 2.0,
+                                          2.0,
                                         ),
                                       );
                                     },
@@ -246,9 +240,7 @@ class WishlistScreen extends ConsumerWidget {
                                                 color: isPureFinance
                                                     ? const Color(0xFF8B95A1)
                                                     : Colors.white60,
-                                                fontSize: isPureFinance
-                                                    ? 12
-                                                    : 11,
+                                                fontSize: 12,
                                                 fontWeight: isPureFinance
                                                     ? FontWeight.normal
                                                     : FontWeight.w400,
@@ -263,7 +255,9 @@ class WishlistScreen extends ConsumerWidget {
                                                 color: isPureFinance
                                                     ? colors.textMain
                                                     : const Color(0xFFD4FF00),
-                                                fontSize: 12,
+                                                fontSize: isPureFinance
+                                                    ? 13
+                                                    : 12,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),
@@ -284,9 +278,6 @@ class WishlistScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: colors.surface,
                               borderRadius: BorderRadius.circular(12),
-                              border: isPureFinance
-                                  ? null
-                                  : Border.all(color: colors.border),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,9 +364,7 @@ class WishlistScreen extends ConsumerWidget {
                                             child: Text(
                                               item.title,
                                               style: TextStyle(
-                                                fontSize: isPureFinance
-                                                    ? 17
-                                                    : 18,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.w600,
                                                 color: isPureFinance
                                                     ? const Color(0xFF191F28)
@@ -388,7 +377,7 @@ class WishlistScreen extends ConsumerWidget {
                                           Text(
                                             i18n.formatCurrency(item.price),
                                             style: TextStyle(
-                                              fontSize: 16,
+                                              fontSize: 15,
                                               fontWeight: FontWeight.bold,
                                               color: colors.textMain,
                                             ),
@@ -432,7 +421,7 @@ class WishlistScreen extends ConsumerWidget {
                                                 ? colors.border
                                                 : Colors.grey[800],
                                             color: isPureFinance
-                                                ? colors.accent
+                                                ? colors.textMain
                                                 : const Color(0xFFD4FF00),
                                             minHeight: 3.0,
                                             borderRadius: BorderRadius.circular(
@@ -466,9 +455,7 @@ class WishlistScreen extends ConsumerWidget {
                                                             0xFF8B95A1,
                                                           )
                                                         : Colors.white60,
-                                                    fontSize: isPureFinance
-                                                        ? 12
-                                                        : 11,
+                                                    fontSize: 12,
                                                     fontWeight: isPureFinance
                                                         ? FontWeight.normal
                                                         : FontWeight.w400,
@@ -485,7 +472,9 @@ class WishlistScreen extends ConsumerWidget {
                                                         : const Color(
                                                             0xFFD4FF00,
                                                           ),
-                                                    fontSize: 12,
+                                                    fontSize: isPureFinance
+                                                        ? 13
+                                                        : 12,
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 ),

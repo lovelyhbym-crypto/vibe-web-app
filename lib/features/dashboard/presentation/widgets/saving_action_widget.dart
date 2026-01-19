@@ -14,12 +14,15 @@ class SavingActionWidget extends StatelessWidget {
         onTap: () => context.push('/saving'),
         child: Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: Colors.black, // 어두운 배경으로 눈부심 방지
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: limeColor.withAlpha(77), width: 1),
+            border: Border.all(
+              color: const Color(0xFFD4FF00).withOpacity(0.3),
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
-                color: limeColor.withAlpha(26),
+                color: const Color(0xFFD4FF00).withOpacity(0.1),
                 blurRadius: 16,
                 offset: const Offset(0, 4),
               ),
@@ -37,7 +40,7 @@ class SavingActionWidget extends StatelessWidget {
                 child: const Icon(
                   Icons.account_balance_wallet,
                   size: 32,
-                  color: limeColor,
+                  color: Color(0xFFD4FF00),
                 ),
               ),
               const SizedBox(height: 12),

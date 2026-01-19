@@ -347,24 +347,36 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
                             },
                             backgroundColor: isPureFinance
                                 ? colors.surface
-                                : colors.surface,
-                            selectedColor: colors.accent,
+                                : Colors.black, // Cyberpunk: Black
+                            selectedColor: isPureFinance
+                                ? colors.accent
+                                : Colors
+                                      .black, // Cyberpunk: Keep background black
                             labelStyle: TextStyle(
                               color: isSelected
-                                  ? Colors.white
+                                  ? (isPureFinance
+                                        ? Colors.white
+                                        : const Color(
+                                            0xFFD4FF00,
+                                          )) // Cyberpunk: Neon Green
                                   : (isPureFinance
                                         ? colors.textMain
-                                        : colors.textMain),
+                                        : Colors.white70),
                               fontWeight: FontWeight.w600,
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(30),
                               side: BorderSide(
                                 color: isSelected
-                                    ? colors.accent
+                                    ? (isPureFinance
+                                          ? colors.accent
+                                          : const Color(
+                                              0xFFD4FF00,
+                                            )) // Cyberpunk: Neon Green
                                     : (isPureFinance
                                           ? Colors.transparent
-                                          : colors.border),
+                                          : Colors.white12),
+                                width: isSelected ? 2 : 1,
                               ),
                             ),
                           ),
@@ -380,20 +392,33 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
                                 _selectedCategoryId = selected ? 'other' : null,
                           );
                         },
-                        backgroundColor: colors.surface,
-                        selectedColor: colors.accent,
+                        backgroundColor: isPureFinance
+                            ? colors.surface
+                            : Colors.black,
+                        selectedColor: isPureFinance
+                            ? colors.accent
+                            : Colors.black,
                         labelStyle: TextStyle(
                           color: _selectedCategoryId == 'other'
-                              ? Colors.white
-                              : colors.textMain,
+                              ? (isPureFinance
+                                    ? Colors.white
+                                    : const Color(0xFFD4FF00))
+                              : (isPureFinance
+                                    ? colors.textMain
+                                    : Colors.white70),
                           fontWeight: FontWeight.w600,
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                           side: BorderSide(
                             color: _selectedCategoryId == 'other'
-                                ? colors.accent
-                                : colors.border,
+                                ? (isPureFinance
+                                      ? colors.accent
+                                      : const Color(0xFFD4FF00))
+                                : (isPureFinance
+                                      ? Colors.transparent
+                                      : Colors.white12),
+                            width: _selectedCategoryId == 'other' ? 2 : 1,
                           ),
                         ),
                       ),

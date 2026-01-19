@@ -406,9 +406,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               if (isGrayscale) {
                                 return ColorFiltered(
                                   colorFilter: const ColorFilter.matrix([
-                                    0.21, 0.72, 0.07, 0, -50, // Red
-                                    0.21, 0.72, 0.07, 0, -50, // Green
-                                    0.21, 0.72, 0.07, 0, -50, // Blue
+                                    0.21, 0.72, 0.07, 0, -30, // Red
+                                    0.21, 0.72, 0.07, 0, -30, // Green
+                                    0.21, 0.72, 0.07, 0, -30, // Blue
                                     0, 0, 0, 1, 0, // Alpha
                                   ]),
                                   child: img,
@@ -514,17 +514,20 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                                   decoration: InputDecoration(
                                     labelText: '목표 이름 수정', // 라벨 부여
                                     filled: true,
-                                    fillColor: isPureFinance
-                                        ? colors.surface
-                                        : Colors.white.withOpacity(0.1),
+                                    fillColor: colors.surface,
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
                                     ),
                                     enabledBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: colors.accent.withOpacity(0.5),
-                                      ),
+                                      borderSide: isPureFinance
+                                          ? BorderSide.none
+                                          : BorderSide(
+                                              color: colors.accent.withOpacity(
+                                                0.5,
+                                              ),
+                                            ),
                                     ),
                                     contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -555,12 +558,16 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: colors.accent.withOpacity(0.2),
+                                color: isPureFinance
+                                    ? colors.surface
+                                    : colors.accent.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: colors.accent,
-                                  width: 1.5,
-                                ),
+                                border: isPureFinance
+                                    ? null
+                                    : Border.all(
+                                        color: colors.accent,
+                                        width: 1.5,
+                                      ),
                                 boxShadow: _isEditing
                                     ? [
                                         BoxShadow(
@@ -601,7 +608,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                                         return 'D-$days';
                                       }(),
                                 style: TextStyle(
-                                  color: colors.accent,
+                                  color: isPureFinance
+                                      ? colors.textSub
+                                      : colors.accent,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                 ),
@@ -620,28 +629,27 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                         margin: const EdgeInsets.only(bottom: 32),
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: isPureFinance
-                              ? colors.accent.withOpacity(0.05)
-                              : Colors.white.withOpacity(0.05),
+                          color: colors.surface,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isPureFinance
-                                ? colors.accent.withOpacity(0.3)
-                                : colors.border,
-                            width: 1,
-                          ),
+                          border: isPureFinance
+                              ? null
+                              : Border.all(color: colors.border, width: 1),
                         ),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: colors.accent.withOpacity(0.15),
+                                color: isPureFinance
+                                    ? colors.background
+                                    : colors.accent.withOpacity(0.15),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
                                 Icons.rocket_launch,
-                                color: colors.accent,
+                                color: isPureFinance
+                                    ? colors.textSub
+                                    : colors.accent,
                                 size: 28,
                               ),
                             ),
@@ -663,7 +671,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                                   Text(
                                     i18n.formatCurrency(item.dailyQuota),
                                     style: TextStyle(
-                                      color: colors.accent,
+                                      color: isPureFinance
+                                          ? colors.textMain
+                                          : colors.accent,
                                       fontSize: 22,
                                       fontWeight: FontWeight.w900,
                                     ),
@@ -707,26 +717,23 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                                       ),
                                       decoration: InputDecoration(
                                         filled: true,
-                                        fillColor: isPureFinance
-                                            ? colors.surface
-                                            : Colors.white.withOpacity(0.1),
+                                        fillColor: colors.surface,
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          borderSide: BorderSide(
-                                            color: colors.accent,
-                                          ),
+                                          borderSide: BorderSide.none,
                                         ),
                                         enabledBorder: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          borderSide: BorderSide(
-                                            color: colors.accent.withOpacity(
-                                              0.5,
-                                            ),
-                                          ),
+                                          borderSide: isPureFinance
+                                              ? BorderSide.none
+                                              : BorderSide(
+                                                  color: colors.accent
+                                                      .withOpacity(0.5),
+                                                ),
                                         ),
                                         contentPadding:
                                             const EdgeInsets.symmetric(
@@ -812,10 +819,10 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               ? colors.border
                               : Colors.grey[800],
                           color: isPureFinance
-                              ? colors.accent
-                              : const Color(0xFFD4FF00), // 밝은 네온 노랑/초록으로 통일
-                          minHeight: 12,
-                          borderRadius: BorderRadius.circular(6),
+                              ? colors.textMain
+                              : const Color(0xFFD4FF00),
+                          minHeight: 3.0,
+                          borderRadius: BorderRadius.circular(2.0),
                         ),
                       ],
                     ),
@@ -870,9 +877,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               filled: isPureFinance,
                             ),
                             cursorColor: isPureFinance
-                                ? colors.textSub
-                                : colors
-                                      .success, // Pure: Grey, Cyber: Cyan (Gauge)
+                                ? colors.textMain
+                                : const Color(0xFFD4FF00),
                           ),
                           if (_hasChanges)
                             Padding(
@@ -882,9 +888,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                                 style: TextStyle(
                                   color: isPureFinance
                                       ? colors.textSub
-                                      : colors.success.withAlpha(
-                                          179,
-                                        ), // Pure: Grey, Cyber: Lime
+                                      : const Color(0xFFD4FF00).withAlpha(179),
                                   fontSize: 13,
                                 ),
                               ),
