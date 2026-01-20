@@ -68,14 +68,17 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
         });
         await launchUrl(uri);
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('토스 앱을 실행할 수 없습니다.')));
-        }
+        // 웹 테스트용 시뮬레이션: 앱 실행 실패 시에도 다이얼로그 강제 호출
+        debugPrint(
+          'Toss app not found. Simulation Mode: Showing success dialog.',
+        );
+        _showSuccessDialog();
       }
     } catch (e) {
-      debugPrint('Deep Link Error: $e');
+      debugPrint(
+        'Deep Link Error: $e. Simulation Mode: Showing success dialog.',
+      );
+      _showSuccessDialog();
     }
   }
 
@@ -119,6 +122,7 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
 
   Future<void> _recordSaving() async {
     try {
+      debugPrint('Executing addSaving: Category: 인질 구출, Amount: 10000');
       // 카테고리 "인질 구출", 금액 10000원 고정 호출
       await ref
           .read(savingProvider.notifier)
