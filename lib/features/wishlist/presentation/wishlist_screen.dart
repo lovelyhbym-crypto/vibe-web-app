@@ -10,12 +10,14 @@ import 'add_wishlist_dialog.dart';
 import '../../../core/ui/bouncy_button.dart';
 import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:vive_app/core/theme/theme_provider.dart';
+import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
 
 class WishlistScreen extends ConsumerWidget {
   const WishlistScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final rewardState = ref.watch(rewardStateProvider);
     final wishlistAsync = ref.watch(wishlistStreamProvider);
     final i18n = I18n.of(context);
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
@@ -295,55 +297,69 @@ class WishlistScreen extends ConsumerWidget {
                                         builder: (context, constraints) {
                                           final w = constraints.maxWidth;
                                           final h = constraints.maxHeight;
-                                          return Stack(
-                                            children: [
-                                              Positioned.fill(
-                                                child: ColorFiltered(
-                                                  colorFilter:
-                                                      const ColorFilter.matrix([
-                                                        0.2,
-                                                        0.5,
-                                                        0.1,
-                                                        0,
-                                                        -30,
-                                                        0.2,
-                                                        0.5,
-                                                        0.1,
-                                                        0,
-                                                        -30,
-                                                        0.2,
-                                                        0.5,
-                                                        0.1,
-                                                        0,
-                                                        -30,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        1,
-                                                        0,
-                                                      ]),
-                                                  child: Image.network(
-                                                    item.imageUrl!,
-                                                    width: w,
-                                                    height: h,
-                                                    fit: BoxFit.cover,
+                                          return ColorFiltered(
+                                            colorFilter:
+                                                rewardState.isMonochrome
+                                                ? const ColorFilter.mode(
+                                                    Colors.grey,
+                                                    BlendMode.saturation,
+                                                  )
+                                                : const ColorFilter.mode(
+                                                    Colors.transparent,
+                                                    BlendMode.multiply,
+                                                  ),
+                                            child: Stack(
+                                              children: [
+                                                Positioned.fill(
+                                                  child: ColorFiltered(
+                                                    colorFilter:
+                                                        const ColorFilter.matrix(
+                                                          [
+                                                            0.2,
+                                                            0.5,
+                                                            0.1,
+                                                            0,
+                                                            -30,
+                                                            0.2,
+                                                            0.5,
+                                                            0.1,
+                                                            0,
+                                                            -30,
+                                                            0.2,
+                                                            0.5,
+                                                            0.1,
+                                                            0,
+                                                            -30,
+                                                            0,
+                                                            0,
+                                                            0,
+                                                            1,
+                                                            0,
+                                                          ],
+                                                        ),
+                                                    child: Image.network(
+                                                      item.imageUrl!,
+                                                      width: w,
+                                                      height: h,
+                                                      fit: BoxFit.cover,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                              ClipRect(
-                                                child: Align(
-                                                  alignment:
-                                                      Alignment.centerLeft,
-                                                  widthFactor: progress,
-                                                  child: Image.network(
-                                                    item.imageUrl!,
-                                                    width: w,
-                                                    height: h,
-                                                    fit: BoxFit.cover,
+                                                ClipRect(
+                                                  child: Align(
+                                                    alignment:
+                                                        Alignment.centerLeft,
+                                                    widthFactor: progress,
+                                                    child: Image.network(
+                                                      item.imageUrl!,
+                                                      width: w,
+                                                      height: h,
+                                                      fit: BoxFit.cover,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           );
                                         },
                                       ),

@@ -12,16 +12,45 @@ import 'widgets/pin_auth_dialog.dart';
 import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:vive_app/core/theme/theme_provider.dart';
 
-class SettingsScreen extends ConsumerWidget {
+import 'package:vive_app/core/services/bank_account_service.dart';
+
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final i18n = I18n.of(context);
-    // localeProvider is watched in main.dart to trigger app rebuild
-    final pinState = ref.watch(pinProvider);
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
 
-    // Get current theme colors
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  final _bankCodeController = TextEditingController();
+  final _accountNumberController = TextEditingController();
+  final _bankAccountService = BankAccountService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAccountInfo();
+  }
+
+  Future<void> _loadAccountInfo() async {
+    final info = await _bankAccountService.getAccountInfo();
+    setState(() {
+      _bankCodeController.text = info['bankCode'] ?? '';
+      _accountNumberController.text = info['accountNumber'] ?? '';
+    });
+  }
+
+  @override
+  void dispose() {
+    _bankCodeController.dispose();
+    _accountNumberController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final i18n = I18n.of(context);
+    final pinState = ref.watch(pinProvider);
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
     final themeMode = ref.watch(themeNotifierProvider);
     final isPureFinance = themeMode == VibeThemeMode.pureFinance;
@@ -37,189 +66,261 @@ class SettingsScreen extends ConsumerWidget {
         elevation: 0,
         iconTheme: IconThemeData(color: colors.textMain),
       ),
-      body: Column(
-        children: [
-          // Theme Settings
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Visual Identity",
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Theme Settings
+            _buildSectionHeader("Visual Identity", colors),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: isPureFinance
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: SwitchListTile(
+                title: Text(
+                  "Pure Finance 모드",
+                  style: TextStyle(
+                    color: colors.textMain,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  isPureFinance ? "단순함과 신뢰의 토스 스타일" : "몰입감을 주는 사이버펑크 스타일",
+                  style: TextStyle(color: colors.textSub, fontSize: 12),
+                ),
+                secondary: Icon(
+                  isPureFinance ? Icons.light_mode : Icons.nightlight_round,
+                  color: isPureFinance ? Colors.orange : colors.accent,
+                ),
+                activeColor: Colors.white,
+                activeTrackColor: colors.accent,
+                value: isPureFinance,
+                onChanged: (value) {
+                  ref.read(themeNotifierProvider.notifier).toggleTheme();
+                },
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Account Settings Section
+            _buildSectionHeader("송금 계좌 설정", colors),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _bankCodeController,
+                    decoration: InputDecoration(
+                      labelText: "토스 뱅크 코드 (예: 190)",
+                      labelStyle: TextStyle(color: colors.textSub),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: colors.border),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: colors.accent),
+                      ),
+                    ),
+                    style: TextStyle(color: colors.textMain),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _accountNumberController,
+                    decoration: InputDecoration(
+                      labelText: "계좌번호",
+                      labelStyle: TextStyle(color: colors.textSub),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: colors.border),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: colors.accent),
+                      ),
+                    ),
+                    style: TextStyle(color: colors.textMain),
+                    keyboardType: TextInputType.number,
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await _bankAccountService.saveAccountInfo(
+                          _bankCodeController.text,
+                          _accountNumberController.text,
+                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("계좌 정보가 저장되었습니다.")),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: colors.accent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        "저장",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            ListTile(
+              title: Text(
+                i18n.languageSetting,
+                style: TextStyle(color: colors.textMain),
+              ),
+              trailing: _LanguageToggle(
+                isKorean: i18n.isKorean,
+                onChanged: (isKorean) {
+                  final locale = isKorean
+                      ? const Locale('ko')
+                      : const Locale('en');
+                  ref.read(localeProvider.notifier).setLocale(locale);
+                },
+                isPureMode: isPureFinance,
+                colors: colors,
+              ),
+            ),
+            Divider(color: colors.textSub.withOpacity(0.1)),
+            ListTile(
+              leading: Icon(Icons.logout, color: colors.textSub),
+              title: Text(
+                'Logout',
                 style: TextStyle(
                   color: colors.textSub,
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: colors.surface,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: isPureFinance
-                  ? [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: SwitchListTile(
-              title: Text(
-                "Pure Finance 모드",
-                style: TextStyle(
-                  color: colors.textMain,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              subtitle: Text(
-                isPureFinance ? "단순함과 신뢰의 토스 스타일" : "몰입감을 주는 사이버펑크 스타일",
-                style: TextStyle(color: colors.textSub, fontSize: 12),
-              ),
-              secondary: Icon(
-                isPureFinance ? Icons.light_mode : Icons.nightlight_round,
-                color: isPureFinance ? Colors.orange : colors.accent,
-              ),
-              activeColor: Colors.white,
-              activeTrackColor: colors.accent,
-              value: isPureFinance,
-              onChanged: (value) {
-                ref.read(themeNotifierProvider.notifier).toggleTheme();
-              },
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          ListTile(
-            title: Text(
-              i18n.languageSetting,
-              style: TextStyle(color: colors.textMain),
-            ),
-            trailing: _LanguageToggle(
-              isKorean: i18n.isKorean,
-              onChanged: (isKorean) {
-                final locale = isKorean
-                    ? const Locale('ko')
-                    : const Locale('en');
-                ref.read(localeProvider.notifier).setLocale(locale);
-              },
-              isPureMode: isPureFinance,
-              colors: colors,
-            ),
-          ),
-          Divider(color: colors.textSub.withOpacity(0.1)),
-          ListTile(
-            leading: Icon(Icons.logout, color: colors.textSub),
-            title: Text(
-              'Logout',
-              style: TextStyle(
-                color: colors.textSub,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            onTap: () {
-              ref.read(authProvider.notifier).signOut();
-            },
-          ),
-          const Spacer(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Danger Zone',
-                style: TextStyle(
-                  color: colors.danger.withOpacity(0.8),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ),
-          ),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              border: Border.all(color: colors.danger.withOpacity(0.5)),
-              borderRadius: BorderRadius.circular(8),
-              color: colors.danger.withOpacity(0.05),
-            ),
-            child: ListTile(
-              leading: Icon(Icons.delete_forever, color: colors.danger),
-              title: Text(
-                '데이터 전체 초기화',
-                style: TextStyle(
-                  color: colors.danger,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              subtitle: Text(
-                '모든 절약 기록과 위시리스트가 영구 삭제됩니다.',
-                style: TextStyle(
-                  color: colors.danger.withOpacity(0.7),
-                  fontSize: 12,
                 ),
               ),
               onTap: () {
-                pinState.when(
-                  data: (storedPin) {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (context) => PinAuthDialog(
-                        isRegistration: storedPin == null,
-                        onSuccess: () async {
-                          try {
-                            // 1. 서버 및 로컬 데이터 삭제 실행
-                            await ref
-                                .read(savingProvider.notifier)
-                                .deleteAllSavings();
-                            await ref
-                                .read(wishlistProvider.notifier)
-                                .deleteAllWishlists();
-
-                            // 2. AI 리포트 상태 초기화
-                            ref
-                                .read(gloryReportProvider.notifier)
-                                .resetReport();
-
-                            // 3. 완료 알림 및 대시보드 이동
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("모든 데이터가 성공적으로 초기화되었습니다."),
-                                  backgroundColor: colors.danger,
-                                ),
-                              );
-                              context.go('/');
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('초기화 실패: $e')),
-                              );
-                            }
-                            debugPrint("초기화 실패: $e");
-                          }
-                        },
-                      ),
-                    );
-                  },
-                  loading: () {},
-                  error: (e, _) => ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text('오류 발생: $e'))),
-                );
+                ref.read(authProvider.notifier).signOut();
               },
             ),
+
+            const SizedBox(height: 40),
+
+            _buildSectionHeader('Danger Zone', colors, isDanger: true),
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                border: Border.all(color: colors.danger.withOpacity(0.5)),
+                borderRadius: BorderRadius.circular(8),
+                color: colors.danger.withOpacity(0.05),
+              ),
+              child: ListTile(
+                leading: Icon(Icons.delete_forever, color: colors.danger),
+                title: Text(
+                  '데이터 전체 초기화',
+                  style: TextStyle(
+                    color: colors.danger,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  '모든 절약 기록과 위시리스트가 영구 삭제됩니다.',
+                  style: TextStyle(
+                    color: colors.danger.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
+                onTap: () {
+                  pinState.when(
+                    data: (storedPin) {
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => PinAuthDialog(
+                          isRegistration: storedPin == null,
+                          onSuccess: () async {
+                            try {
+                              await ref
+                                  .read(savingProvider.notifier)
+                                  .deleteAllSavings();
+                              await ref
+                                  .read(wishlistProvider.notifier)
+                                  .deleteAllWishlists();
+                              ref
+                                  .read(gloryReportProvider.notifier)
+                                  .resetReport();
+
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("모든 데이터가 성공적으로 초기화되었습니다."),
+                                    backgroundColor: colors.danger,
+                                  ),
+                                );
+                                context.go('/');
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('초기화 실패: $e')),
+                                );
+                              }
+                              debugPrint("초기화 실패: $e");
+                            }
+                          },
+                        ),
+                      );
+                    },
+                    loading: () {},
+                    error: (e, _) => ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('오류 발생: $e'))),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(
+    String title,
+    VibeColors colors, {
+    bool isDanger = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: TextStyle(
+            color: isDanger ? colors.danger.withOpacity(0.8) : colors.textSub,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            letterSpacing: isDanger ? 1.2 : null,
           ),
-          const SizedBox(height: 32),
-        ],
+        ),
       ),
     );
   }

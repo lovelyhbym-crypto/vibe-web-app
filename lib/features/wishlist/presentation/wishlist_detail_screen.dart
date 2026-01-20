@@ -12,6 +12,7 @@ import 'package:vive_app/core/theme/theme_provider.dart';
 import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/services/image_service.dart';
+import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
 import 'package:intl/intl.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {
@@ -417,70 +418,83 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                               return img;
                             }
 
-                            return Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: buildUnifiedImage(true), // 바닥: 흑백
-                                ),
-                                ClipRect(
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    widthFactor: value, // 게이지: 컬러
-                                    child: buildUnifiedImage(false),
+                            final rewardState = ref.watch(rewardStateProvider);
+
+                            return ColorFiltered(
+                              colorFilter: rewardState.isMonochrome
+                                  ? const ColorFilter.mode(
+                                      Colors.grey,
+                                      BlendMode.saturation,
+                                    )
+                                  : const ColorFilter.mode(
+                                      Colors.transparent,
+                                      BlendMode.multiply,
+                                    ),
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: buildUnifiedImage(true), // 바닥: 흑백
                                   ),
-                                ),
-                                // (C) 스캔 라인 효과
-                                if (value > 0 && value < 1.0)
-                                  Positioned(
-                                    left: width * value - 1,
-                                    top: 0,
-                                    bottom: 0,
-                                    child: Container(
-                                      width: 2,
-                                      decoration: BoxDecoration(
-                                        color: colors.accent,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: colors.accent.withOpacity(
-                                              0.8,
-                                            ),
-                                            blurRadius: 8,
-                                            spreadRadius: 2,
-                                          ),
-                                        ],
-                                      ),
+                                  ClipRect(
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      widthFactor: value, // 게이지: 컬러
+                                      child: buildUnifiedImage(false),
                                     ),
                                   ),
-                                // (D) 수정 모드 오버레이
-                                if (_isEditing)
-                                  Positioned.fill(
-                                    child: GestureDetector(
-                                      onTap: _pickImage,
+                                  // (C) 스캔 라인 효과
+                                  if (value > 0 && value < 1.0)
+                                    Positioned(
+                                      left: width * value - 1,
+                                      top: 0,
+                                      bottom: 0,
                                       child: Container(
-                                        color: Colors.black45,
-                                        child: const Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.camera_alt,
-                                              color: Colors.white,
-                                              size: 40,
-                                            ),
-                                            SizedBox(height: 8),
-                                            Text(
-                                              '사진 변경',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
+                                        width: 2,
+                                        decoration: BoxDecoration(
+                                          color: colors.accent,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: colors.accent.withOpacity(
+                                                0.8,
                                               ),
+                                              blurRadius: 8,
+                                              spreadRadius: 2,
                                             ),
                                           ],
                                         ),
                                       ),
                                     ),
-                                  ),
-                              ],
+                                  // (D) 수정 모드 오버레이
+                                  if (_isEditing)
+                                    Positioned.fill(
+                                      child: GestureDetector(
+                                        onTap: _pickImage,
+                                        child: Container(
+                                          color: Colors.black45,
+                                          child: const Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.camera_alt,
+                                                color: Colors.white,
+                                                size: 40,
+                                              ),
+                                              SizedBox(height: 8),
+                                              Text(
+                                                '사진 변경',
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             );
                           },
                         );

@@ -4,15 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/utils/i18n.dart';
 import 'package:vive_app/core/theme/app_theme.dart';
+import 'package:vive_app/core/services/bank_account_service.dart';
 
 import 'package:vive_app/features/saving/domain/category_model.dart';
 import 'package:vive_app/features/saving/providers/category_provider.dart';
 import 'package:vive_app/features/saving/providers/saving_provider.dart';
 import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
 import 'package:vive_app/core/theme/theme_provider.dart';
-import 'package:vive_app/features/dashboard/providers/achievement_provider.dart';
 
 class SavingRecordScreen extends ConsumerStatefulWidget {
   const SavingRecordScreen({super.key});
@@ -21,18 +22,22 @@ class SavingRecordScreen extends ConsumerStatefulWidget {
   ConsumerState<SavingRecordScreen> createState() => _SavingRecordScreenState();
 }
 
-class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
+class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
+    with WidgetsBindingObserver {
   final _amountController = TextEditingController();
   final _customCategoryController = TextEditingController();
+  final _bankAccountService = BankAccountService();
   late ConfettiController _confettiController;
   String? _selectedCategoryId;
   bool _addToCategories = false;
   String? _selectedWishlistId;
   bool _isLoading = false;
+  bool _isWaitingForTransfer = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 1),
     );
@@ -40,10 +45,18 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _amountController.dispose();
     _customCategoryController.dispose();
     _confettiController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isWaitingForTransfer) {
+      _showSuccessDialog();
+    }
   }
 
   void _addAmount(int amount) {
@@ -64,19 +77,14 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
   Future<void> _submit() async {
     if (_isLoading) return;
 
-    final theme = Theme.of(context);
-    final vibeTheme = theme.extension<VibeThemeExtension>();
-    final colors = vibeTheme?.colors;
-    final isPureFinance = colors is PureFinanceColors;
-    final i18n = I18n.of(context);
-
-    // 입력값 정제
-    final cleanText = _amountController.text
+    final cleanerText = _amountController.text
         .replaceAll(',', '')
         .replaceAll(' ', '')
         .trim();
-    final amount = int.tryParse(cleanText);
+    final amount = int.tryParse(cleanerText);
+    final i18n = I18n.of(context);
 
+    // 기본 검증
     if (_selectedCategoryId == null || amount == null || amount <= 0) {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -86,25 +94,126 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
       return;
     }
 
+    // 1. 강한 진동
+    await HapticFeedback.heavyImpact();
+
+    // 2. 계좌 정보 확인
+    final info = await _bankAccountService.getAccountInfo();
+    final accountNo = info['accountNumber'];
+
+    if (accountNo == null || accountNo.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('송금 계좌 정보가 설정되어 있지 않습니다. 설정에서 등록해주세요.')),
+        );
+      }
+      return;
+    }
+
+    // 3. 토스 딥링크 실행
+    final String url =
+        'supertoss://send?bank=092&accountNo=$accountNo&amount=$amount';
+    final Uri uri = Uri.parse(url);
+
+    try {
+      if (await canLaunchUrl(uri)) {
+        setState(() {
+          _isWaitingForTransfer = true;
+        });
+        await launchUrl(uri);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('토스 앱을 실행할 수 없습니다.')));
+        }
+      }
+    } catch (e) {
+      debugPrint('Deep Link Error: $e');
+    }
+  }
+
+  void _showSuccessDialog() {
+    final theme = Theme.of(context);
+    final vibeTheme = theme.extension<VibeThemeExtension>();
+    final colors = vibeTheme?.colors;
+    final isPureFinance = colors is PureFinanceColors;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: colors?.surface ?? Colors.grey[900],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          '송금을 완료했나요?',
+          style: TextStyle(
+            color: colors?.textMain ?? Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          '확인을 누르면 실제 저축 데이터가 기록됩니다.',
+          style: TextStyle(color: colors?.textSub ?? Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _isWaitingForTransfer = false;
+              });
+              Navigator.pop(context);
+            },
+            child: Text(
+              '취소',
+              style: TextStyle(color: colors?.textSub ?? Colors.grey),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colors?.accent ?? const Color(0xFFD4FF00),
+              foregroundColor: isPureFinance ? Colors.white : Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+              await _performActualSaving();
+            },
+            child: const Text('네(확인)'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performActualSaving() async {
+    if (_isLoading) return;
+
+    final theme = Theme.of(context);
+    final vibeTheme = theme.extension<VibeThemeExtension>();
+    final colors = vibeTheme?.colors;
+    final isPureFinance = colors is PureFinanceColors;
+    final i18n = I18n.of(context);
+
+    final cleanText = _amountController.text
+        .replaceAll(',', '')
+        .replaceAll(' ', '')
+        .trim();
+    final amount = int.tryParse(cleanText);
+
+    if (amount == null) return;
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // 카테고리 처리 로직
       String finalCategoryName = '';
       final categories = ref.read(categoryProvider).value ?? [];
       if (_selectedCategoryId == 'other') {
         final customName = _customCategoryController.text.trim();
-        if (customName.isEmpty) {
-          if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(i18n.snackBarSelect)));
-            setState(() => _isLoading = false);
-          }
-          return;
-        }
         finalCategoryName = customName;
         if (_addToCategories) {
           await ref.read(categoryProvider.notifier).addCategory(customName);
@@ -130,30 +239,20 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
           );
 
       // 2. 위시리스트 금액 업데이트
-      final wishlistNotifier = ref.read(wishlistProvider.notifier);
       if (_selectedWishlistId != null) {
-        await wishlistNotifier.addFundsToSelectedItems(amount.toDouble(), [
-          _selectedWishlistId!,
-        ]);
+        await ref.read(wishlistProvider.notifier).addFundsToSelectedItems(
+          amount.toDouble(),
+          [_selectedWishlistId!],
+        );
       }
 
       if (mounted) {
-        // [변경 1] 상태 업데이트 감지를 위해 500ms 대기 (안정성 확보)
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        // 마일스톤 발생 여부 확인
-        final hasMilestone =
-            ref.read(achievementNotifierProvider).asData?.value != null;
-
-        // 이펙트 실행
         HapticFeedback.mediumImpact();
         _confettiController.play();
 
-        // 사용자 경험을 위해 1.5초 대기
         await Future.delayed(const Duration(milliseconds: 1500));
 
         if (mounted) {
-          // 입력폼 초기화
           _amountController.clear();
           _customCategoryController.clear();
           setState(() {
@@ -161,62 +260,28 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
             _selectedWishlistId = null;
             _addToCategories = false;
             _isLoading = false;
+            _isWaitingForTransfer = false;
           });
           FocusScope.of(context).unfocus();
 
-          // [변경 2] 마일스톤이 없을 때만 일반 배너 표시
-          if (!hasMilestone) {
-            // 기존 스낵바 정리
-            ScaffoldMessenger.of(context).clearSnackBars();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('🎉', style: TextStyle(fontSize: 18)),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        // [변경 3] 문구 단순화: "성공적으로 저축했습니다!"로 고정
-                        i18n.isKorean ? '성공적으로 저축했습니다!' : 'Saved successfully!',
-                        style: TextStyle(
-                          // 테마별 텍스트 가시성 확보
-                          color: colors?.textMain ?? Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                backgroundColor: isPureFinance
-                    ? colors.surface
-                    : const Color(0xFF1A1A1A),
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.all(20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    color: isPureFinance ? colors.border : Colors.greenAccent,
-                    width: isPureFinance ? 1 : 2,
-                  ),
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                i18n.isKorean ? '성공적으로 구출했습니다!' : 'Saved successfully!',
+                style: TextStyle(
+                  color: isPureFinance ? colors.textMain : Colors.white,
                 ),
               ),
-            );
-          }
+              backgroundColor: isPureFinance
+                  ? colors.surface
+                  : const Color(0xFF1A1A1A),
+            ),
+          );
         }
       }
     } catch (e) {
+      debugPrint('Saving error: $e');
       setState(() => _isLoading = false);
-      if (mounted) {
-        String message = i18n.isKorean ? '저장 중 오류가 발생했습니다.' : 'Failed to save.';
-        if (e.toString().contains('ID 유실')) message = '서버 응답 오류: ID 유실';
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), backgroundColor: Colors.red),
-        );
-      }
     }
   }
 
@@ -661,38 +726,153 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen> {
                   const SizedBox(height: 40),
 
                   // Save Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colors.accent,
-                        foregroundColor: isPureFinance
-                            ? Colors.white
-                            : Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              i18n.submitButton,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                  Builder(
+                    builder: (context) {
+                      final limeColor = const Color(0xFFD4FF00);
+                      final amountText = _amountController.text.isEmpty
+                          ? '0'
+                          : _amountController.text;
+
+                      if (isPureFinance) {
+                        return GestureDetector(
+                          onTap: _isLoading ? null : _submit,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 18,
+                              horizontal: 24,
                             ),
-                    ),
+                            decoration: BoxDecoration(
+                              color: colors.accent,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colors.accent.withOpacity(0.25),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.send_rounded,
+                                      size: 24,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          '송금으로 구출하기',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                            letterSpacing: -0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${amountText}원 송금하기',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.white.withOpacity(
+                                              0.9,
+                                            ),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                if (_isLoading)
+                                  const CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      return GestureDetector(
+                        onTap: _isLoading ? null : _submit,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 20,
+                            horizontal: 24,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            border: Border.all(color: limeColor, width: 3),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: limeColor.withOpacity(0.3),
+                                blurRadius: 15,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.send_rounded,
+                                    size: 50,
+                                    color: Color(0xFFD4FF00),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text(
+                                          '송금으로 구출하기',
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                            letterSpacing: -0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '토스뱅크로 ${amountText}원 송금',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: limeColor.withOpacity(0.8),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (_isLoading)
+                                const CircularProgressIndicator(
+                                  color: Color(0xFFD4FF00),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
 
                   const SizedBox(height: 48),
