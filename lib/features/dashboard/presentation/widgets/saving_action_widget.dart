@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 import 'package:vive_app/core/services/bank_account_service.dart';
 import 'package:vive_app/features/saving/providers/saving_provider.dart';
 import 'package:vive_app/features/home/providers/navigation_provider.dart';
@@ -111,14 +112,18 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
               foregroundColor: Colors.black,
             ),
             onPressed: () async {
-              // 1. 보상 장전 (Trigger Load)
+              // 1. 팝업 먼저 닫기 (UI가 깔끔하게 정리된 상태에서 이동)
+              if (mounted) Navigator.pop(context);
+
+              // 2. 보상 장전 (Trigger Load)
               ref.read(rewardStateProvider.notifier).triggerConfetti();
 
-              // 2. 화면 이동 (위시리스트 탭으로 전환, 인덱스 1) - 즉시 이동
-              ref.read(navigationIndexProvider.notifier).setIndex(1);
-
-              // 3. 팝업 닫기
-              if (mounted) Navigator.pop(context);
+              // 3. 화면 이동 (위시리스트 탭으로 전환, 인덱스 1)
+              // GoRouter를 통해 메인으로 강제 소환 후 인덱스 변경
+              if (mounted) {
+                context.go('/');
+                ref.read(navigationIndexProvider.notifier).setIndex(1);
+              }
 
               // 4. 저축 데이터 기록 (백그라운드에서 처리)
               await _recordSaving();

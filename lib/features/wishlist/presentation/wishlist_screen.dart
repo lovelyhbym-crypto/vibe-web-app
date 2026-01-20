@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:confetti/confetti.dart';
 
-import '../../../core/utils/i18n.dart';
-import '../../../core/providers/wishlist_provider.dart';
-import '../providers/wishlist_provider.dart';
-import 'add_wishlist_dialog.dart';
-import '../../../core/ui/bouncy_button.dart';
+import 'package:vive_app/core/utils/i18n.dart';
+import 'package:vive_app/core/providers/wishlist_provider.dart';
+import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
+import 'package:vive_app/features/wishlist/presentation/add_wishlist_dialog.dart';
+import 'package:vive_app/core/ui/bouncy_button.dart';
 import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:vive_app/core/theme/theme_provider.dart';
 import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
@@ -42,9 +42,14 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
     // RewardState 감시하여 폭죽 트리거가 켜지면 실행
     ref.listen(rewardStateProvider, (previous, next) {
       if (next.isTriggered) {
-        _confettiController.play();
-        // 실행 후 즉시 상태 소비
-        ref.read(rewardStateProvider.notifier).consumeConfetti();
+        // [Massive Boom] 화면 전환 애니메이션 후 터지도록 지연 시간 추가
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            _confettiController.play();
+            // 재생 시작 후 상태 소비
+            ref.read(rewardStateProvider.notifier).consumeConfetti();
+          }
+        });
       }
     });
 

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../core/utils/i18n.dart';
+import 'package:vive_app/core/utils/i18n.dart';
 import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:vive_app/core/services/bank_account_service.dart';
 
@@ -14,6 +14,8 @@ import 'package:vive_app/features/saving/providers/category_provider.dart';
 import 'package:vive_app/features/saving/providers/saving_provider.dart';
 import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
 import 'package:vive_app/core/theme/theme_provider.dart';
+import 'package:vive_app/features/home/providers/navigation_provider.dart';
+import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
 
 class SavingRecordScreen extends ConsumerStatefulWidget {
   const SavingRecordScreen({super.key});
@@ -193,7 +195,20 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               ),
             ),
             onPressed: () async {
+              // 1. 팝업 먼저 닫기
               Navigator.pop(context);
+
+              // 2. 보상 장전 (전역 폭죽 신호)
+              ref.read(rewardStateProvider.notifier).triggerConfetti();
+
+              // 3. 목표 탭으로 즉시 이동 (인덱스 1)
+              // GoRouter를 통해 메인으로 강제 소환 후 인덱스 변경
+              if (mounted) {
+                context.go('/');
+                ref.read(navigationIndexProvider.notifier).setIndex(1);
+              }
+
+              // 4. 저축 데이터 기록 (백그라운드에서 처리)
               await _performActualSaving();
             },
             child: const Text('네(확인)'),
@@ -267,9 +282,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
 
       if (mounted) {
         HapticFeedback.mediumImpact();
-        _confettiController.play();
-
-        await Future.delayed(const Duration(milliseconds: 1500));
+        // [수정] 이동 후 해당 화면에서 폭죽을 터뜨리므로 로컬 폭죽은 제거
+        // _confettiController.play();
 
         if (mounted) {
           _amountController.clear();

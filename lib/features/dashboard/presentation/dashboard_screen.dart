@@ -8,18 +8,18 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../wishlist/providers/wishlist_provider.dart';
-import '../../../core/utils/i18n.dart';
+import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
+import 'package:vive_app/core/utils/i18n.dart';
 
 import 'package:vive_app/core/theme/app_theme.dart';
 
-import '../providers/dashboard_provider.dart';
-import '../providers/savings_period_provider.dart';
-import '../../wishlist/domain/wishlist_model.dart';
-import '../providers/total_saved_provider.dart';
-import '../providers/achievement_provider.dart';
-import '../../home/providers/navigation_provider.dart';
-import '../../vibe_shifter/presentation/vibe_shifter_dialog.dart';
+import 'package:vive_app/features/dashboard/providers/dashboard_provider.dart';
+import 'package:vive_app/features/dashboard/providers/savings_period_provider.dart';
+import 'package:vive_app/features/wishlist/domain/wishlist_model.dart';
+import 'package:vive_app/features/dashboard/providers/total_saved_provider.dart';
+import 'package:vive_app/features/dashboard/providers/achievement_provider.dart';
+import 'package:vive_app/features/home/providers/navigation_provider.dart';
+import 'package:vive_app/features/vibe_shifter/presentation/vibe_shifter_dialog.dart';
 
 import 'package:vive_app/core/theme/theme_provider.dart';
 
