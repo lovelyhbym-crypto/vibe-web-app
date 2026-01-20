@@ -118,20 +118,42 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     final Uri uri = Uri.parse(url);
 
     try {
-      if (await canLaunchUrl(uri)) {
+      final bool canLaunch = await canLaunchUrl(uri);
+      if (canLaunch) {
         setState(() {
           _isWaitingForTransfer = true;
         });
-        await launchUrl(uri);
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('토스 앱을 실행할 수 없습니다.')));
+        // Fallback: canLaunchUrl may fail on some Android versions even with <queries>
+        // Try launching directly as a last resort
+        try {
+          setState(() {
+            _isWaitingForTransfer = true;
+          });
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (innerError) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  '토스 앱을 찾을 수 없거나 실행할 수 없습니다. 토스 앱이 설치되어 있는지 확인해주세요.',
+                ),
+              ),
+            );
+          }
+          setState(() {
+            _isWaitingForTransfer = false;
+          });
         }
       }
     } catch (e) {
       debugPrint('Deep Link Error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('오류가 발생했습니다: $e')));
+      }
     }
   }
 
