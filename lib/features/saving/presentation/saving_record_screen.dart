@@ -111,8 +111,10 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     }
 
     // 3. 토스 딥링크 실행
+    // 계좌번호 정제 (하이픈, 공백 제거)
+    final cleanAccountNo = accountNo.replaceAll(RegExp(r'[^0-9]'), '');
     final String url =
-        'supertoss://send?bank=092&accountNo=$accountNo&amount=$amount';
+        'supertoss://send?bank=092&accountNo=$cleanAccountNo&amount=$amount';
     final Uri uri = Uri.parse(url);
 
     try {
