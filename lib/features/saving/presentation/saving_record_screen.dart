@@ -32,7 +32,6 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
   late ConfettiController _confettiController;
   String? _selectedCategoryId;
   bool _addToCategories = false;
-  String? _selectedWishlistId;
   bool _isLoading = false;
   bool _isWaitingForTransfer = false;
 
@@ -66,16 +65,6 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     _amountController.text = (current + amount).toString();
   }
 
-  void _selectWishlist(String id) {
-    setState(() {
-      if (_selectedWishlistId == id) {
-        _selectedWishlistId = null;
-      } else {
-        _selectedWishlistId = id;
-      }
-    });
-  }
-
   Future<void> _submit() async {
     if (_isLoading) return;
 
@@ -92,6 +81,22 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(i18n.snackBarSelect)));
+      }
+      return;
+    }
+
+    // 목표 확인
+    final wishlistAsync = ref.read(wishlistProvider);
+    final activeWishlists = wishlistAsync.maybeWhen(
+      data: (list) => list.where((w) => !w.isAchieved).toList(),
+      orElse: () => [],
+    );
+
+    if (activeWishlists.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('목표를 먼저 설정하세요')));
       }
       return;
     }
@@ -256,8 +261,18 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
         finalCategoryName = category.name;
       }
 
+      // 목표 확인
+      final wishlistAsync = ref.read(wishlistProvider);
+      final activeWishlists = wishlistAsync.maybeWhen(
+        data: (list) => list.where((w) => !w.isAchieved).toList(),
+        orElse: () => [],
+      );
+
+      if (activeWishlists.isEmpty) return;
+      final targetWishlistId = activeWishlists.first.id!;
+
       debugPrint(
-        'Executing performActualSaving: Category: $finalCategoryName, Amount: $amount',
+        'Executing performActualSaving: Category: $finalCategoryName, Amount: $amount, Target: $targetWishlistId',
       );
 
       // 1. 저축 데이터 저장
@@ -267,18 +282,14 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
             category: finalCategoryName,
             amount: amount,
             createdAt: DateTime.now(),
-            wishlistIds: _selectedWishlistId != null
-                ? [_selectedWishlistId!]
-                : [],
+            wishlistIds: [targetWishlistId],
           );
 
       // 2. 위시리스트 금액 업데이트
-      if (_selectedWishlistId != null) {
-        await ref.read(wishlistProvider.notifier).addFundsToSelectedItems(
-          amount.toDouble(),
-          [_selectedWishlistId!],
-        );
-      }
+      await ref.read(wishlistProvider.notifier).addFundsToSelectedItems(
+        amount.toDouble(),
+        [targetWishlistId],
+      );
 
       if (mounted) {
         HapticFeedback.mediumImpact();
@@ -290,7 +301,6 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
           _customCategoryController.clear();
           setState(() {
             _selectedCategoryId = null;
-            _selectedWishlistId = null;
             _addToCategories = false;
             _isLoading = false;
             _isWaitingForTransfer = false;
@@ -323,28 +333,6 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     final i18n = I18n.of(context);
     final categoriesAsync = ref.watch(categoryProvider);
     final categories = categoriesAsync.asData?.value ?? [];
-
-    // [수정된 스마트 동기화 로직]
-    ref.listen(wishlistProvider, (previous, next) {
-      if (next is AsyncData) {
-        final wishlists = next.asData!.value;
-        if (wishlists.isEmpty) return;
-
-        // 1. 현재 활성화된(달성 전) 목표들 중 '대표'를 찾음
-        final activeWishlists = wishlists.where((w) => !w.isAchieved).toList();
-        if (activeWishlists.isEmpty) return;
-
-        final currentRep = activeWishlists.firstWhere(
-          (w) => w.isRepresentative,
-          orElse: () => activeWishlists.first,
-        );
-
-        // 2. [핵심] 현재 선택된 ID가 실제 '대표'와 다르다면 강제 동기화
-        if (_selectedWishlistId != currentRep.id) {
-          setState(() => _selectedWishlistId = currentRep.id);
-        }
-      }
-    });
 
     // Theme Access
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
@@ -635,126 +623,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                   ),
 
                   const SizedBox(height: 40),
-                  _buildSectionTitle(
-                    i18n.isKorean ? '함께 채울 목표 선택' : 'Goals to fill together',
-                    colors,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Wishlist Multi-Selection
-                  ref
-                      .watch(wishlistProvider)
-                      .when(
-                        data: (wishlists) {
-                          final activeWishlists = wishlists
-                              .where((w) => !w.isAchieved)
-                              .toList();
-
-                          if (activeWishlists.isEmpty) {
-                            return Text(
-                              i18n.isKorean
-                                  ? '진행 중인 목표가 없습니다.'
-                                  : 'No active goals.',
-                              style: TextStyle(
-                                color: colors.textSub,
-                                fontSize: 14,
-                              ),
-                            );
-                          }
-                          return Wrap(
-                            spacing: 8,
-                            runSpacing: 10,
-                            children: activeWishlists.map((item) {
-                              final isSelected = _selectedWishlistId == item.id;
-                              return GestureDetector(
-                                onTap: () => _selectWishlist(item.id!),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  width:
-                                      (MediaQuery.of(context).size.width - 56) /
-                                      2, // 2-column style
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: isPureFinance
-                                        ? (isSelected
-                                              ? colors.accent.withOpacity(0.08)
-                                              : colors.surface)
-                                        : Colors.black, // 배경을 어둡게 하여 눈부심 방지
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: isSelected
-                                        ? Border.all(
-                                            color: isPureFinance
-                                                ? colors.accent
-                                                : const Color(
-                                                    0xFFD4FF00,
-                                                  ), // 선택 시 그린 네온 테두리
-                                            width: 2,
-                                          )
-                                        : Border.all(
-                                            color: isPureFinance
-                                                ? colors.border
-                                                : Colors.white10,
-                                          ),
-                                    boxShadow: (isSelected && !isPureFinance)
-                                        ? [
-                                            BoxShadow(
-                                              color: const Color(
-                                                0xFFD4FF00,
-                                              ).withOpacity(0.3),
-                                              blurRadius: 8,
-                                            ),
-                                          ]
-                                        : null,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          item.title,
-                                          style: TextStyle(
-                                            color: isSelected
-                                                ? (isPureFinance
-                                                      ? colors.accent
-                                                      : const Color(0xFFD4FF00))
-                                                : (isPureFinance
-                                                      ? colors.textMain
-                                                      : Colors.white70),
-                                            fontWeight: isSelected
-                                                ? FontWeight.bold
-                                                : FontWeight.normal,
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Icon(
-                                        isSelected
-                                            ? Icons.check_circle
-                                            : Icons.circle_outlined,
-                                        size: 20,
-                                        color: isSelected
-                                            ? (isPureFinance
-                                                  ? colors.accent
-                                                  : const Color(0xFFD4FF00))
-                                            : (isPureFinance
-                                                  ? colors.textSub
-                                                  : Colors.white24),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        },
-                        loading: () => const CircularProgressIndicator(),
-                        error: (_, __) => const SizedBox.shrink(),
-                      ),
+                  const SizedBox(height: 40),
+                  _buildTargetGoalCard(colors, isPureFinance),
 
                   const SizedBox(height: 40),
 
@@ -933,6 +803,101 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
         ],
       ),
     );
+  }
+
+  Widget _buildTargetGoalCard(VibeColors colors, bool isPureFinance) {
+    return ref
+        .watch(wishlistProvider)
+        .when(
+          data: (wishlists) {
+            final activeWishlists = wishlists
+                .where((w) => !w.isAchieved)
+                .toList();
+            if (activeWishlists.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Text(
+                  "설정된 목표가 없습니다",
+                  style: TextStyle(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              );
+            }
+
+            final target = activeWishlists.first;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "인질로 잡힌 목표",
+                  style: TextStyle(
+                    color: colors.textSub.withOpacity(0.7),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      if (target.imageUrl != null &&
+                          target.imageUrl!.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            target.imageUrl!,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 48,
+                              height: 48,
+                              color: colors.surface,
+                              child: Icon(Icons.image, color: colors.textSub),
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(Icons.image, color: colors.textSub),
+                        ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Text(
+                          target.title,
+                          style: TextStyle(
+                            color: colors.textMain,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (_, __) => const SizedBox.shrink(),
+        );
   }
 
   Widget _buildSectionTitle(String title, VibeColors colors) {
@@ -1183,17 +1148,17 @@ class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
       error: (e, st) => Text("Error: $e"),
     );
   }
+}
 
-  String _getCategoryIcon(String category) {
-    final lower = category.toLowerCase();
-    if (lower.contains('커피') || lower.contains('coffee')) return '☕';
-    if (lower.contains('술') || lower.contains('alcohol')) return '🍺';
-    if (lower.contains('택시') || lower.contains('taxi')) return '🚕';
-    if (lower.contains('야식') || lower.contains('snack')) return '🍔';
-    if (lower.contains('배달') || lower.contains('food')) return '🛵';
-    if (lower.contains('쇼핑') || lower.contains('shopping')) return '🛍️';
-    if (lower.contains('담배') || lower.contains('cigarette')) return '🚬';
-    if (lower.contains('게임') || lower.contains('game')) return '🎮';
-    return '💸';
-  }
+String _getCategoryIcon(String category) {
+  final lower = category.toLowerCase();
+  if (lower.contains('커피') || lower.contains('coffee')) return '☕';
+  if (lower.contains('술') || lower.contains('alcohol')) return '🍺';
+  if (lower.contains('택시') || lower.contains('taxi')) return '🚕';
+  if (lower.contains('야식') || lower.contains('snack')) return '🍔';
+  if (lower.contains('배달') || lower.contains('food')) return '🛵';
+  if (lower.contains('쇼핑') || lower.contains('shopping')) return '🛍️';
+  if (lower.contains('담배') || lower.contains('cigarette')) return '🚬';
+  if (lower.contains('게임') || lower.contains('game')) return '🎮';
+  return '💸';
 }
