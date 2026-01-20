@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:vive_app/core/services/bank_account_service.dart';
 import 'package:vive_app/features/saving/providers/saving_provider.dart';
+import 'package:vive_app/features/home/providers/navigation_provider.dart';
+import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
 
 class SavingActionWidget extends ConsumerStatefulWidget {
   const SavingActionWidget({super.key});
@@ -109,9 +111,17 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
               foregroundColor: Colors.black,
             ),
             onPressed: () async {
-              // 실제 저축 로직 실행
-              await _recordSaving();
+              // 1. 보상 장전 (Trigger Load)
+              ref.read(rewardStateProvider.notifier).triggerConfetti();
+
+              // 2. 화면 이동 (위시리스트 탭으로 전환, 인덱스 1) - 즉시 이동
+              ref.read(navigationIndexProvider.notifier).setIndex(1);
+
+              // 3. 팝업 닫기
               if (mounted) Navigator.pop(context);
+
+              // 4. 저축 데이터 기록 (백그라운드에서 처리)
+              await _recordSaving();
             },
             child: const Text('네(확인)'),
           ),

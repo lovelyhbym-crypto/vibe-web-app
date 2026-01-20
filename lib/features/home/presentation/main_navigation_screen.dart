@@ -21,7 +21,7 @@ class MainNavigationScreen extends ConsumerWidget {
     ];
 
     void onItemTapped(int index) {
-      ref.read(navigationIndexProvider.notifier).state = index;
+      ref.read(navigationIndexProvider.notifier).setIndex(index);
     }
 
     return Scaffold(
