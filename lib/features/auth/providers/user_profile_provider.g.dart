@@ -7,7 +7,7 @@ part of 'user_profile_provider.dart';
 // **************************************************************************
 
 String _$userProfileNotifierHash() =>
-    r'ce6c954da16460d31d33a5d7fd290d7b88627667';
+    r'0c186e48cd0649579c24d96830e344926c91c8df';
 
 /// See also [UserProfileNotifier].
 @ProviderFor(UserProfileNotifier)

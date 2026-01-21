@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import 'package:vive_app/core/network/supabase_client.dart';
 import 'package:vive_app/features/auth/providers/auth_provider.dart';
+import '../../auth/providers/user_profile_provider.dart';
 import '../domain/wishlist_model.dart';
 
 part 'wishlist_provider.g.dart';
@@ -803,11 +804,14 @@ class WishlistNotifier extends _$WishlistNotifier {
 
   /// Desire Control System: Pivot Tax Update
   /// 페널티 적용 여부에 따라 저축액을 90%로 삭감하고 목표를 수정함
+  /// Desire Control System: Pivot Tax Update
+  /// 페널티 적용 여부에 따라 저축액을 90%로 삭감하고 목표를 수정함
   Future<void> updateWishlistWithPenalty(
     WishlistModel newItem, {
     required bool applyPenalty,
+    required bool consumeFreePass,
   }) async {
-    // 1. Penalty Calculation
+    // 1. Penalty Calculation (Strict Floor)
     double? newSavedAmount;
 
     if (applyPenalty) {
@@ -817,7 +821,8 @@ class WishlistNotifier extends _$WishlistNotifier {
         orElse: () => newItem,
       );
       if (currentItem != null) {
-        newSavedAmount = currentItem.savedAmount * 0.9;
+        // [Strict Logic] 90% deduction, floor to double to maximize penalty
+        newSavedAmount = (currentItem.savedAmount * 0.9).floorToDouble();
       }
     }
 
@@ -833,6 +838,15 @@ class WishlistNotifier extends _$WishlistNotifier {
     // 3. Update Saved Amount if Penalty Applied
     if (newSavedAmount != null) {
       await _updateSavedAmountDirectly(newItem.id!, newSavedAmount);
+    }
+
+    // 4. Force Consume Free Pass (Delegate to Notifier)
+    if (consumeFreePass) {
+      // userProfileNotifier now handles both DB and Local sync.
+      // It will update Supabase if user is logged in.
+      await ref.read(userProfileNotifierProvider.notifier).useFreePass();
+
+      // No need to invalidate. The notifier updates its own state.
     }
   }
 

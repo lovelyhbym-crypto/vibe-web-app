@@ -179,9 +179,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     });
 
     try {
-      FocusScope.of(context).unfocus(); // Close keyboard
+      FocusScope.of(context).unfocus();
 
-      String? uploadedImageUrl;
+      String? uploadedImageUrl = widget.item.imageUrl; // Default to existing
       if (_selectedImage != null) {
         uploadedImageUrl = await _imageService.uploadImage(_selectedImage!);
       }
@@ -189,24 +189,114 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
       final title = _titleController.text;
       final price = double.tryParse(_priceController.text) ?? widget.item.price;
 
+      // Construct the potential new item state
+      final newItem = widget.item.copyWith(
+        title: title,
+        price: price,
+        totalGoal: price, // Assuming total goal updates with price
+        targetDate: _editedDate,
+        imageUrl: uploadedImageUrl,
+        comment: _commentController.text,
+      );
+
+      // Delegate to penalty check logic
+      await _checkPenaltyAndSave(newItem);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('수정 실패: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _checkPenaltyAndSave(WishlistModel newItem) async {
+    final original = widget.item;
+
+    // 0. Check for Significant Changes (Title, Price, Date, Image)
+    // "나의 다짐(Comment)" only changes should NOT trigger penalty.
+    final isTitleChanged = newItem.title != original.title;
+    final isPriceChanged = newItem.price != original.price;
+    final isDateChanged = newItem.targetDate != original.targetDate;
+    final isImageChanged = newItem.imageUrl != original.imageUrl;
+
+    final isSignificantChange =
+        isTitleChanged || isPriceChanged || isDateChanged || isImageChanged;
+
+    if (!isSignificantChange) {
+      // Just updating comment or no real change -> Free
+      await _executeFinalSave(
+        newItem,
+        applyPenalty: false,
+        consumeFreePass: false,
+      );
+      return;
+    }
+
+    // 1. Strict Safety Zone (Only if NO savings exist)
+    // "무료 기회 썼으면 얄짤없이 패널티" -> No 10% buffer allowed.
+    // If you have saved even 1 won, you are subject to the rules.
+    if (original.savedAmount <= 0) {
+      // Nothing to lose, so free change
+      await _executeFinalSave(
+        newItem,
+        applyPenalty: false,
+        consumeFreePass: false,
+      );
+      return;
+    }
+
+    // 2. Check Free Pass (Reactive)
+    final userProfile = await ref.read(userProfileNotifierProvider.future);
+
+    if (userProfile.hasFreePass) {
+      final confirm = await _showFreePassDialog();
+      if (confirm) {
+        await _executeFinalSave(
+          newItem,
+          applyPenalty: false,
+          consumeFreePass: true,
+        );
+      }
+      return; // If cancelled, do nothing (stay in edit mode)
+    }
+
+    // 3. Taxpayer (Penalty)
+    final penalty = original.savedAmount * 0.1;
+    final confirm = await _showPenaltyDialog(original.savedAmount, penalty);
+
+    if (confirm) {
+      await _executeFinalSave(
+        newItem,
+        applyPenalty: true,
+        consumeFreePass: false,
+      );
+    }
+  }
+
+  Future<void> _executeFinalSave(
+    WishlistModel newItem, {
+    required bool applyPenalty,
+    required bool consumeFreePass,
+  }) async {
+    try {
+      // Use the robust provider method we fixed earlier
       await ref
           .read(wishlistProvider.notifier)
-          .updateWishlist(
-            widget.item.id!,
-            title: title != widget.item.title ? title : null,
-            price: price != widget.item.price ? price : null,
-            targetDate: _editedDate != widget.item.targetDate
-                ? _editedDate
-                : null,
-            imageUrl: uploadedImageUrl,
+          .updateWishlistWithPenalty(
+            newItem,
+            applyPenalty: applyPenalty,
+            consumeFreePass: consumeFreePass,
           );
-
-      // Save comment if changed
-      if (_commentController.text != (widget.item.comment ?? '')) {
-        await ref
-            .read(wishlistProvider.notifier)
-            .updateComment(widget.item.id!, _commentController.text);
-      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -216,9 +306,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               children: [
                 const Text('✨', style: TextStyle(fontSize: 18)),
                 const SizedBox(width: 8),
-                const Text(
-                  '성공적으로 수정되었습니다!',
-                  style: TextStyle(
+                Text(
+                  applyPenalty ? '페널티가 적용되어 수정되었습니다.' : '성공적으로 수정되었습니다!',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -242,105 +332,20 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
         });
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('수정 실패: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
+      debugPrint('Save error: $e');
+      throw e; // Rethrow to be caught by _saveChanges
     }
   }
 
-  Future<void> _handlePivotAttempt(WishlistModel item) async {
-    final userProfileToCheck = await ref.read(
-      userProfileNotifierProvider.future,
-    );
-
-    // 1. Check Safety Zone (No saved amount or very low?)
-    // "아직 저축 시작 단계이므로 페널티 없이 목표를 변경할 수 있습니다."
-    // Let's assume Safety Zone is if savedAmount is 0.
-    if (item.savedAmount <= 0) {
-      _showSafetyZoneDialog();
-      return;
-    }
-
-    // 2. Check Free Pass
-    if (userProfileToCheck.hasFreePass) {
-      final confirm = await _showFreePassDialog();
-      if (confirm) {
-        await ref.read(userProfileNotifierProvider.notifier).useFreePass();
-        setState(() {
-          _isEditing = true;
-        });
-      }
-    } else {
-      // 3. Taxpayer (Penalty)
-      final penalty = item.savedAmount * 0.1;
-      final confirm = await _showPenaltyDialog(item.savedAmount, penalty);
-      if (confirm) {
-        // Apply penalty
-        try {
-          await ref
-              .read(wishlistProvider.notifier)
-              .applyPenalty(item.id!, penalty);
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('페널티가 적용되었습니다. 목표를 수정하세요.')),
-            );
-            setState(() {
-              _isEditing = true;
-            });
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('오류 발생: $e')));
-          }
-        }
-      }
-    }
+  // Simplified entry point - Just enters edit mode
+  void _enterEditMode() {
+    setState(() {
+      _isEditing = true;
+    });
   }
 
-  void _showSafetyZoneDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: const Text(
-          'Safety Zone',
-          style: TextStyle(color: Colors.greenAccent),
-        ),
-        content: const Text(
-          '아직 저축 시작 단계이므로 페널티 없이 목표를 변경할 수 있습니다.',
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                _isEditing = true;
-              });
-            },
-            child: const Text(
-              '변경하기',
-              style: TextStyle(color: Colors.greenAccent),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Deprecated _handlePivotAttempt logic removed.
+  // The functionality is now integrated into _checkPenaltyAndSave within _saveChanges.
 
   Future<bool> _showFreePassDialog() async {
     return await showDialog<bool>(
@@ -356,7 +361,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                 Icon(Icons.star, color: Colors.yellowAccent),
                 SizedBox(width: 8),
                 Text(
-                  'One Time Chance',
+                  '첫 번째 변경 무료',
                   style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
               ],
@@ -366,7 +371,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '첫 번째 목표 변경은 무료입니다.\n하지만 다음부터는 소중한 노력이 깎이게 됩니다.\n\n정말 변경하시겠습니까?',
+                  '이번만 무료로 목표를 변경해드립니다.\n다음부터는 패널티가 적용되니 신중하게 결정해주세요!',
                   style: TextStyle(color: Colors.white70),
                 ),
               ],
@@ -406,7 +411,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                 Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
                 SizedBox(width: 8),
                 Text(
-                  'WARNING',
+                  '[위험] 페널티 발생',
                   style: TextStyle(
                     color: Colors.redAccent,
                     fontWeight: FontWeight.bold,
@@ -419,7 +424,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '목표를 변경하면 현재까지 쌓인 공든 탑의 10%가 무너집니다.\n그래도 감수하시겠습니까?',
+                  '이미 무료 기회를 사용하셨습니다.\n목표 수정시 10% 페널티가 부과됩니다.',
                   style: TextStyle(color: Colors.white),
                 ),
                 const SizedBox(height: 20),
@@ -527,6 +532,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
   Widget build(BuildContext context) {
     // [추가] 프로바이더에서 현재 아이템의 최신 상태를 실시간으로 감시
     final wishlistState = ref.watch(wishlistProvider);
+    // [Fix] Keep UserProfile alive and reactive
+    ref.watch(userProfileNotifierProvider);
+
     final item = wishlistState.maybeWhen(
       data: (list) => list.firstWhere(
         (e) => e.id == widget.item.id,
@@ -612,7 +620,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                           },
                         )
                       : TextButton.icon(
-                          onPressed: () => _handlePivotAttempt(item),
+                          onPressed: _enterEditMode,
                           icon: Icon(
                             Icons.swap_horiz_rounded, // Pivot icon
                             size: 18,
@@ -621,7 +629,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                 : colors.accent,
                           ),
                           label: Text(
-                            "Desire Change",
+                            "목표물 변경",
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,

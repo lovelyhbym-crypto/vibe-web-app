@@ -163,7 +163,12 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
 
     // 1. Safety Zone (< 10%)
     if (progress < 0.1 || original.savedAmount <= 0) {
-      await _executeEdit(title, price, applyPenalty: false);
+      await _executeEdit(
+        title,
+        price,
+        applyPenalty: false,
+        consumeFreePass: false,
+      );
       return;
     }
 
@@ -211,8 +216,16 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
       );
 
       if (confirm == true) {
-        await ref.read(userProfileNotifierProvider.notifier).useFreePass();
-        await _executeEdit(title, price, applyPenalty: false);
+        // Logic: Free pass is consumed via the provider call in _executeEdit or directly
+        // The provider updateWishlistWithPenalty now handles consumption if flag is true.
+        // Wait, normally I used `ref.read(userProfileNotifierProvider.notifier).useFreePass()` separately.
+        // But the new provider logic handles it. Let's rely on that to accept 'consumeFreePass: true'.
+        await _executeEdit(
+          title,
+          price,
+          applyPenalty: false,
+          consumeFreePass: true,
+        );
       }
       return;
     }
@@ -235,7 +248,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
             Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
             SizedBox(width: 8),
             Text(
-              '페널티 경고',
+              '[위험] 페널티 발생',
               style: TextStyle(
                 color: Colors.redAccent,
                 fontWeight: FontWeight.bold,
@@ -248,7 +261,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '목표를 변경하면 공든 탑의 10%가 무너집니다.\n그래도 변경하시겠습니까?',
+              '이미 무료 기회를 사용하셨습니다.\n목표 수정시 10% 페널티가 부과됩니다.',
               style: TextStyle(color: Colors.white),
             ),
             const SizedBox(height: 16),
@@ -314,7 +327,12 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
     );
 
     if (confirmPenalty == true) {
-      await _executeEdit(title, price, applyPenalty: true);
+      await _executeEdit(
+        title,
+        price,
+        applyPenalty: true,
+        consumeFreePass: false,
+      );
     }
   }
 
@@ -322,6 +340,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
     String title,
     double price, {
     required bool applyPenalty,
+    required bool consumeFreePass,
   }) async {
     setState(() {
       _isUploading = true;
@@ -343,7 +362,11 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
 
       await ref
           .read(wishlistProvider.notifier)
-          .updateWishlistWithPenalty(newItem, applyPenalty: applyPenalty);
+          .updateWishlistWithPenalty(
+            newItem,
+            applyPenalty: applyPenalty,
+            consumeFreePass: consumeFreePass,
+          );
 
       if (mounted) {
         context.pop();

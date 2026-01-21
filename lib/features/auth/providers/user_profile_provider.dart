@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:vive_app/core/network/supabase_client.dart';
+import 'package:vive_app/features/auth/providers/auth_provider.dart';
 import '../models/user_profile.dart';
 
 part 'user_profile_provider.g.dart';
@@ -12,42 +15,92 @@ class UserProfileNotifier extends _$UserProfileNotifier {
 
   @override
   FutureOr<UserProfile> build() async {
-    return _loadProfile();
+    // Watch auth provider to rebuild when login state changes
+    final authState = ref.watch(authProvider);
+    return _initProfile(authState.asData?.value);
   }
 
-  Future<UserProfile> _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString(_storageKey);
-    if (jsonStr != null) {
-      try {
-        return UserProfile.fromJson(jsonDecode(jsonStr));
-      } catch (e) {
-        // Fallback or error handling
+  Future<UserProfile> _initProfile(User? user) async {
+    // 1. Auth State is passed as argument
+
+    // 2. If Guest, use SharedPreferences (Legacy/Local)
+    if (user == null) {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_storageKey);
+      if (jsonStr != null) {
+        try {
+          return UserProfile.fromJson(jsonDecode(jsonStr));
+        } catch (_) {}
       }
+      return const UserProfile(id: 'guest_user', hasFreePass: true);
     }
-    // Default profile
-    return const UserProfile(id: 'user_default', hasFreePass: true);
-  }
 
-  Future<void> _saveProfile(UserProfile profile) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_storageKey, jsonEncode(profile.toJson()));
-    state = AsyncValue.data(profile);
+    // 3. If Logged In, Fetch from Supabase
+    try {
+      final response = await ref
+          .read(supabaseProvider)
+          .from('user_profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (response == null) {
+        // Create if not exists
+        final newProfile = UserProfile(id: user.id, hasFreePass: true);
+        await ref
+            .read(supabaseProvider)
+            .from('user_profiles')
+            .insert(newProfile.toJson());
+        return newProfile;
+      }
+
+      return UserProfile.fromJson(response);
+    } catch (e) {
+      // Fallback to local if offline or error
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_storageKey);
+      if (jsonStr != null) {
+        try {
+          return UserProfile.fromJson(jsonDecode(jsonStr));
+        } catch (_) {}
+      }
+      return UserProfile(id: user.id, hasFreePass: true);
+    }
   }
 
   Future<void> useFreePass() async {
     final current = state.value;
     if (current == null) return;
 
-    if (current.hasFreePass) {
-      final updated = current.copyWith(hasFreePass: false);
-      await _saveProfile(updated);
+    // Optimistic Update
+    final updated = current.copyWith(hasFreePass: false);
+    state = AsyncValue.data(updated);
+
+    // Persist
+    final user = ref.read(authProvider).asData?.value;
+
+    // 1. Local Persistence (Always)
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, jsonEncode(updated.toJson()));
+
+    // 2. Remote Persistence (If Logged In)
+    if (user != null) {
+      try {
+        await ref
+            .read(supabaseProvider)
+            .from('user_profiles')
+            .update({'has_free_pass': false})
+            .eq('id', user.id);
+      } catch (e) {
+        // If server update fails, invalidate to refetch later?
+        // Or trust local for now.
+        print('Error updating user profile: $e');
+      }
     }
   }
 
-  // Debug/Reset method
+  // Debug/Reset
   Future<void> resetProfile() async {
-    final newProfile = const UserProfile(id: 'user_default', hasFreePass: true);
-    await _saveProfile(newProfile);
+    // ... Implementation if needed, mostly for dev
   }
 }
