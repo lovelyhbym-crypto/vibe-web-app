@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:ui' as ui;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -40,91 +40,54 @@ class VibeImageEffect extends StatelessWidget {
           height: h,
           child: Stack(
             children: [
-              // Layer 1: Base Image with Blur & Effects
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(end: blurLevel),
-                duration: const Duration(milliseconds: 1500),
-                curve: Curves.easeOutCubic,
-                builder: (context, blurValue, child) {
-                  return ImageFiltered(
-                    imageFilter: ui.ImageFilter.blur(
-                      sigmaX: blurValue,
-                      sigmaY: blurValue,
-                    ),
-                    child: Stack(
-                      children: [
-                        // Base Grayscale Layer (Full width)
-                        _buildImage(grayscale: true, w: w, h: h),
+              // Layer 0: Original Gauge Image (Base Layer)
+              // This logic runs regardless of isBroken status
+              Stack(
+                children: [
+                  // Base Grayscale Layer (Full width)
+                  _buildImage(grayscale: true, w: w, h: h),
 
-                        // Progress-based Color Layer (Clipped width)
-                        ClipRect(
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            widthFactor: progress,
-                            child: _buildImage(grayscale: false, w: w, h: h),
-                          ),
-                        ),
-                      ],
+                  // Progress-based Color Layer (Clipped width)
+                  ClipRect(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: progress,
+                      child: _buildImage(grayscale: false, w: w, h: h),
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
 
-              // Layer 2: The Shatter Overlay (Stabilized Phase 1)
-              if (isBroken)
+              // Layer 1: Destruction Overlay (Top Layer)
+              if (isBroken) ...[
+                // Vignette Shadow Layer (Middle)
                 Positioned.fill(
-                  child: AnimatedOpacity(
-                    opacity: 1.0,
-                    duration: const Duration(milliseconds: 800),
-                    curve: Curves.fastOutSlowIn,
-                    child: Stack(
-                      children: [
-                        // 1. Backdrop Blur (Dissolving the reality) - Encapsulated with ClipRect
-                        Positioned.fill(
-                          child: ClipRect(
-                            child: BackdropFilter(
-                              filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.2),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // 2. Dark Red Mood (Tint)
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Colors.black.withOpacity(0.5),
-                                  Colors.red.withOpacity(0.25),
-                                  Colors.black.withOpacity(0.5),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // 3. Crack Synthesis (Using broken_glass.png)
-                        Positioned.fill(
-                          child: Image.asset(
-                            'assets/images/broken_glass.png',
-                            fit: BoxFit.cover,
-                            color: Colors.white.withOpacity(0.6),
-                            colorBlendMode: BlendMode.overlay,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(), // Safe fallback if asset missing
-                          ),
-                        ),
-                      ],
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment.center,
+                        radius: 0.8,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.8),
+                        ],
+                        stops: const [0.2, 1.0],
+                      ),
                     ),
                   ),
                 ),
+
+                // Broken Glass Layer (Top)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Image.asset(
+                      'assets/images/broken_glass.png',
+                      fit: BoxFit.cover,
+                      opacity: const AlwaysStoppedAnimation(0.8),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         );
