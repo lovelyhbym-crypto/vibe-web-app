@@ -386,12 +386,6 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
             wishlistIds: [targetWishlistId],
           );
 
-      // 2. 위시리스트 금액 업데이트
-      await ref.read(wishlistProvider.notifier).addFundsToSelectedItems(
-        amount.toDouble(),
-        [targetWishlistId],
-      );
-
       if (mounted) {
         HapticFeedback.mediumImpact();
         // [수정] 이동 후 해당 화면에서 폭죽을 터뜨리므로 로컬 폭죽은 제거

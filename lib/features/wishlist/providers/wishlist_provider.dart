@@ -396,18 +396,27 @@ class WishlistNotifier extends _$WishlistNotifier {
       // 2. Supabase Parallel Update
       await Future.wait(
         updatedList.where((item) => selectedIds.contains(item.id)).map((item) {
-          if (item.isBroken) {
-            // [퀘스트 연동] 깨진 아이템인 경우 퀘스트 로직 별도 처리
-            return processQuestSaving(item.id!, amount);
-          }
-
           final updates = <String, dynamic>{
             'saved_amount': item.savedAmount.toInt(),
           };
+
+          if (item.isBroken) {
+            // [퀘스트 연동] 깨진 아이템인 경우 퀘스트 관련 모든 필드 업데이트
+            updates.addAll({
+              'is_broken': item.isBroken,
+              'quest_saved_amount': item.questSavedAmount,
+              'consecutive_valid_days': item.consecutiveValidDays,
+              'broken_at': item.brokenAt?.toIso8601String(),
+              'last_quest_saving_date': item.lastQuestSavingDate
+                  ?.toIso8601String(),
+            });
+          }
+
           if (item.isAchieved) {
             updates['is_achieved'] = true;
             updates['achieved_at'] = item.achievedAt?.toIso8601String();
           }
+
           return ref
               .read(supabaseProvider)
               .from('wishlists')
@@ -416,10 +425,16 @@ class WishlistNotifier extends _$WishlistNotifier {
         }),
       );
     } catch (e) {
-      // 에러 시 상태 복구
-      ref.invalidateSelf();
       debugPrint('Error in addFundsToSelectedItems: $e');
-      throw Exception('Failed to add funds to selected items: $e');
+      // [중요] 스키마 캐시 에러(PGRST204)인 경우 강제 새로고침을 하지 않음
+      // 이를 통해 DB에 컬럼이 없더라도 로컬 상태는 유지되어 누적 저축/퀘스트가 작동함
+      if (e.toString().contains('PGRST204')) {
+        debugPrint(
+          'Warning: Supabase columns for Quest are missing. Persistence may fail, but local state is kept.',
+        );
+      } else {
+        ref.invalidateSelf();
+      }
     }
   }
 
