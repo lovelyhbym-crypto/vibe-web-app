@@ -643,6 +643,41 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
         false;
   }
 
+  Widget _LockedButton({required Widget child, required bool isBroken}) {
+    if (!isBroken) return child;
+
+    return Stack(
+      children: [
+        AbsorbPointer(child: child),
+        Positioned.fill(
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.vibrate();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text(
+                    "부서진 꿈을 방치한 채 도망갈 수 없습니다. [긴급 복구 퀘스트]를 먼저 완료하십시오.",
+                  ),
+                  backgroundColor: Colors.redAccent.withOpacity(0.9),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black54, // Opacity 0.6 equivalent
+                borderRadius: BorderRadius.circular(20), // Matches button shape
+              ),
+              child: const Center(
+                child: Icon(Icons.lock, color: Colors.white, size: 20),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // [추가] 프로바이더에서 현재 아이템의 최신 상태를 실시간으로 감시
@@ -705,91 +740,101 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               ),
               actions: [
                 // Pivot / Edit Button
-                Container(
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isPureFinance
-                        ? Colors.white.withOpacity(0.9)
-                        : Colors.black.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(
-                      20,
-                    ), // Pill shape if text
-                  ),
-                  child: _isEditing
-                      ? IconButton(
-                          icon: const Icon(Icons.close),
-                          color: isPureFinance ? Colors.black87 : colors.accent,
-                          onPressed: () {
-                            setState(() {
-                              _isEditing = false;
-                              // Revert changes logic...
-                              _titleController.text = widget.item.title;
-                              _priceController.text = widget.item.price
-                                  .toInt()
-                                  .toString();
-                              _editedDate = widget.item.targetDate;
-                              _selectedImage = null;
-                            });
-                          },
-                        )
-                      : TextButton.icon(
-                          onPressed: _enterEditMode,
-                          icon: Icon(
-                            Icons.swap_horiz_rounded, // Pivot icon
-                            size: 18,
-                            color: isPureFinance
-                                ? Colors.black87
-                                : colors.accent,
-                          ),
-                          label: Text(
-                            "목표물 변경",
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: isPureFinance
-                                  ? Colors.black87
-                                  : colors.accent,
-                            ),
-                          ),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            minimumSize: const Size(0, 36),
-                          ),
-                        ),
-                ),
-                // Save Button (visible when changes exist or editing)
-                if (_isEditing || _hasChanges)
-                  Container(
-                    margin: const EdgeInsets.all(8),
+                _LockedButton(
+                  isBroken: item.isBroken,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: isPureFinance
                           ? Colors.white.withOpacity(0.9)
                           : Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
+                      borderRadius: BorderRadius.circular(
+                        20,
+                      ), // Pill shape if text
                     ),
-                    child: IconButton(
-                      onPressed: _isSaving ? null : _saveChanges,
-                      icon: _isSaving
-                          ? SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: isPureFinance
-                                    ? Colors.black
-                                    : colors.accent,
-                              ),
-                            )
-                          : Icon(
-                              Icons.check,
+                    child: _isEditing
+                        ? IconButton(
+                            icon: const Icon(Icons.close),
+                            color: isPureFinance
+                                ? Colors.black87
+                                : colors.accent,
+                            onPressed: () {
+                              setState(() {
+                                _isEditing = false;
+                                // Revert changes logic...
+                                _titleController.text = widget.item.title;
+                                _priceController.text = widget.item.price
+                                    .toInt()
+                                    .toString();
+                                _editedDate = widget.item.targetDate;
+                                _selectedImage = null;
+                              });
+                            },
+                          )
+                        : TextButton.icon(
+                            onPressed: _enterEditMode,
+                            icon: Icon(
+                              Icons.swap_horiz_rounded, // Pivot icon
+                              size: 18,
                               color: isPureFinance
                                   ? Colors.black87
                                   : colors.accent,
-                              size: 28,
                             ),
+                            label: Text(
+                              "목표물 변경",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: isPureFinance
+                                    ? Colors.black87
+                                    : colors.accent,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              minimumSize: const Size(0, 36),
+                            ),
+                          ),
+                  ),
+                ),
+                // Save Button (visible when changes exist or editing)
+                if (_isEditing || _hasChanges)
+                  _LockedButton(
+                    isBroken: item.isBroken,
+                    child: Container(
+                      margin: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isPureFinance
+                            ? Colors.white.withOpacity(0.9)
+                            : Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        onPressed: _isSaving ? null : _saveChanges,
+                        icon: _isSaving
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: isPureFinance
+                                      ? Colors.black
+                                      : colors.accent,
+                                ),
+                              )
+                            : Icon(
+                                Icons.check,
+                                color: isPureFinance
+                                    ? Colors.black87
+                                    : colors.accent,
+                                size: 28,
+                              ),
+                      ),
                     ),
                   ),
               ],
