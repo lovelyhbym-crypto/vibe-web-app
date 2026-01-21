@@ -264,7 +264,21 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
               '이미 무료 기회를 사용하셨습니다.\n목표 수정시 10% 페널티가 부과됩니다.',
               style: TextStyle(color: Colors.white),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            const Text(
+              '⚠ 주의: 목표물도 파괴되며\n구원 퀘스트를 수행해야 복구됩니다.',
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 20),
+            // Preview Visualization
+            const Text(
+              '게이지 변화',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -286,6 +300,30 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
                         style: const TextStyle(color: Colors.white),
                       ),
                     ],
+                  ),
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 1.0, end: 0.9), // Visualizing 10% drop
+                    duration: const Duration(milliseconds: 1500),
+                    curve: Curves.bounceOut, // Heavy impact effect
+                    builder: (context, value, child) {
+                      return FractionallySizedBox(
+                        widthFactor: value,
+                        child: Container(
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            borderRadius: BorderRadius.circular(5),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.red.withOpacity(0.8),
+                                blurRadius: 12,
+                                spreadRadius: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const Divider(color: Colors.grey),
                   Row(

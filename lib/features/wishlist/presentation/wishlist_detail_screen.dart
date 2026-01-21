@@ -427,10 +427,19 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                   '이미 무료 기회를 사용하셨습니다.\n목표 수정시 10% 페널티가 부과됩니다.',
                   style: TextStyle(color: Colors.white),
                 ),
+                const SizedBox(height: 12),
+                const Text(
+                  '⚠ 주의: 목표물도 파괴되며\n구원 퀘스트를 수행해야 복구됩니다.',
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 // Preview Visualization
                 const Text(
-                  '내 자산 변화',
+                  '게이지 변화',
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 const SizedBox(height: 8),
@@ -460,9 +469,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                       tween: Tween(
                         begin: 1.0,
                         end: 0.9,
-                      ), // Visualizing 10% drop relative to 100% of current
-                      duration: const Duration(seconds: 2),
-                      curve: Curves.elasticOut, // Shake effect
+                      ), // Visualizing 10% drop
+                      duration: const Duration(milliseconds: 1500),
+                      curve: Curves.bounceOut, // Heavy impact effect
                       builder: (context, value, child) {
                         return FractionallySizedBox(
                           widthFactor: value,
@@ -473,8 +482,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                               borderRadius: BorderRadius.circular(5),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.red.withOpacity(0.5),
-                                  blurRadius: 8,
+                                  color: Colors.red.withOpacity(0.8),
+                                  blurRadius: 12,
+                                  spreadRadius: 2,
                                 ),
                               ],
                             ),

@@ -811,8 +811,10 @@ class WishlistNotifier extends _$WishlistNotifier {
     required bool applyPenalty,
     required bool consumeFreePass,
   }) async {
-    // 1. Penalty Calculation (Strict Floor)
+    // 1. Penalty Calculation (Strict Floor) & Shatter Logic
     double? newSavedAmount;
+    bool shouldShatter = false;
+    int brokenIndex = 0;
 
     if (applyPenalty) {
       // Find current saved amount
@@ -823,6 +825,8 @@ class WishlistNotifier extends _$WishlistNotifier {
       if (currentItem != null) {
         // [Strict Logic] 90% deduction, floor to double to maximize penalty
         newSavedAmount = (currentItem.savedAmount * 0.9).floorToDouble();
+        shouldShatter = true;
+        brokenIndex = Random().nextInt(2) + 1; // 1 or 2
       }
     }
 
@@ -835,9 +839,14 @@ class WishlistNotifier extends _$WishlistNotifier {
       imageUrl: newItem.imageUrl,
     );
 
-    // 3. Update Saved Amount if Penalty Applied
+    // 3. Update Saved Amount & Shatter Status if Penalty Applied
     if (newSavedAmount != null) {
-      await _updateSavedAmountDirectly(newItem.id!, newSavedAmount);
+      await _updatePenaltyAndShatter(
+        newItem.id!,
+        newSavedAmount,
+        shouldShatter: shouldShatter,
+        brokenIndex: brokenIndex,
+      );
     }
 
     // 4. Force Consume Free Pass (Delegate to Notifier)
@@ -850,7 +859,12 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
   }
 
-  Future<void> _updateSavedAmountDirectly(String id, double amount) async {
+  Future<void> _updatePenaltyAndShatter(
+    String id,
+    double amount, {
+    required bool shouldShatter,
+    required int brokenIndex,
+  }) async {
     final authNotifier = ref.read(authProvider.notifier);
     final user = ref.read(authProvider).asData?.value;
 
@@ -858,10 +872,23 @@ class WishlistNotifier extends _$WishlistNotifier {
     final index = previousList.indexWhere((item) => item.id == id);
     if (index == -1) return;
 
-    final updatedItem = previousList[index].copyWith(savedAmount: amount);
+    // Apply updates locally
+    var updatedItem = previousList[index].copyWith(savedAmount: amount);
+
+    if (shouldShatter) {
+      updatedItem = updatedItem.copyWith(
+        isBroken: true,
+        brokenImageIndex: brokenIndex,
+        brokenAt: DateTime.now(),
+        questSavedAmount: 0.0,
+        consecutiveValidDays: 0,
+      );
+    }
+
     final updatedList = List<WishlistModel>.from(previousList);
     updatedList[index] = updatedItem;
 
+    // Optimistic Update
     state = AsyncValue.data(updatedList);
 
     if (authNotifier.isGuest || user == null) {
@@ -871,13 +898,31 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
 
     try {
+      final updates = <String, dynamic>{'saved_amount': amount.toInt()};
+
+      if (shouldShatter) {
+        updates.addAll({
+          'is_broken': true,
+          'broken_image_index': brokenIndex,
+          'broken_at': DateTime.now().toIso8601String(),
+          'quest_saved_amount': 0,
+          'consecutive_valid_days': 0,
+        });
+      }
+
       await ref
           .read(supabaseProvider)
           .from('wishlists')
-          .update({'saved_amount': amount.toInt()})
+          .update(updates)
           .eq('id', id);
     } catch (e) {
       ref.invalidateSelf();
+
+      // Handle PGRST204 (Missing columns in old schema) gracefully
+      if (e.toString().contains('PGRST204')) {
+        debugPrint('Warning: Quest columns missing. Penalty applied locally.');
+        return;
+      }
       throw Exception('Failed to update penalty amount: $e');
     }
   }
