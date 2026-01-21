@@ -121,60 +121,6 @@ class VibeImageEffect extends StatelessWidget {
                                 Container(), // Safe fallback if asset missing
                           ),
                         ),
-
-                        // 4. Warning Labels
-                        Center(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withAlpha(220),
-                              borderRadius: BorderRadius.circular(2),
-                              border: Border.all(
-                                color: Colors.redAccent.withOpacity(0.7),
-                                width: 1.0,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.redAccent.withOpacity(0.2),
-                                  blurRadius: 10,
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.warning_amber_rounded,
-                                  color: Colors.redAccent,
-                                  size: 44,
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  "DREAM SHATTERED",
-                                  style: TextStyle(
-                                    color: Colors.redAccent,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 2.0,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  "SYSTEM CORRUPTED",
-                                  style: TextStyle(
-                                    color: Colors.redAccent.withOpacity(0.6),
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 3.0,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
