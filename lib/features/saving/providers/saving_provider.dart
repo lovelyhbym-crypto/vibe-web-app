@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/network/supabase_client.dart';
 import 'package:vive_app/features/auth/providers/auth_provider.dart';
 import '../domain/saving_model.dart';
+import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
 
 part 'saving_provider.g.dart';
 
@@ -95,6 +96,25 @@ class SavingNotifier extends _$SavingNotifier {
       // Immediately update state with the confirmed item
       final previousList = state.valueOrNull ?? [];
       state = AsyncValue.data([savedItem, ...previousList]);
+
+      // [Step 1] 저축 성공 후 퀘스트 판정 연동
+      final double amountDouble = parsedAmount.toDouble();
+      final wishlistNotifier = ref.read(wishlistProvider.notifier);
+      final wishlistState = ref.read(wishlistProvider);
+      final activeItem = wishlistState.activeItem;
+
+      if (activeItem != null) {
+        if (activeItem.isBroken) {
+          // 깨진 상태라면 퀘스트 진행도 업데이트
+          await wishlistNotifier.processQuestSaving(
+            activeItem.id!,
+            amountDouble,
+          );
+        } else {
+          // 정상 상태라면 기존 로직대로 진행량 업데이트
+          await wishlistNotifier.updateSavedAmount(amountDouble);
+        }
+      }
     } catch (e) {
       debugPrint('Error in addSaving: $e');
       throw Exception('Failed to add saving record: $e');

@@ -14,6 +14,10 @@ class WishlistModel {
   final double blurLevel;
   final bool isBroken;
   final DateTime? lastSavedAt;
+  final DateTime? brokenAt;
+  final double questSavedAmount;
+  final int consecutiveValidDays;
+  final DateTime? lastQuestSavingDate;
 
   WishlistModel({
     this.id,
@@ -31,6 +35,10 @@ class WishlistModel {
     this.blurLevel = 0.0,
     this.isBroken = false,
     this.lastSavedAt,
+    this.brokenAt,
+    this.questSavedAmount = 0.0,
+    this.consecutiveValidDays = 0,
+    this.lastQuestSavingDate,
   }) : createdAt = createdAt ?? DateTime.now();
 
   /// (totalGoal - savedAmount) / (남은 일수)를 계산
@@ -72,6 +80,8 @@ class WishlistModel {
       'is_representative': isRepresentative,
       'blur_level': blurLevel,
       'is_broken': isBroken,
+      'quest_saved_amount': questSavedAmount,
+      'consecutive_valid_days': consecutiveValidDays,
     };
 
     if (targetDate != null) {
@@ -84,6 +94,14 @@ class WishlistModel {
 
     if (lastSavedAt != null) {
       data['last_saved_at'] = lastSavedAt!.toIso8601String();
+    }
+
+    if (brokenAt != null) {
+      data['broken_at'] = brokenAt!.toIso8601String();
+    }
+
+    if (lastQuestSavingDate != null) {
+      data['last_quest_saving_date'] = lastQuestSavingDate!.toIso8601String();
     }
 
     // Include ID if it exists (though usually not for insert)
@@ -120,6 +138,14 @@ class WishlistModel {
       lastSavedAt: json['last_saved_at'] != null
           ? DateTime.parse(json['last_saved_at'] as String)
           : null,
+      brokenAt: json['broken_at'] != null
+          ? DateTime.parse(json['broken_at'] as String)
+          : null,
+      questSavedAmount: (json['quest_saved_amount'] as num?)?.toDouble() ?? 0.0,
+      consecutiveValidDays: (json['consecutive_valid_days'] as int?) ?? 0,
+      lastQuestSavingDate: json['last_quest_saving_date'] != null
+          ? DateTime.parse(json['last_quest_saving_date'] as String)
+          : null,
     );
   }
 
@@ -139,6 +165,10 @@ class WishlistModel {
     double? blurLevel,
     bool? isBroken,
     DateTime? lastSavedAt,
+    DateTime? brokenAt,
+    double? questSavedAmount,
+    int? consecutiveValidDays,
+    DateTime? lastQuestSavingDate,
   }) {
     return WishlistModel(
       id: id ?? this.id,
@@ -156,6 +186,10 @@ class WishlistModel {
       blurLevel: blurLevel ?? this.blurLevel,
       isBroken: isBroken ?? this.isBroken,
       lastSavedAt: lastSavedAt ?? this.lastSavedAt,
+      brokenAt: brokenAt ?? this.brokenAt,
+      questSavedAmount: questSavedAmount ?? this.questSavedAmount,
+      consecutiveValidDays: consecutiveValidDays ?? this.consecutiveValidDays,
+      lastQuestSavingDate: lastQuestSavingDate ?? this.lastQuestSavingDate,
     );
   }
 

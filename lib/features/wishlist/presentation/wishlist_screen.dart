@@ -14,6 +14,7 @@ import 'package:vive_app/core/theme/theme_provider.dart';
 import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
 import 'package:vive_app/core/ui/vibe_image_effect.dart';
 import 'package:vive_app/features/home/providers/navigation_provider.dart';
+import 'package:vive_app/features/wishlist/presentation/widgets/quest_status_card.dart';
 
 class WishlistScreen extends ConsumerStatefulWidget {
   const WishlistScreen({super.key});
@@ -608,7 +609,31 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                         child: buildBanner(),
                       ),
                     ),
-                    const SliverToBoxAdapter(child: SizedBox(height: 80)),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+                    // [Quest] 깨진 아이템이 있다면 목표 탭 최하단에 노출
+                    SliverToBoxAdapter(
+                      child: wishlistAsync.maybeWhen(
+                        data: (list) {
+                          final brokenItem = list.firstWhere(
+                            (item) => item.isBroken && !item.isAchieved,
+                            orElse: () => list.first,
+                          );
+                          if (brokenItem.isBroken) {
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: QuestStatusCard(item: brokenItem),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                        orElse: () => const SizedBox.shrink(),
+                      ),
+                    ),
+
+                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
                   ],
                 ],
               );

@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -47,7 +47,7 @@ class VibeImageEffect extends StatelessWidget {
                 curve: Curves.easeOutCubic,
                 builder: (context, blurValue, child) {
                   return ImageFiltered(
-                    imageFilter: ImageFilter.blur(
+                    imageFilter: ui.ImageFilter.blur(
                       sigmaX: blurValue,
                       sigmaY: blurValue,
                     ),
@@ -70,56 +70,115 @@ class VibeImageEffect extends StatelessWidget {
                 },
               ),
 
-              // Layer 2: The Shatter Overlay
-              Positioned.fill(
-                child: AnimatedOpacity(
-                  opacity: isBroken ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 800),
-                  curve: Curves.fastOutSlowIn,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.2),
-                      border: Border.all(
-                        color: Colors.redAccent.withOpacity(0.8),
-                        width: 8,
-                      ),
-                    ),
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.redAccent),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.warning_amber_rounded,
-                              color: Colors.redAccent,
-                              size: 40,
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              "DREAM SHATTERED",
-                              style: TextStyle(
-                                color: Colors.redAccent,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1.5,
+              // Layer 2: The Shatter Overlay (Stabilized Phase 1)
+              if (isBroken)
+                Positioned.fill(
+                  child: AnimatedOpacity(
+                    opacity: 1.0,
+                    duration: const Duration(milliseconds: 800),
+                    curve: Curves.fastOutSlowIn,
+                    child: Stack(
+                      children: [
+                        // 1. Backdrop Blur (Dissolving the reality) - Encapsulated with ClipRect
+                        Positioned.fill(
+                          child: ClipRect(
+                            child: BackdropFilter(
+                              filter: ui.ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.2),
+                                ),
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
+
+                        // 2. Dark Red Mood (Tint)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.black.withOpacity(0.5),
+                                  Colors.red.withOpacity(0.25),
+                                  Colors.black.withOpacity(0.5),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // 3. Crack Synthesis (Using broken_glass.png)
+                        Positioned.fill(
+                          child: Image.asset(
+                            'assets/images/broken_glass.png',
+                            fit: BoxFit.cover,
+                            color: Colors.white.withOpacity(0.6),
+                            colorBlendMode: BlendMode.overlay,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(), // Safe fallback if asset missing
+                          ),
+                        ),
+
+                        // 4. Warning Labels
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withAlpha(220),
+                              borderRadius: BorderRadius.circular(2),
+                              border: Border.all(
+                                color: Colors.redAccent.withOpacity(0.7),
+                                width: 1.0,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.redAccent.withOpacity(0.2),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Colors.redAccent,
+                                  size: 44,
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  "DREAM SHATTERED",
+                                  style: TextStyle(
+                                    color: Colors.redAccent,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 2.0,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "SYSTEM CORRUPTED",
+                                  style: TextStyle(
+                                    color: Colors.redAccent.withOpacity(0.6),
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 3.0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
             ],
           ),
         );

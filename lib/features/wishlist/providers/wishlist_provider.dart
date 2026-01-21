@@ -353,6 +353,11 @@ class WishlistNotifier extends _$WishlistNotifier {
     // 1. Optimistic Update를 위한 새로운 리스트 생성
     final updatedList = wishlist.map((item) {
       if (selectedIds.contains(item.id)) {
+        if (item.isBroken) {
+          // [퀘스트 연동] 깨진 아이템인 경우 퀘스트 로직 적용
+          return _applyQuestLogic(item, amount);
+        }
+
         final updatedAmount = item.savedAmount + amount;
         final isNowAchieved =
             updatedAmount >= item.totalGoal && !item.isAchieved;
@@ -391,6 +396,11 @@ class WishlistNotifier extends _$WishlistNotifier {
       // 2. Supabase Parallel Update
       await Future.wait(
         updatedList.where((item) => selectedIds.contains(item.id)).map((item) {
+          if (item.isBroken) {
+            // [퀘스트 연동] 깨진 아이템인 경우 퀘스트 로직 별도 처리
+            return processQuestSaving(item.id!, amount);
+          }
+
           final updates = <String, dynamic>{
             'saved_amount': item.savedAmount.toInt(),
           };
@@ -525,7 +535,7 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
   }
 
-  /// 꿈의 파괴 (isBroken 설정)
+  /// 꿈의 파괴 (isBroken 설정 및 퀘스트 초기화)
   Future<void> shatterDream(String id) async {
     final wishlist = state.valueOrNull ?? [];
     final index = wishlist.indexWhere((item) => item.id == id);
@@ -533,8 +543,13 @@ class WishlistNotifier extends _$WishlistNotifier {
 
     final original = wishlist[index];
 
-    // Optimistic Update
-    final updatedItem = original.copyWith(isBroken: true);
+    // Optimistic Update: 퀘스트 필드 초기화
+    final updatedItem = original.copyWith(
+      isBroken: true,
+      brokenAt: DateTime.now(),
+      questSavedAmount: 0.0,
+      consecutiveValidDays: 0,
+    );
     final updatedList = List<WishlistModel>.from(wishlist);
     updatedList[index] = updatedItem;
     state = AsyncValue.data(updatedList);
@@ -550,13 +565,169 @@ class WishlistNotifier extends _$WishlistNotifier {
       await ref
           .read(supabaseProvider)
           .from('wishlists')
-          .update({'is_broken': true})
+          .update({
+            'is_broken': true,
+            'broken_at': DateTime.now().toIso8601String(),
+            'quest_saved_amount': 0,
+            'consecutive_valid_days': 0,
+          })
           .eq('id', id);
     } catch (e) {
       debugPrint('Error shattering dream: $e');
-      ref.invalidateSelf();
+      // [중요] 스키마 캐시 에러(PGRST204)인 경우 강제 새로고침을 하지 않음
+      // 이를 통해 DB에 컬럼이 없더라도 로컬 상태는 유지되어 퀘스트 카드가 계속 유지됨
+      if (e.toString().contains('PGRST204')) {
+        debugPrint(
+          'Warning: Supabase columns for Quest are missing. Working in local mode.',
+        );
+      } else {
+        ref.invalidateSelf();
+      }
+    }
+  }
+
+  /// 퀘스트 진행도 계산 공통 로직 (낙관적 업데이트 및 서버 동기화 겸용)
+  WishlistModel _applyQuestLogic(WishlistModel item, double amount) {
+    if (!item.isBroken) return item;
+
+    // 1. 연속 저축 카운트 계산
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    int newConsecutive = item.consecutiveValidDays;
+
+    if (item.lastQuestSavingDate == null) {
+      newConsecutive = 1;
+    } else {
+      final lastDate = DateTime(
+        item.lastQuestSavingDate!.year,
+        item.lastQuestSavingDate!.month,
+        item.lastQuestSavingDate!.day,
+      );
+      final difference = today.difference(lastDate).inDays;
+
+      if (difference == 0) {
+        // 오늘 이미 저축함, 카운트 유지
+      } else if (difference == 1) {
+        newConsecutive += 1;
+      } else {
+        newConsecutive = 1; // 연속 끊김 -> 리셋
+      }
+    }
+
+    // 2. 금액 누적
+    final newQuestAmount = item.questSavedAmount + amount;
+    final newSavedAmount = item.savedAmount + amount;
+
+    // 3. 성공 조건 검사 (3일 연속 또는 원래 가격의 10% 지불 중 하나만 달성해도 성공)
+    final conditionA = newConsecutive >= 3;
+    final conditionB = newQuestAmount >= (item.totalGoal * 0.1);
+    final isRecovered = conditionA || conditionB;
+
+    if (isRecovered) {
+      // 복구 성공: 모든 퀘스트 필드 초기화 및 isBroken 해제
+      debugPrint('REDEMPTION SUCCESS: Goal "${item.title}" restored!');
+      return item.copyWith(
+        isBroken: false,
+        savedAmount: newSavedAmount,
+        brokenAt: null,
+        questSavedAmount: 0.0,
+        consecutiveValidDays: 0,
+        lastQuestSavingDate: null,
+      );
+    } else {
+      // 진행 중
+      return item.copyWith(
+        savedAmount: newSavedAmount,
+        questSavedAmount: newQuestAmount,
+        consecutiveValidDays: newConsecutive,
+        lastQuestSavingDate: now,
+      );
+    }
+  }
+
+  /// 구원 퀘스트(Redemption Quest) 판정 로직
+  Future<void> processQuestSaving(String id, double amount) async {
+    final wishlist = state.valueOrNull ?? [];
+    final index = wishlist.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final item = wishlist[index];
+    if (!item.isBroken) return;
+
+    // 공통 로직 적용
+    final updatedItem = _applyQuestLogic(item, amount);
+
+    // 반영 (Optimistic)
+    final updatedList = List<WishlistModel>.from(wishlist);
+    updatedList[index] = updatedItem;
+    state = AsyncValue.data(updatedList);
+
+    final authNotifier = ref.read(authProvider.notifier);
+    if (authNotifier.isGuest) {
+      final guestIndex = _guestWishlist.indexWhere((it) => it.id == id);
+      if (guestIndex != -1) _guestWishlist[guestIndex] = updatedItem;
+      return;
+    }
+
+    try {
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .update({
+            'saved_amount': updatedItem.savedAmount.toInt(),
+            'is_broken': updatedItem.isBroken,
+            'quest_saved_amount': updatedItem.questSavedAmount,
+            'consecutive_valid_days': updatedItem.consecutiveValidDays,
+            'broken_at': updatedItem.brokenAt?.toIso8601String(),
+            'last_quest_saving_date': updatedItem.lastQuestSavingDate
+                ?.toIso8601String(),
+          })
+          .eq('id', id);
+    } catch (e) {
+      debugPrint('Error processing quest saving: $e');
+      if (e.toString().contains('PGRST204')) {
+        debugPrint(
+          'Warning: Supabase columns for Quest are missing. Persistence may fail, but local state is kept.',
+        );
+      } else {
+        ref.invalidateSelf();
+      }
+    }
+  }
+
+  /// [통합] 일반 상태의 아이템 금액 업데이트 (퀘스트가 아닌 경우)
+  Future<void> updateSavedAmount(double amount) async {
+    final list = state.valueOrNull;
+    if (list == null || list.isEmpty) return;
+
+    // 달성되지 않은 첫 번째 아이템을 찾아 업데이트
+    final activeItem = list.firstWhere(
+      (item) => !item.isAchieved,
+      orElse: () => list.first,
+    );
+    if (activeItem.id != null) {
+      await addFundsToSelectedItems(amount, [activeItem.id!]);
     }
   }
 }
 
 final wishlistProvider = wishlistNotifierProvider;
+
+/// 위시리스트 상태에 대한 편의 확장
+extension WishlistAsyncValueX on AsyncValue<List<WishlistModel>> {
+  WishlistModel? get activeItem {
+    final list = valueOrNull;
+    if (list == null || list.isEmpty) return null;
+
+    // 1. 깨진 아이템이 있다면 최우선으로 반환
+    try {
+      return list.firstWhere((item) => item.isBroken && !item.isAchieved);
+    } catch (_) {
+      // 2. 깨진 게 없다면 달성되지 않은 첫 번째 아이템 반환 (없으면 첫 번째 아이템)
+      return list.firstWhere(
+        (item) => !item.isAchieved,
+        orElse: () => list.first,
+      );
+    }
+  }
+}

@@ -63,9 +63,9 @@ class DashboardScreen extends ConsumerWidget {
     });
 
     final i18n = I18n.of(context);
-    final wishlistAsync = ref.watch(wishlistProvider);
+    final wishlistState = ref.watch(wishlistProvider);
     final activeGoals =
-        wishlistAsync.asData?.value.where((w) => !w.isAchieved).toList() ?? [];
+        wishlistState.valueOrNull?.where((w) => !w.isAchieved).toList() ?? [];
 
     // [New] Get current theme colors
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
