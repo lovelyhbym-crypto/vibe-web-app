@@ -10,6 +10,7 @@ class WishlistItem {
   final bool isBroken;
   final int brokenImageIndex; // Added for random broken image logic
   final DateTime? lastSavedAt;
+  final bool isActive; // Added for Desire Control System
 
   WishlistItem({
     required this.id,
@@ -23,6 +24,7 @@ class WishlistItem {
     this.isBroken = false,
     this.brokenImageIndex = 0, // Default 0
     this.lastSavedAt,
+    this.isActive = true, // Default true
   });
 
   factory WishlistItem.fromJson(Map<String, dynamic> json) {
@@ -42,6 +44,7 @@ class WishlistItem {
       lastSavedAt: json['last_saved_at'] != null
           ? DateTime.parse(json['last_saved_at'] as String)
           : null,
+      isActive: json['is_active'] as bool? ?? true,
     );
   }
 
@@ -58,6 +61,7 @@ class WishlistItem {
       'is_broken': isBroken,
       'broken_image_index': brokenImageIndex,
       'last_saved_at': lastSavedAt?.toIso8601String(),
+      'is_active': isActive,
     };
   }
 
@@ -73,6 +77,7 @@ class WishlistItem {
     bool? isBroken,
     int? brokenImageIndex,
     DateTime? lastSavedAt,
+    bool? isActive,
   }) {
     return WishlistItem(
       id: id ?? this.id,
@@ -86,6 +91,7 @@ class WishlistItem {
       isBroken: isBroken ?? this.isBroken,
       brokenImageIndex: brokenImageIndex ?? this.brokenImageIndex,
       lastSavedAt: lastSavedAt ?? this.lastSavedAt,
+      isActive: isActive ?? this.isActive,
     );
   }
 

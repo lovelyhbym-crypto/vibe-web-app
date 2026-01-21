@@ -761,6 +761,112 @@ class WishlistNotifier extends _$WishlistNotifier {
       await addFundsToSelectedItems(amount, [activeItem.id!]);
     }
   }
+
+  // Desire Control System: Penalty Logic
+  Future<void> applyPenalty(String id, double penaltyAmount) async {
+    final authNotifier = ref.read(authProvider.notifier);
+    final user = ref.read(authProvider).asData?.value;
+
+    final previousList = state.valueOrNull ?? [];
+    final index = previousList.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final original = previousList[index];
+    double newSavedAmount = original.savedAmount - penaltyAmount;
+    if (newSavedAmount < 0) newSavedAmount = 0;
+
+    final updatedItem = original.copyWith(savedAmount: newSavedAmount);
+    final updatedList = List<WishlistModel>.from(previousList);
+    updatedList[index] = updatedItem;
+
+    // Optimistic Update
+    state = AsyncValue.data(updatedList);
+
+    if (authNotifier.isGuest || user == null) {
+      final guestIndex = _guestWishlist.indexWhere((item) => item.id == id);
+      if (guestIndex != -1) _guestWishlist[guestIndex] = updatedItem;
+      return;
+    }
+
+    try {
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .update({'saved_amount': newSavedAmount.toInt()})
+          .eq('id', id);
+    } catch (e) {
+      ref.invalidateSelf();
+      debugPrint('Error applying penalty: $e');
+      throw Exception('Failed to apply penalty: $e');
+    }
+  }
+
+  /// Desire Control System: Pivot Tax Update
+  /// 페널티 적용 여부에 따라 저축액을 90%로 삭감하고 목표를 수정함
+  Future<void> updateWishlistWithPenalty(
+    WishlistModel newItem, {
+    required bool applyPenalty,
+  }) async {
+    // 1. Penalty Calculation
+    double? newSavedAmount;
+
+    if (applyPenalty) {
+      // Find current saved amount
+      final currentItem = state.valueOrNull?.firstWhere(
+        (e) => e.id == newItem.id,
+        orElse: () => newItem,
+      );
+      if (currentItem != null) {
+        newSavedAmount = currentItem.savedAmount * 0.9;
+      }
+    }
+
+    // 2. Update Basic Info
+    await updateWishlist(
+      newItem.id!,
+      title: newItem.title,
+      price: newItem.price,
+      targetDate: newItem.targetDate,
+      imageUrl: newItem.imageUrl,
+    );
+
+    // 3. Update Saved Amount if Penalty Applied
+    if (newSavedAmount != null) {
+      await _updateSavedAmountDirectly(newItem.id!, newSavedAmount);
+    }
+  }
+
+  Future<void> _updateSavedAmountDirectly(String id, double amount) async {
+    final authNotifier = ref.read(authProvider.notifier);
+    final user = ref.read(authProvider).asData?.value;
+
+    final previousList = state.valueOrNull ?? [];
+    final index = previousList.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final updatedItem = previousList[index].copyWith(savedAmount: amount);
+    final updatedList = List<WishlistModel>.from(previousList);
+    updatedList[index] = updatedItem;
+
+    state = AsyncValue.data(updatedList);
+
+    if (authNotifier.isGuest || user == null) {
+      final guestIndex = _guestWishlist.indexWhere((item) => item.id == id);
+      if (guestIndex != -1) _guestWishlist[guestIndex] = updatedItem;
+      return;
+    }
+
+    try {
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .update({'saved_amount': amount.toInt()})
+          .eq('id', id);
+    } catch (e) {
+      ref.invalidateSelf();
+      throw Exception('Failed to update penalty amount: $e');
+    }
+  }
 }
 
 final wishlistProvider = wishlistNotifierProvider;

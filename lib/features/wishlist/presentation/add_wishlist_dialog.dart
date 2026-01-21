@@ -14,9 +14,12 @@ import '../../../core/utils/i18n.dart';
 import '../../../../core/ui/bouncy_button.dart';
 import '../domain/wishlist_model.dart';
 import '../providers/wishlist_provider.dart';
+import '../../auth/providers/user_profile_provider.dart';
 
 class AddWishlistDialog extends ConsumerStatefulWidget {
-  const AddWishlistDialog({super.key});
+  final WishlistModel? item; // Optional for Edit Mode
+
+  const AddWishlistDialog({super.key, this.item});
 
   @override
   ConsumerState<AddWishlistDialog> createState() => _AddWishlistDialogState();
@@ -30,6 +33,16 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
   XFile? _selectedImage;
   DateTime? _targetDate;
   bool _isUploading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.item != null) {
+      _titleController.text = widget.item!.title;
+      _priceController.text = widget.item!.price.toInt().toString();
+      _targetDate = widget.item!.targetDate;
+    }
+  }
 
   @override
   void dispose() {
@@ -88,6 +101,13 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
       return;
     }
 
+    // Edit Mode Penalty Logic
+    if (widget.item != null) {
+      await _checkPenaltyAndSubmit(title, price);
+      return;
+    }
+
+    // Add Mode (Existing Logic)
     setState(() {
       _isUploading = true;
     });
@@ -135,6 +155,221 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
     }
   }
 
+  Future<void> _checkPenaltyAndSubmit(String title, double price) async {
+    final original = widget.item!;
+    final progress = original.savedAmount > 0
+        ? original.savedAmount / original.totalGoal
+        : 0.0;
+
+    // 1. Safety Zone (< 10%)
+    if (progress < 0.1 || original.savedAmount <= 0) {
+      await _executeEdit(title, price, applyPenalty: false);
+      return;
+    }
+
+    final userProfile = await ref.read(userProfileNotifierProvider.future);
+
+    // 2. Free Pass
+    if (userProfile.hasFreePass) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.indigo[900],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Colors.cyanAccent),
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.star, color: Colors.yellowAccent),
+              SizedBox(width: 8),
+              Text(
+                '첫 번째 변경 무료',
+                style: TextStyle(color: Colors.white, fontSize: 18),
+              ),
+            ],
+          ),
+          content: const Text(
+            '이번만 무료로 목표를 변경해드립니다.\n다음부터는 패널티가 적용되니 신중하게 결정해주세요!',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('취소', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.cyanAccent,
+                foregroundColor: Colors.black,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('변경하기'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm == true) {
+        await ref.read(userProfileNotifierProvider.notifier).useFreePass();
+        await _executeEdit(title, price, applyPenalty: false);
+      }
+      return;
+    }
+
+    // 3. Penalty Warning
+    final currentSaved = original.savedAmount;
+    final afterPenalty = currentSaved * 0.9;
+    final loss = currentSaved - afterPenalty;
+
+    final confirmPenalty = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF2A0000), // Dark Red
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Colors.redAccent),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+            SizedBox(width: 8),
+            Text(
+              '페널티 경고',
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '목표를 변경하면 공든 탑의 10%가 무너집니다.\n그래도 변경하시겠습니까?',
+              style: TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black26,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '현재 모은 돈',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      Text(
+                        '${currentSaved.toInt()}원',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const Divider(color: Colors.grey),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '변경 후 (-10%)',
+                        style: TextStyle(color: Colors.redAccent),
+                      ),
+                      Text(
+                        '${afterPenalty.toInt()}원',
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('돌아가기', style: TextStyle(color: Colors.white)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('페널티 감수 확인'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmPenalty == true) {
+      await _executeEdit(title, price, applyPenalty: true);
+    }
+  }
+
+  Future<void> _executeEdit(
+    String title,
+    double price, {
+    required bool applyPenalty,
+  }) async {
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      String? imageUrl = widget.item!.imageUrl;
+      if (_selectedImage != null) {
+        imageUrl = await _imageService.uploadImage(_selectedImage!);
+      }
+
+      final newItem = widget.item!.copyWith(
+        title: title,
+        price: price,
+        totalGoal: price, // Assuming totalGoal follows price update
+        imageUrl: imageUrl,
+        targetDate: _targetDate,
+      );
+
+      await ref
+          .read(wishlistProvider.notifier)
+          .updateWishlistWithPenalty(newItem, applyPenalty: applyPenalty);
+
+      if (mounted) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(applyPenalty ? '페널티가 적용되어 수정되었습니다.' : '목표가 수정되었습니다.'),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Edit error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('수정 실패: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final i18n = I18n.of(context);
@@ -145,7 +380,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
     return AlertDialog(
       backgroundColor: colors.surface,
       title: Text(
-        i18n.wishlistAddTitle,
+        widget.item == null ? i18n.wishlistAddTitle : '목표 수정',
         style: TextStyle(color: colors.textMain),
       ),
       content: SingleChildScrollView(
@@ -165,15 +400,24 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
                   image: _selectedImage != null
                       ? DecorationImage(
                           image: kIsWeb
-                              ? NetworkImage(_selectedImage!.path)
+                              ? NetworkImage(
+                                  _selectedImage != null
+                                      ? _selectedImage!.path
+                                      : widget.item?.imageUrl ?? '',
+                                ) // logic handled below
                               : FileImage(File(_selectedImage!.path))
                                     as ImageProvider,
                           fit: BoxFit.cover,
                         )
-                      : null,
+                      : (widget.item?.imageUrl != null
+                            ? DecorationImage(
+                                image: NetworkImage(widget.item!.imageUrl!),
+                                fit: BoxFit.cover,
+                              )
+                            : null),
                 ),
                 alignment: Alignment.center,
-                child: _selectedImage == null
+                child: (_selectedImage == null && widget.item?.imageUrl == null)
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -295,7 +539,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
                     ),
                   )
                 : Text(
-                    i18n.add,
+                    widget.item == null ? i18n.add : '수정 완료',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
           ),

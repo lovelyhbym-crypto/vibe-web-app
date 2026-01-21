@@ -13,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/services/image_service.dart';
 import 'package:intl/intl.dart';
 import 'package:vive_app/core/ui/vibe_image_effect.dart';
+import 'package:vive_app/features/auth/providers/user_profile_provider.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {
   final WishlistModel item;
@@ -258,6 +259,270 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     }
   }
 
+  Future<void> _handlePivotAttempt(WishlistModel item) async {
+    final userProfileToCheck = await ref.read(
+      userProfileNotifierProvider.future,
+    );
+
+    // 1. Check Safety Zone (No saved amount or very low?)
+    // "아직 저축 시작 단계이므로 페널티 없이 목표를 변경할 수 있습니다."
+    // Let's assume Safety Zone is if savedAmount is 0.
+    if (item.savedAmount <= 0) {
+      _showSafetyZoneDialog();
+      return;
+    }
+
+    // 2. Check Free Pass
+    if (userProfileToCheck.hasFreePass) {
+      final confirm = await _showFreePassDialog();
+      if (confirm) {
+        await ref.read(userProfileNotifierProvider.notifier).useFreePass();
+        setState(() {
+          _isEditing = true;
+        });
+      }
+    } else {
+      // 3. Taxpayer (Penalty)
+      final penalty = item.savedAmount * 0.1;
+      final confirm = await _showPenaltyDialog(item.savedAmount, penalty);
+      if (confirm) {
+        // Apply penalty
+        try {
+          await ref
+              .read(wishlistProvider.notifier)
+              .applyPenalty(item.id!, penalty);
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('페널티가 적용되었습니다. 목표를 수정하세요.')),
+            );
+            setState(() {
+              _isEditing = true;
+            });
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('오류 발생: $e')));
+          }
+        }
+      }
+    }
+  }
+
+  void _showSafetyZoneDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text(
+          'Safety Zone',
+          style: TextStyle(color: Colors.greenAccent),
+        ),
+        content: const Text(
+          '아직 저축 시작 단계이므로 페널티 없이 목표를 변경할 수 있습니다.',
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _isEditing = true;
+              });
+            },
+            child: const Text(
+              '변경하기',
+              style: TextStyle(color: Colors.greenAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool> _showFreePassDialog() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.indigo[900],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: Colors.cyanAccent),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.star, color: Colors.yellowAccent),
+                SizedBox(width: 8),
+                Text(
+                  'One Time Chance',
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ],
+            ),
+            content: const Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '첫 번째 목표 변경은 무료입니다.\n하지만 다음부터는 소중한 노력이 깎이게 됩니다.\n\n정말 변경하시겠습니까?',
+                  style: TextStyle(color: Colors.white70),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('취소', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.cyanAccent,
+                  foregroundColor: Colors.black,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('무료 환승하기'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<bool> _showPenaltyDialog(double currentAmount, double penalty) async {
+    final afterAmount = currentAmount - penalty;
+
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF2A0000), // Dark Red
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: Colors.redAccent),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+                SizedBox(width: 8),
+                Text(
+                  'WARNING',
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '목표를 변경하면 현재까지 쌓인 공든 탑의 10%가 무너집니다.\n그래도 감수하시겠습니까?',
+                  style: TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 20),
+                // Preview Visualization
+                const Text(
+                  '내 자산 변화',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                Stack(
+                  children: [
+                    // Background
+                    Container(
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[800],
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                    ),
+                    // Original (Faded)
+                    FractionallySizedBox(
+                      widthFactor: 1.0,
+                      child: Container(
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                    ),
+                    // New Amount (Red)
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(
+                        begin: 1.0,
+                        end: 0.9,
+                      ), // Visualizing 10% drop relative to 100% of current
+                      duration: const Duration(seconds: 2),
+                      curve: Curves.elasticOut, // Shake effect
+                      builder: (context, value, child) {
+                        return FractionallySizedBox(
+                          widthFactor: value,
+                          child: Container(
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent,
+                              borderRadius: BorderRadius.circular(5),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.red.withOpacity(0.5),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${currentAmount.toInt()}',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                    Text(
+                      '${afterAmount.toInt()} (-${penalty.toInt()})',
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text(
+                  '돌아가기',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('페널티 감수하고 변경'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
     // [추가] 프로바이더에서 현재 아이템의 최신 상태를 실시간으로 감시
@@ -315,38 +580,61 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                 ),
               ),
               actions: [
-                // Edit Button
+                // Pivot / Edit Button
                 Container(
-                  margin: const EdgeInsets.all(8),
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: isPureFinance
                         ? Colors.white.withOpacity(0.9)
                         : Colors.black.withOpacity(0.5),
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(
+                      20,
+                    ), // Pill shape if text
                   ),
-                  child: IconButton(
-                    icon: Icon(
-                      _isEditing ? Icons.close : Icons.edit,
-                      color: isPureFinance ? Colors.black87 : colors.accent,
-                      size: 24,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        if (_isEditing) {
-                          // Cancel edits
-                          _isEditing = false;
-                          _titleController.text = widget.item.title;
-                          _priceController.text = widget.item.price
-                              .toInt()
-                              .toString();
-                          _editedDate = widget.item.targetDate;
-                          _selectedImage = null;
-                        } else {
-                          _isEditing = true;
-                        }
-                      });
-                    },
-                  ),
+                  child: _isEditing
+                      ? IconButton(
+                          icon: const Icon(Icons.close),
+                          color: isPureFinance ? Colors.black87 : colors.accent,
+                          onPressed: () {
+                            setState(() {
+                              _isEditing = false;
+                              // Revert changes logic...
+                              _titleController.text = widget.item.title;
+                              _priceController.text = widget.item.price
+                                  .toInt()
+                                  .toString();
+                              _editedDate = widget.item.targetDate;
+                              _selectedImage = null;
+                            });
+                          },
+                        )
+                      : TextButton.icon(
+                          onPressed: () => _handlePivotAttempt(item),
+                          icon: Icon(
+                            Icons.swap_horiz_rounded, // Pivot icon
+                            size: 18,
+                            color: isPureFinance
+                                ? Colors.black87
+                                : colors.accent,
+                          ),
+                          label: Text(
+                            "Desire Change",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: isPureFinance
+                                  ? Colors.black87
+                                  : colors.accent,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            minimumSize: const Size(0, 36),
+                          ),
+                        ),
                 ),
                 // Save Button (visible when changes exist or editing)
                 if (_isEditing || _hasChanges)
