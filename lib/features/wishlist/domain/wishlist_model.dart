@@ -19,6 +19,7 @@ class WishlistModel {
   final double questSavedAmount;
   final int consecutiveValidDays;
   final DateTime? lastQuestSavingDate;
+  final double penaltyAmount;
 
   WishlistModel({
     this.id,
@@ -41,6 +42,7 @@ class WishlistModel {
     this.questSavedAmount = 0.0,
     this.consecutiveValidDays = 0,
     this.lastQuestSavingDate,
+    this.penaltyAmount = 0.0,
   }) : createdAt = createdAt ?? DateTime.now();
 
   /// (totalGoal - savedAmount) / (남은 일수)를 계산
@@ -85,6 +87,7 @@ class WishlistModel {
       'broken_image_index': brokenImageIndex,
       'quest_saved_amount': questSavedAmount,
       'consecutive_valid_days': consecutiveValidDays,
+      'penalty_amount': penaltyAmount,
     };
 
     if (targetDate != null) {
@@ -150,6 +153,7 @@ class WishlistModel {
       lastQuestSavingDate: json['last_quest_saving_date'] != null
           ? DateTime.parse(json['last_quest_saving_date'] as String)
           : null,
+      penaltyAmount: (json['penalty_amount'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -174,6 +178,7 @@ class WishlistModel {
     double? questSavedAmount,
     int? consecutiveValidDays,
     DateTime? lastQuestSavingDate,
+    double? penaltyAmount,
   }) {
     return WishlistModel(
       id: id ?? this.id,
@@ -196,6 +201,7 @@ class WishlistModel {
       questSavedAmount: questSavedAmount ?? this.questSavedAmount,
       consecutiveValidDays: consecutiveValidDays ?? this.consecutiveValidDays,
       lastQuestSavingDate: lastQuestSavingDate ?? this.lastQuestSavingDate,
+      penaltyAmount: penaltyAmount ?? this.penaltyAmount,
     );
   }
 

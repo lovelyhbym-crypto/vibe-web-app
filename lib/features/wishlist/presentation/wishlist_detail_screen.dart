@@ -13,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/services/image_service.dart';
 import 'package:intl/intl.dart';
 import 'package:vive_app/core/ui/vibe_image_effect.dart';
+import 'package:flutter/services.dart';
 import 'package:vive_app/features/auth/providers/user_profile_provider.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {
@@ -270,8 +271,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
       return; // If cancelled, do nothing (stay in edit mode)
     }
 
-    // 3. Taxpayer (Penalty)
-    final penalty = original.savedAmount * 0.1;
+    // 3. Taxpayer (Penalty: -20% Success Probability)
+    // Penalty is 20% of TOTAL GOAL, not saved amount.
+    final penalty = original.totalGoal * 0.2;
     final confirm = await _showPenaltyDialog(original.savedAmount, penalty);
 
     if (confirm) {
@@ -395,8 +397,18 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
         false;
   }
 
-  Future<bool> _showPenaltyDialog(double currentAmount, double penalty) async {
-    final afterAmount = currentAmount - penalty;
+  Future<bool> _showPenaltyDialog(
+    double currentSaved,
+    double penaltyAmount,
+  ) async {
+    final totalGoal = widget.item.totalGoal;
+    final double safeTotal = totalGoal > 0 ? totalGoal : 1.0;
+
+    // Probability Calculation
+    // Current Progress
+    final double currentProgress = (currentSaved / safeTotal);
+    // New Progress = (Saved - Penalty) / Goal
+    final double newProgress = ((currentSaved - penaltyAmount) / safeTotal);
 
     return await showDialog<bool>(
           context: context,
@@ -424,8 +436,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '이미 무료 기회를 사용하셨습니다.\n목표 수정시 10% 페널티가 부과됩니다.',
-                  style: TextStyle(color: Colors.white),
+                  '이미 무료 기회를 사용하셨습니다.\n성공 확률이 -20% 감소합니다.',
+                  style: TextStyle(color: Colors.white, height: 1.5),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -436,10 +448,19 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                     fontSize: 13,
                   ),
                 ),
+                const SizedBox(height: 8),
+                const Text(
+                  '또한, 확률 게이지가 빚(Debt)으로 전환됩니다.',
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 // Preview Visualization
                 const Text(
-                  '게이지 변화',
+                  '성공 확률 변화',
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
                 const SizedBox(height: 8),
@@ -447,69 +468,106 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                   children: [
                     // Background
                     Container(
-                      height: 10,
+                      height: 12,
                       decoration: BoxDecoration(
                         color: Colors.grey[800],
-                        borderRadius: BorderRadius.circular(5),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                     ),
-                    // Original (Faded)
+                    // Original (Gray/White)
                     FractionallySizedBox(
-                      widthFactor: 1.0,
+                      widthFactor: currentProgress.clamp(0.0, 1.0),
                       child: Container(
-                        height: 10,
+                        height: 12,
                         decoration: BoxDecoration(
                           color: Colors.white24,
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                       ),
                     ),
-                    // New Amount (Red)
+                    // New Probability Animation
                     TweenAnimationBuilder<double>(
-                      tween: Tween(
-                        begin: 1.0,
-                        end: 0.9,
-                      ), // Visualizing 10% drop
-                      duration: const Duration(milliseconds: 1500),
-                      curve: Curves.bounceOut, // Heavy impact effect
+                      tween: Tween(begin: currentProgress, end: newProgress),
+                      duration: const Duration(milliseconds: 2000),
+                      curve: Curves.elasticOut,
+                      onEnd: () {
+                        HapticFeedback.heavyImpact();
+                      },
                       builder: (context, value, child) {
-                        return FractionallySizedBox(
-                          widthFactor: value,
-                          child: Container(
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: Colors.redAccent,
-                              borderRadius: BorderRadius.circular(5),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.red.withOpacity(0.8),
-                                  blurRadius: 12,
-                                  spreadRadius: 2,
+                        // Value can be negative
+                        final isNegative = value < 0;
+                        final displayWidth = value.clamp(
+                          0.0,
+                          1.0,
+                        ); // Only positive part fits in bar?
+                        // If negative, maybe show red bar going left? or just Empty?
+                        // User wants "Red text -10%".
+                        // Let's show the bar shrinking. If negative, it disappears (width 0).
+
+                        return Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            FractionallySizedBox(
+                              widthFactor: displayWidth > 0
+                                  ? displayWidth
+                                  : 0.001,
+                              child: Container(
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: Colors.redAccent,
+                                  borderRadius: BorderRadius.circular(6),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.red.withOpacity(0.8),
+                                      blurRadius: 10,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
+                            // If negative, show label explicitly
+                            if (isNegative)
+                              Positioned(
+                                left: 0,
+                                top: 16,
+                                child: Text(
+                                  "DEBT ZONE",
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
                         );
                       },
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${currentAmount.toInt()}',
+                      '${(currentProgress * 100).toInt()}%',
                       style: const TextStyle(
                         color: Colors.grey,
                         decoration: TextDecoration.lineThrough,
                       ),
                     ),
+                    const Icon(
+                      Icons.arrow_forward,
+                      color: Colors.grey,
+                      size: 16,
+                    ),
                     Text(
-                      '${afterAmount.toInt()} (-${penalty.toInt()})',
+                      '${(newProgress * 100).toInt()}%', // e.g. -10%
                       style: const TextStyle(
                         color: Colors.redAccent,
                         fontWeight: FontWeight.bold,
+                        fontSize: 18,
                       ),
                     ),
                   ],
@@ -520,8 +578,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
                 child: const Text(
-                  '돌아가기',
-                  style: TextStyle(color: Colors.white),
+                  '취소',
+                  style: TextStyle(color: Colors.white70),
                 ),
               ),
               ElevatedButton(
@@ -555,8 +613,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
 
     final i18n = I18n.of(context);
     final progress = item.totalGoal > 0
-        ? (item.savedAmount / item.totalGoal).clamp(0.0, 1.0)
+        ? ((item.savedAmount - item.penaltyAmount) / item.totalGoal)
         : 0.0;
+    // Remaining amount ignores penalty as per user instruction "Don't touch remaining amount"
     final remaining = item.totalGoal - item.savedAmount;
 
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
@@ -700,7 +759,13 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                           key: ValueKey(
                             '${item.savedAmount}-$_animationTriggerId',
                           ), // 저축액 변화 및 트리거 발생 시 애니메이션 실행
-                          tween: Tween<double>(begin: 0.0, end: progress),
+                          tween: Tween<double>(
+                            begin: 0.0,
+                            end: progress.clamp(
+                              0.0,
+                              1.0,
+                            ), // Image effect stays positive
+                          ),
                           duration: const Duration(milliseconds: 1000),
                           curve: Curves.easeOutCubic,
                           builder: (context, value, child) {
@@ -1088,11 +1153,13 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              '${(progress * 100).toInt()}% 달성',
+                              '성공 확률 : ${(progress * 100).toInt()}%',
                               style: TextStyle(
-                                color: isPureFinance
-                                    ? colors.textMain
-                                    : Colors.white70,
+                                color: progress < 0
+                                    ? Colors.redAccent
+                                    : (isPureFinance
+                                          ? colors.textMain
+                                          : Colors.white70),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -1108,13 +1175,18 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                           curve: Curves.easeOutCubic,
                           builder: (context, value, child) {
                             return LinearProgressIndicator(
-                              value: value,
+                              value: value.clamp(
+                                0.0,
+                                1.0,
+                              ), // Ensure valid range for indicator
                               backgroundColor: isPureFinance
                                   ? colors.border
                                   : Colors.grey[800],
                               color: isPureFinance
                                   ? colors.textMain
-                                  : const Color(0xFFD4FF00),
+                                  : (value < 0
+                                        ? Colors.redAccent
+                                        : const Color(0xFFD4FF00)),
                               minHeight: 4.0, // 약간 두껍게 수정
                               borderRadius: BorderRadius.circular(2.0),
                             );

@@ -15,6 +15,7 @@ import '../../../../core/ui/bouncy_button.dart';
 import '../domain/wishlist_model.dart';
 import '../providers/wishlist_provider.dart';
 import '../../auth/providers/user_profile_provider.dart';
+import 'package:flutter/services.dart';
 
 class AddWishlistDialog extends ConsumerStatefulWidget {
   final WishlistModel? item; // Optional for Edit Mode
@@ -232,136 +233,11 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
 
     // 3. Penalty Warning
     final currentSaved = original.savedAmount;
-    final afterPenalty = currentSaved * 0.9;
-    final loss = currentSaved - afterPenalty;
+    final penaltyAmount = currentSaved * 0.2; // 20% penalty
 
-    final confirmPenalty = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2A0000), // Dark Red
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: Colors.redAccent),
-        ),
-        title: const Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
-            SizedBox(width: 8),
-            Text(
-              '[위험] 페널티 발생',
-              style: TextStyle(
-                color: Colors.redAccent,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '이미 무료 기회를 사용하셨습니다.\n목표 수정시 10% 페널티가 부과됩니다.',
-              style: TextStyle(color: Colors.white),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              '⚠ 주의: 목표물도 파괴되며\n구원 퀘스트를 수행해야 복구됩니다.',
-              style: TextStyle(
-                color: Colors.redAccent,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Preview Visualization
-            const Text(
-              '게이지 변화',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black26,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '현재 모은 돈',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      Text(
-                        '${currentSaved.toInt()}원',
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  ),
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 1.0, end: 0.9), // Visualizing 10% drop
-                    duration: const Duration(milliseconds: 1500),
-                    curve: Curves.bounceOut, // Heavy impact effect
-                    builder: (context, value, child) {
-                      return FractionallySizedBox(
-                        widthFactor: value,
-                        child: Container(
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent,
-                            borderRadius: BorderRadius.circular(5),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.red.withOpacity(0.8),
-                                blurRadius: 12,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const Divider(color: Colors.grey),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        '변경 후 (-10%)',
-                        style: TextStyle(color: Colors.redAccent),
-                      ),
-                      Text(
-                        '${afterPenalty.toInt()}원',
-                        style: const TextStyle(
-                          color: Colors.redAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('돌아가기', style: TextStyle(color: Colors.white)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('페널티 감수 확인'),
-          ),
-        ],
-      ),
+    final confirmPenalty = await _showPenaltyDialog(
+      currentSaved,
+      penaltyAmount,
     );
 
     if (confirmPenalty == true) {
@@ -372,6 +248,185 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
         consumeFreePass: false,
       );
     }
+  }
+
+  Future<bool> _showPenaltyDialog(double currentAmount, double penalty) async {
+    final afterAmount = currentAmount - penalty;
+    final totalGoal = widget.item!.totalGoal;
+
+    final double safeTotal = totalGoal > 0 ? totalGoal : 1.0;
+    final double startProgress = (currentAmount / safeTotal).clamp(0.0, 1.0);
+    final double endProgress = (afterAmount / safeTotal);
+
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: const Color(0xFF2A0000), // Dark Red
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: Colors.redAccent),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+                SizedBox(width: 8),
+                Text(
+                  '[위험] 페널티 발생',
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '이미 무료 기회를 사용하셨습니다.\n목표 수정시 20% 페널티가 부과됩니다.', // 20% text
+                  style: TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  '⚠ 주의: 목표물도 파괴되며\n구원 퀘스트를 수행해야 복구됩니다.',
+                  style: TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Preview Visualization
+                const Text(
+                  '게이지 변화',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                Stack(
+                  children: [
+                    // Background
+                    Container(
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[800],
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                    ),
+                    // Original (Faded)
+                    FractionallySizedBox(
+                      widthFactor: startProgress,
+                      child: Container(
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                    ),
+                    // New Amount (Red)
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: startProgress, end: endProgress),
+                      duration: const Duration(milliseconds: 2000),
+                      curve: Curves.easeInOutQuart,
+                      onEnd: () {
+                        HapticFeedback.heavyImpact();
+                      },
+                      builder: (context, value, child) {
+                        final isNegative = value < 0;
+                        final widthFactor = value.abs();
+
+                        return Stack(
+                          alignment: Alignment.centerLeft,
+                          children: [
+                            Container(
+                              height: 10,
+                              width: double.infinity,
+                              color: Colors.grey[800],
+                            ),
+                            FractionallySizedBox(
+                              widthFactor: widthFactor.clamp(0.0, 1.0),
+                              child: Container(
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: isNegative
+                                      ? const Color(0xFFFF0000)
+                                      : Colors.redAccent,
+                                  borderRadius: BorderRadius.circular(5),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color:
+                                          (isNegative
+                                                  ? const Color(0xFFFF0000)
+                                                  : Colors.red)
+                                              .withOpacity(0.8),
+                                      blurRadius: 15,
+                                      spreadRadius: 3,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (isNegative)
+                              const Positioned(
+                                right: 0,
+                                child: Text(
+                                  "DEBT",
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${currentAmount.toInt()}',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                    Text(
+                      '${afterAmount.toInt()} (-${penalty.toInt()})',
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text(
+                  '돌아가기',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('페널티 감수하고 변경'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   Future<void> _executeEdit(

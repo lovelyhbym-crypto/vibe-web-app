@@ -102,6 +102,7 @@ class WishlistNotifier extends _$WishlistNotifier {
           safeJson.remove('broken_image_index');
           safeJson.remove('quest_saved_amount'); // Also might be missing
           safeJson.remove('consecutive_valid_days');
+          safeJson.remove('penalty_amount');
 
           final response = await ref
               .read(supabaseProvider)
@@ -763,45 +764,6 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
   }
 
-  // Desire Control System: Penalty Logic
-  Future<void> applyPenalty(String id, double penaltyAmount) async {
-    final authNotifier = ref.read(authProvider.notifier);
-    final user = ref.read(authProvider).asData?.value;
-
-    final previousList = state.valueOrNull ?? [];
-    final index = previousList.indexWhere((item) => item.id == id);
-    if (index == -1) return;
-
-    final original = previousList[index];
-    double newSavedAmount = original.savedAmount - penaltyAmount;
-    if (newSavedAmount < 0) newSavedAmount = 0;
-
-    final updatedItem = original.copyWith(savedAmount: newSavedAmount);
-    final updatedList = List<WishlistModel>.from(previousList);
-    updatedList[index] = updatedItem;
-
-    // Optimistic Update
-    state = AsyncValue.data(updatedList);
-
-    if (authNotifier.isGuest || user == null) {
-      final guestIndex = _guestWishlist.indexWhere((item) => item.id == id);
-      if (guestIndex != -1) _guestWishlist[guestIndex] = updatedItem;
-      return;
-    }
-
-    try {
-      await ref
-          .read(supabaseProvider)
-          .from('wishlists')
-          .update({'saved_amount': newSavedAmount.toInt()})
-          .eq('id', id);
-    } catch (e) {
-      ref.invalidateSelf();
-      debugPrint('Error applying penalty: $e');
-      throw Exception('Failed to apply penalty: $e');
-    }
-  }
-
   /// Desire Control System: Pivot Tax Update
   /// 페널티 적용 여부에 따라 저축액을 90%로 삭감하고 목표를 수정함
   /// Desire Control System: Pivot Tax Update
@@ -811,20 +773,23 @@ class WishlistNotifier extends _$WishlistNotifier {
     required bool applyPenalty,
     required bool consumeFreePass,
   }) async {
-    // 1. Penalty Calculation (Strict Floor) & Shatter Logic
-    double? newSavedAmount;
+    // 1. Penalty Calculation (Store separately, do NOT touch savedAmount)
+    double penaltyValue = 0.0;
     bool shouldShatter = false;
     int brokenIndex = 0;
 
     if (applyPenalty) {
-      // Find current saved amount
+      // Find current state
       final currentItem = state.valueOrNull?.firstWhere(
         (e) => e.id == newItem.id,
         orElse: () => newItem,
       );
+
       if (currentItem != null) {
-        // [Strict Logic] 90% deduction, floor to double to maximize penalty
-        newSavedAmount = (currentItem.savedAmount * 0.9).floorToDouble();
+        // [Merciless Logic] Penalty is 20% of Total Goal
+        // Saved Amount is SAFE. Penalty is stored in penaltyAmount.
+        penaltyValue = currentItem.totalGoal * 0.2;
+
         shouldShatter = true;
         brokenIndex = Random().nextInt(2) + 1; // 1 or 2
       }
@@ -839,11 +804,12 @@ class WishlistNotifier extends _$WishlistNotifier {
       imageUrl: newItem.imageUrl,
     );
 
-    // 3. Update Saved Amount & Shatter Status if Penalty Applied
-    if (newSavedAmount != null) {
+    // 3. Update Penalty & Shatter Status
+    // Always call this if penalty applied OR if we need to reset penalty (though currently we only add)
+    if (applyPenalty) {
       await _updatePenaltyAndShatter(
         newItem.id!,
-        newSavedAmount,
+        penaltyValue,
         shouldShatter: shouldShatter,
         brokenIndex: brokenIndex,
       );
@@ -861,7 +827,7 @@ class WishlistNotifier extends _$WishlistNotifier {
 
   Future<void> _updatePenaltyAndShatter(
     String id,
-    double amount, {
+    double penaltyValue, {
     required bool shouldShatter,
     required int brokenIndex,
   }) async {
@@ -873,7 +839,8 @@ class WishlistNotifier extends _$WishlistNotifier {
     if (index == -1) return;
 
     // Apply updates locally
-    var updatedItem = previousList[index].copyWith(savedAmount: amount);
+    // We update penaltyAmount. savedAmount is untouched.
+    var updatedItem = previousList[index].copyWith(penaltyAmount: penaltyValue);
 
     if (shouldShatter) {
       updatedItem = updatedItem.copyWith(
@@ -898,7 +865,7 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
 
     try {
-      final updates = <String, dynamic>{'saved_amount': amount.toInt()};
+      final updates = <String, dynamic>{'penalty_amount': penaltyValue};
 
       if (shouldShatter) {
         updates.addAll({
@@ -916,14 +883,14 @@ class WishlistNotifier extends _$WishlistNotifier {
           .update(updates)
           .eq('id', id);
     } catch (e) {
-      ref.invalidateSelf();
-
       // Handle PGRST204 (Missing columns in old schema) gracefully
       if (e.toString().contains('PGRST204')) {
-        debugPrint('Warning: Quest columns missing. Penalty applied locally.');
-        return;
+        debugPrint('Warning: Columns missing. Penalty applied locally.');
+        return; // Keep optimistic update
       }
-      throw Exception('Failed to update penalty amount: $e');
+
+      ref.invalidateSelf(); // Only invalidate for other errors
+      throw Exception('Failed to update penalty: $e');
     }
   }
 }

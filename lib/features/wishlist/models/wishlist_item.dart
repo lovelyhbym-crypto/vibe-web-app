@@ -25,7 +25,10 @@ class WishlistItem {
     this.brokenImageIndex = 0, // Default 0
     this.lastSavedAt,
     this.isActive = true, // Default true
+    this.penaltyAmount = 0.0,
   });
+
+  final double penaltyAmount;
 
   factory WishlistItem.fromJson(Map<String, dynamic> json) {
     return WishlistItem(
@@ -45,6 +48,7 @@ class WishlistItem {
           ? DateTime.parse(json['last_saved_at'] as String)
           : null,
       isActive: json['is_active'] as bool? ?? true,
+      penaltyAmount: (json['penalty_amount'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -62,6 +66,7 @@ class WishlistItem {
       'broken_image_index': brokenImageIndex,
       'last_saved_at': lastSavedAt?.toIso8601String(),
       'is_active': isActive,
+      'penalty_amount': penaltyAmount,
     };
   }
 
@@ -78,6 +83,7 @@ class WishlistItem {
     int? brokenImageIndex,
     DateTime? lastSavedAt,
     bool? isActive,
+    double? penaltyAmount,
   }) {
     return WishlistItem(
       id: id ?? this.id,
@@ -92,6 +98,7 @@ class WishlistItem {
       brokenImageIndex: brokenImageIndex ?? this.brokenImageIndex,
       lastSavedAt: lastSavedAt ?? this.lastSavedAt,
       isActive: isActive ?? this.isActive,
+      penaltyAmount: penaltyAmount ?? this.penaltyAmount,
     );
   }
 

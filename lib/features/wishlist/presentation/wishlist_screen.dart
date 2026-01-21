@@ -82,7 +82,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
       }
     });
 
-    final wishlistAsync = ref.watch(wishlistStreamProvider);
+    final wishlistAsync = ref.watch(wishlistProvider);
     final i18n = I18n.of(context);
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
     final themeMode = ref.watch(themeNotifierProvider);
@@ -205,10 +205,8 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final item = activeWishlist[index];
                         final progress = item.totalGoal > 0
-                            ? (item.savedAmount / item.totalGoal).clamp(
-                                0.0,
-                                1.0,
-                              )
+                            ? ((item.savedAmount - item.penaltyAmount) /
+                                  item.totalGoal)
                             : 0.0;
 
                         final cardcontent = item.imageUrl == null
@@ -279,7 +277,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                         ),
                                         tween: Tween<double>(
                                           begin: 0.0,
-                                          end: progress,
+                                          end: progress.clamp(0.0, 1.0),
                                         ),
                                         duration: const Duration(
                                           milliseconds: 1000,
@@ -291,7 +289,11 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                             backgroundColor: colors.border,
                                             color: isPureFinance
                                                 ? colors.textMain
-                                                : const Color(0xFFD4FF00),
+                                                : (value < 0
+                                                      ? Colors.redAccent
+                                                      : const Color(
+                                                          0xFFD4FF00,
+                                                        )),
                                             minHeight: 3.0,
                                             borderRadius: BorderRadius.circular(
                                               2.0,
@@ -305,12 +307,14 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                             MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
-                                            '${(progress * 100).toInt()}% ${i18n.achieved}',
+                                            '성공 확률 : ${(progress * 100).toInt()}%',
                                             style: TextStyle(
                                               fontSize: 12,
-                                              color: isPureFinance
-                                                  ? Colors.grey[500]
-                                                  : colors.textSub,
+                                              color: progress < 0
+                                                  ? Colors.redAccent
+                                                  : (isPureFinance
+                                                        ? Colors.grey[500]
+                                                        : colors.textSub),
                                             ),
                                           ),
                                           RichText(
@@ -383,7 +387,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                             ),
                                             tween: Tween<double>(
                                               begin: 0.0,
-                                              end: progress,
+                                              end: progress.clamp(0.0, 1.0),
                                             ),
                                             duration: const Duration(
                                               milliseconds: 1000,
@@ -468,7 +472,9 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                           ),
                                           const SizedBox(height: 12),
                                           TweenAnimationBuilder<double>(
-                                            tween: Tween<double>(end: progress),
+                                            tween: Tween<double>(
+                                              end: progress.clamp(0.0, 1.0),
+                                            ),
                                             duration: const Duration(
                                               milliseconds: 1000,
                                             ),
@@ -481,7 +487,11 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                                     : Colors.grey[800],
                                                 color: isPureFinance
                                                     ? colors.textMain
-                                                    : const Color(0xFFD4FF00),
+                                                    : (value < 0
+                                                          ? Colors.redAccent
+                                                          : const Color(
+                                                              0xFFD4FF00,
+                                                            )),
                                                 minHeight: 3.0,
                                                 borderRadius:
                                                     BorderRadius.circular(2.0),
@@ -494,12 +504,14 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
-                                                '${(progress * 100).toInt()}% ${i18n.achieved}',
+                                                '성공 확률 : ${(progress * 100).toInt()}%',
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: isPureFinance
-                                                      ? Colors.grey[500]
-                                                      : Colors.white60,
+                                                  color: progress < 0
+                                                      ? Colors.redAccent
+                                                      : (isPureFinance
+                                                            ? Colors.grey[500]
+                                                            : Colors.white60),
                                                 ),
                                               ),
                                               RichText(
