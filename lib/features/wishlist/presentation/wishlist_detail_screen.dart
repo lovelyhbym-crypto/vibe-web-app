@@ -387,22 +387,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                                   isBroken: item.isBroken,
                                   width: width,
                                   height: height,
-                                  isGrayscale: true,
-                                ),
-                                ClipRect(
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    widthFactor: value,
-                                    child: VibeImageEffect(
-                                      imageUrl: item.imageUrl,
-                                      localImage: _selectedImage,
-                                      blurLevel: item.blurLevel,
-                                      isBroken: item.isBroken,
-                                      width: width,
-                                      height: height,
-                                      isGrayscale: false,
-                                    ),
-                                  ),
+                                  progress: value,
                                 ),
                                 // (C) 스캔 라인 효과
                                 if (value > 0 && value < 1.0)

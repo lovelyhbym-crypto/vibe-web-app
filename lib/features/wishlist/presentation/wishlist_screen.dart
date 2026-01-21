@@ -353,7 +353,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                                             height: double.infinity,
                                             blurLevel: item.blurLevel,
                                             isBroken: item.isBroken,
-                                            isGrayscale: progress < 1.0,
+                                            progress: progress,
                                           ),
                                         ),
                                       ),
