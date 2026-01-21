@@ -65,7 +65,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     _amountController.text = (current + amount).toString();
   }
 
-  Future<void> _executeDefeatSequence(double amount) async {
+  void _executeDefeatSequence(double amount) async {
     // 1. Sound: 유리창 깨지는 소리 시뮬레이션 (안전 모드)
     debugPrint('Sound Simulation: Glass Breaking Sound (Amount: $amount)');
 
@@ -76,16 +76,143 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
       orElse: () => [],
     );
 
+    String? penaltyText;
     if (activeWishlists.isNotEmpty) {
-      final targetId = activeWishlists.first.id;
-      if (targetId != null) {
-        await ref.read(wishlistProvider.notifier).shatterDream(targetId);
+      final target = activeWishlists.first;
+      penaltyText = target.penaltyText;
+      if (target.id != null) {
+        await ref.read(wishlistProvider.notifier).shatterDream(target.id!);
       }
     }
 
-    // 3. Navigation: 즉시 위시리스트 탭으로 강제 전환
+    // 3. Confrontation Mode (Full Screen Overlay)
     if (mounted) {
-      HapticFeedback.vibrate();
+      // Haptic Feedback for impact
+      HapticFeedback.heavyImpact();
+
+      await showGeneralDialog(
+        context: context,
+        barrierDismissible: false,
+        barrierColor: Colors.black.withOpacity(0.95), // Pitch black overlay
+        pageBuilder: (context, anim1, anim2) {
+          return PopScope(
+            canPop: false, // Prevent back button
+            child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.broken_image_rounded,
+                      size: 80,
+                      color: Colors.white24,
+                    ),
+                    const SizedBox(height: 32),
+                    const Text(
+                      "실패가 확정되었습니다.",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 24,
+                      ),
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1A0000),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.redAccent.withOpacity(0.5),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          const Text(
+                            "약속하신 벌칙",
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            penaltyText ?? "설정된 벌칙이 없습니다.",
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              height: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (penaltyText != null)
+                            const Text(
+                              "지금 즉시 수행하십시오.",
+                              style: TextStyle(
+                                color: Colors.white54,
+                                fontSize: 12,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 60),
+                    SizedBox(
+                      width: 200,
+                      height: 56,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 8,
+                          shadowColor: Colors.redAccent.withOpacity(0.5),
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Close overlay
+                        },
+                        child: const Text(
+                          "수행하겠습니다",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+        transitionBuilder: (context, anim1, anim2, child) {
+          return FadeTransition(
+            opacity: anim1,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.95, end: 1.0).animate(
+                CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
+              ),
+              child: child,
+            ),
+          );
+        },
+      );
+    }
+
+    // 4. Navigation: 즉시 위시리스트 탭으로 강제 전환
+    if (mounted) {
       context.go('/');
       ref.read(navigationIndexProvider.notifier).setIndex(1);
     }
@@ -100,16 +227,19 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: colors?.surface ?? Colors.grey[900],
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Row(
+        backgroundColor: const Color(0xFF111111),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: Colors.redAccent),
+        ),
+        title: const Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
-            const SizedBox(width: 8),
+            Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+            SizedBox(width: 8),
             Text(
-              '패배를 인정하시겠습니까?',
+              '마지막 경고',
               style: TextStyle(
-                color: colors?.textMain ?? Colors.white,
+                color: Colors.redAccent,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -120,20 +250,23 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text(
+              '패배를 인정하시겠습니까?\n이 선택은 되돌릴 수 없으며,\n설정하신 벌칙을 즉시 수행해야 합니다.',
+              style: TextStyle(color: Colors.white70, height: 1.5),
+            ),
+            const SizedBox(height: 24),
             Text(
               '얼마를 낭비했습니까?',
               style: TextStyle(color: colors?.textSub ?? Colors.white70),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             TextField(
               controller: controller,
               keyboardType: TextInputType.number,
-              style: TextStyle(color: colors?.textMain ?? Colors.white),
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: '금액 입력',
-                hintStyle: TextStyle(
-                  color: (colors?.textSub ?? Colors.white).withOpacity(0.4),
-                ),
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
                 enabledBorder: const UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.redAccent),
                 ),
@@ -151,7 +284,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
+              backgroundColor: Colors.red[900],
               foregroundColor: Colors.white,
             ),
             onPressed: () {
@@ -159,7 +292,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               Navigator.pop(context);
               _executeDefeatSequence(amount);
             },
-            child: const Text('패배 선언'),
+            child: const Text('패배 확정'),
           ),
         ],
       ),

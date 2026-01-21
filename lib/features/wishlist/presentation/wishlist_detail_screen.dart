@@ -28,7 +28,7 @@ class WishlistDetailScreen extends ConsumerStatefulWidget {
 
 class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     with WidgetsBindingObserver {
-  late TextEditingController _commentController;
+  late TextEditingController _penaltyController;
   late TextEditingController _titleController;
   late TextEditingController _priceController;
   DateTime? _editedDate;
@@ -43,13 +43,13 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _commentController = TextEditingController(text: widget.item.comment);
+    _penaltyController = TextEditingController(text: widget.item.penaltyText);
     _titleController = TextEditingController(text: widget.item.title);
     _priceController = TextEditingController(
       text: widget.item.price.toInt().toString(),
     );
     _editedDate = widget.item.targetDate;
-    _commentController.addListener(_onTextChanged);
+    _penaltyController.addListener(_onTextChanged);
     _titleController.addListener(_onTextChanged);
     _priceController.addListener(_onTextChanged);
   }
@@ -57,10 +57,10 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _commentController.removeListener(_onTextChanged);
+    _penaltyController.removeListener(_onTextChanged);
     _titleController.removeListener(_onTextChanged);
     _priceController.removeListener(_onTextChanged);
-    _commentController.dispose();
+    _penaltyController.dispose();
     _titleController.dispose();
     _priceController.dispose();
     super.dispose();
@@ -82,17 +82,17 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
   }
 
   void _onTextChanged() {
-    final originalComment = widget.item.comment ?? '';
+    final originalPenalty = widget.item.penaltyText ?? '';
     final originalTitle = widget.item.title;
     final originalPrice = widget.item.price.toInt().toString();
 
-    final currentComment = _commentController.text;
+    final currentPenalty = _penaltyController.text;
     final currentTitle = _titleController.text;
     final currentPrice = _priceController.text;
 
     setState(() {
       _hasChanges =
-          originalComment != currentComment ||
+          originalPenalty != currentPenalty ||
           originalTitle != currentTitle ||
           originalPrice != currentPrice ||
           _editedDate != widget.item.targetDate ||
@@ -197,7 +197,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
         totalGoal: price, // Assuming total goal updates with price
         targetDate: _editedDate,
         imageUrl: uploadedImageUrl,
-        comment: _commentController.text,
+        penaltyText: _penaltyController.text,
       );
 
       // Delegate to penalty check logic
@@ -1197,9 +1197,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
 
                     const SizedBox(height: 40),
 
-                    // Comment Section (Editable)
+                    // Penalty Section (Editable)
                     Text(
-                      '나의 다짐',
+                      '실패 시 나에게 주는 벌칙',
                       style: TextStyle(
                         color: isPureFinance ? colors.textMain : Colors.white,
                         fontSize: 18,
@@ -1217,7 +1217,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           TextField(
-                            controller: _commentController,
+                            controller: _penaltyController,
                             maxLines: 4,
                             minLines: 1,
                             style: TextStyle(
@@ -1227,11 +1227,12 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                               fontSize: 16,
                               height: 1.5,
                             ),
+                            // Penalty is always editable unless completed & achieved
                             readOnly: item.isAchieved || progress >= 1.0,
                             decoration: InputDecoration(
                               hintText: (item.isAchieved || progress >= 1.0)
-                                  ? "달성 완료된 다짐입니다"
-                                  : "미래의 나에게 보내는 응원 메시지",
+                                  ? "성공한 목표에는 벌칙이 없습니다"
+                                  : "실패 시 수행할 벌칙을 입력하세요",
                               hintStyle: TextStyle(
                                 color: isPureFinance
                                     ? colors.textSub

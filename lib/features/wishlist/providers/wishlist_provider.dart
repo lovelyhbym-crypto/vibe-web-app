@@ -103,6 +103,7 @@ class WishlistNotifier extends _$WishlistNotifier {
           safeJson.remove('quest_saved_amount'); // Also might be missing
           safeJson.remove('consecutive_valid_days');
           safeJson.remove('penalty_amount');
+          safeJson.remove('penalty_text');
 
           final response = await ref
               .read(supabaseProvider)
@@ -302,6 +303,7 @@ class WishlistNotifier extends _$WishlistNotifier {
     double? price,
     DateTime? targetDate,
     String? imageUrl,
+    String? penaltyText,
   }) async {
     final authNotifier = ref.read(authProvider.notifier);
     final user = ref.read(authProvider).asData?.value;
@@ -320,6 +322,7 @@ class WishlistNotifier extends _$WishlistNotifier {
       totalGoal: newTotalGoal,
       targetDate: targetDate ?? originalItem.targetDate,
       imageUrl: imageUrl ?? originalItem.imageUrl,
+      penaltyText: penaltyText ?? originalItem.penaltyText,
       isAchieved: isNowAchieved,
       achievedAt: (isNowAchieved && !originalItem.isAchieved)
           ? DateTime.now()
@@ -350,6 +353,7 @@ class WishlistNotifier extends _$WishlistNotifier {
       if (targetDate != null)
         updates['target_date'] = targetDate.toIso8601String();
       if (imageUrl != null) updates['image_url'] = imageUrl;
+      if (penaltyText != null) updates['penalty_text'] = penaltyText;
 
       // [핵심] 달성 상태 항상 명시적 업데이트
       updates['is_achieved'] = isNowAchieved;
@@ -814,6 +818,7 @@ class WishlistNotifier extends _$WishlistNotifier {
       price: newItem.price,
       targetDate: newItem.targetDate,
       imageUrl: newItem.imageUrl,
+      penaltyText: newItem.penaltyText,
     );
 
     // 3. Update Penalty & Shatter Status

@@ -20,6 +20,7 @@ class WishlistModel {
   final int consecutiveValidDays;
   final DateTime? lastQuestSavingDate;
   final double penaltyAmount;
+  final String? penaltyText;
 
   WishlistModel({
     this.id,
@@ -43,6 +44,7 @@ class WishlistModel {
     this.consecutiveValidDays = 0,
     this.lastQuestSavingDate,
     this.penaltyAmount = 0.0,
+    this.penaltyText,
   }) : createdAt = createdAt ?? DateTime.now();
 
   /// (totalGoal - savedAmount) / (남은 일수)를 계산
@@ -80,7 +82,7 @@ class WishlistModel {
       'image_url': imageUrl,
       'is_achieved': isAchieved,
       'created_at': createdAt.toIso8601String(),
-      'comment': comment,
+      'comment': penaltyText, // Save penaltyText to the comment column
       'is_representative': isRepresentative,
       'blur_level': blurLevel,
       'is_broken': isBroken,
@@ -88,6 +90,7 @@ class WishlistModel {
       'quest_saved_amount': questSavedAmount,
       'consecutive_valid_days': consecutiveValidDays,
       'penalty_amount': penaltyAmount,
+      // 'penalty_text': penaltyText, // Mapped to 'comment' column
     };
 
     if (targetDate != null) {
@@ -137,7 +140,8 @@ class WishlistModel {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
-      comment: json['comment'] as String?,
+      comment: null, // Comment is now used for penaltyText
+      penaltyText: json['comment'] as String?, // Read from comment column
       isRepresentative: json['is_representative'] as bool? ?? false,
       blurLevel: (json['blur_level'] as num?)?.toDouble() ?? 0.0,
       isBroken: json['is_broken'] as bool? ?? false,
@@ -154,6 +158,7 @@ class WishlistModel {
           ? DateTime.parse(json['last_quest_saving_date'] as String)
           : null,
       penaltyAmount: (json['penalty_amount'] as num?)?.toDouble() ?? 0.0,
+      // penaltyText: json['penalty_text'] as String?, // Mapped from 'comment'
     );
   }
 
@@ -179,6 +184,7 @@ class WishlistModel {
     int? consecutiveValidDays,
     DateTime? lastQuestSavingDate,
     double? penaltyAmount,
+    String? penaltyText,
   }) {
     return WishlistModel(
       id: id ?? this.id,
@@ -202,6 +208,7 @@ class WishlistModel {
       consecutiveValidDays: consecutiveValidDays ?? this.consecutiveValidDays,
       lastQuestSavingDate: lastQuestSavingDate ?? this.lastQuestSavingDate,
       penaltyAmount: penaltyAmount ?? this.penaltyAmount,
+      penaltyText: penaltyText ?? this.penaltyText,
     );
   }
 

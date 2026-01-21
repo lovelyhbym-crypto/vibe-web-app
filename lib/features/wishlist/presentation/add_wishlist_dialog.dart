@@ -29,11 +29,50 @@ class AddWishlistDialog extends ConsumerStatefulWidget {
 class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
   final _titleController = TextEditingController();
   final _priceController = TextEditingController();
+  final _penaltyController = TextEditingController();
   final _imageService = ImageService();
 
   XFile? _selectedImage;
   DateTime? _targetDate;
   bool _isUploading = false;
+  bool _isSpinning = false;
+
+  void _spinPenaltySlotMachine() async {
+    if (_isSpinning) return;
+
+    setState(() => _isSpinning = true);
+
+    final penalties = [
+      "배달 앱(배민/쿠팡이츠 등) 하루 동안 삭제",
+      "사진첩의 쓸데없는 사진 20개 정리하기",
+      "물 1.5L 마시기(물 마실때마다 어플 생각)",
+      "스마트폰 없이 딱 15분동안 동네 산책하기",
+      "오늘 밤 자기 전 무지출 전략 세우기",
+      "하루 동안 '감사합니다' 혹은 '수고하셨습니다' 인사 5번 하기",
+      "지금 즉시 책상 혹은 방 바닥 청소하기",
+      "집에 있는 안 쓰는 물건 하나 비우기 (기부/나눔)",
+      "내일 하루 액상과당(제로 음료 포함) 0mg 실천",
+      "내일 평소보다 1시간 일찍 일어나기",
+    ];
+
+    // Slot Machine Animation Effect
+    for (int i = 0; i < 10; i++) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
+      setState(() {
+        _penaltyController.text = penalties[i % penalties.length];
+      });
+    }
+
+    // Final Random Selection
+    final random = DateTime.now().millisecondsSinceEpoch % penalties.length;
+    if (mounted) {
+      setState(() {
+        _penaltyController.text = penalties[random];
+        _isSpinning = false;
+      });
+    }
+  }
 
   @override
   void initState() {
@@ -41,6 +80,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
     if (widget.item != null) {
       _titleController.text = widget.item!.title;
       _priceController.text = widget.item!.price.toInt().toString();
+      _penaltyController.text = widget.item!.penaltyText ?? '';
       _targetDate = widget.item!.targetDate;
     }
   }
@@ -49,6 +89,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
   void dispose() {
     _titleController.dispose();
     _priceController.dispose();
+    _penaltyController.dispose();
     super.dispose();
   }
 
@@ -97,6 +138,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
   Future<void> _submit() async {
     final title = _titleController.text;
     final price = double.tryParse(_priceController.text) ?? 0.0;
+    final penaltyText = _penaltyController.text;
 
     if (title.isEmpty || price <= 0) {
       return;
@@ -104,7 +146,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
 
     // Edit Mode Penalty Logic
     if (widget.item != null) {
-      await _checkPenaltyAndSubmit(title, price);
+      await _checkPenaltyAndSubmit(title, price, penaltyText);
       return;
     }
 
@@ -125,6 +167,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
         totalGoal: price, // Assuming goal equals price for now
         imageUrl: imageUrl,
         targetDate: _targetDate,
+        penaltyText: penaltyText,
       );
 
       await ref.read(wishlistProvider.notifier).addWishlist(newItem);
@@ -156,7 +199,11 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
     }
   }
 
-  Future<void> _checkPenaltyAndSubmit(String title, double price) async {
+  Future<void> _checkPenaltyAndSubmit(
+    String title,
+    double price,
+    String penaltyText,
+  ) async {
     final original = widget.item!;
     final progress = original.savedAmount > 0
         ? original.savedAmount / original.totalGoal
@@ -167,6 +214,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
       await _executeEdit(
         title,
         price,
+        penaltyText,
         applyPenalty: false,
         consumeFreePass: false,
       );
@@ -217,13 +265,10 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
       );
 
       if (confirm == true) {
-        // Logic: Free pass is consumed via the provider call in _executeEdit or directly
-        // The provider updateWishlistWithPenalty now handles consumption if flag is true.
-        // Wait, normally I used `ref.read(userProfileNotifierProvider.notifier).useFreePass()` separately.
-        // But the new provider logic handles it. Let's rely on that to accept 'consumeFreePass: true'.
         await _executeEdit(
           title,
           price,
+          penaltyText,
           applyPenalty: false,
           consumeFreePass: true,
         );
@@ -244,6 +289,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
       await _executeEdit(
         title,
         price,
+        penaltyText,
         applyPenalty: true,
         consumeFreePass: false,
       );
@@ -431,7 +477,8 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
 
   Future<void> _executeEdit(
     String title,
-    double price, {
+    double price,
+    String penaltyText, {
     required bool applyPenalty,
     required bool consumeFreePass,
   }) async {
@@ -451,6 +498,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
         totalGoal: price, // Assuming totalGoal follows price update
         imageUrl: imageUrl,
         targetDate: _targetDate,
+        penaltyText: penaltyText,
       );
 
       await ref
@@ -615,6 +663,86 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 24),
+            // Penalty Input Section
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '실패 시 나에게 주는 벌칙',
+                      style: TextStyle(
+                        color: colors.textSub,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _spinPenaltySlotMachine,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _isSpinning ? colors.accent : colors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _isSpinning
+                                ? Colors.transparent
+                                : colors.accent,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.casino,
+                              size: 14,
+                              color: _isSpinning ? Colors.black : colors.accent,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              "운명의 뽑기",
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: _isSpinning
+                                    ? Colors.black
+                                    : colors.accent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _penaltyController,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    hintText: "예: 배달 앱 하루 삭제",
+                    hintStyle: TextStyle(
+                      color: colors.textSub.withOpacity(0.5),
+                    ),
+                    filled: true,
+                    fillColor: isPureFinance
+                        ? colors.background
+                        : Colors.black26,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                  style: TextStyle(color: colors.textMain, fontSize: 14),
+                ),
+              ],
             ),
           ],
         ),
