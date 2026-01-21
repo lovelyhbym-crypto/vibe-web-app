@@ -739,6 +739,73 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                 ),
               ),
               actions: [
+                // Delete Button
+                _LockedButton(
+                  isBroken: item.isBroken,
+                  child: Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isPureFinance
+                          ? Colors.white.withOpacity(0.9)
+                          : Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: isPureFinance
+                            ? Colors.redAccent
+                            : Colors.redAccent,
+                      ),
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: colors.surface,
+                            title: Text(
+                              '정말 포기하시겠습니까?',
+                              style: TextStyle(color: colors.textMain),
+                            ),
+                            content: Text(
+                              '이 결정은 되돌릴 수 없습니다.',
+                              style: TextStyle(color: colors.textSub),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop(false),
+                                child: Text(
+                                  '취소',
+                                  style: TextStyle(color: colors.textSub),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () =>
+                                    Navigator.of(context).pop(true),
+                                child: const Text(
+                                  '목표 파기',
+                                  style: TextStyle(
+                                    color: Colors.redAccent,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirmed == true) {
+                          if (widget.item.id != null) {
+                            await ref
+                                .read(wishlistProvider.notifier)
+                                .deleteWishlist(widget.item.id!);
+                            if (mounted) context.pop(); // Close detail screen
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ),
                 // Pivot / Edit Button
                 _LockedButton(
                   isBroken: item.isBroken,

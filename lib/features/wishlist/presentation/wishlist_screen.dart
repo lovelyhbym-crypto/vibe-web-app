@@ -570,48 +570,11 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
 
                         if (item.id == null) return card;
 
-                        return Dismissible(
-                          key: ValueKey(item.id ?? DateTime.now().toString()),
-                          direction: DismissDirection.endToStart,
-                          confirmDismiss: (direction) async {
-                            if (item.id == null) return false;
-                            final confirmed = await _showDeleteConfirmation(
-                              context,
-                            );
-                            if (confirmed != true) return false;
-                            try {
-                              await ref
-                                  .read(wishlistProvider.notifier)
-                                  .deleteWishlist(item.id!);
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('목표가 삭제되었습니다.')),
-                                );
-                              }
-                              return true;
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('삭제 실패: ${e.toString()}'),
-                                    backgroundColor: Colors.redAccent,
-                                  ),
-                                );
-                              }
-                              return false;
-                            }
-                          },
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            color: Colors.redAccent,
-                            child: const Icon(
-                              Icons.delete,
-                              color: Colors.white,
-                            ),
-                          ),
-                          child: card,
-                        );
+                        if (item.id == null) return card;
+
+                        // Slide-to-delete removed as per "Failure Lock" protocol.
+                        // Deletion is now centralized in the Detail Screen.
+                        return card;
                       }, childCount: activeWishlist.length),
                     ),
                     SliverToBoxAdapter(
@@ -735,27 +698,6 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     showDialog(
       context: context,
       builder: (context) => const AddWishlistDialog(),
-    );
-  }
-
-  Future<bool?> _showDeleteConfirmation(BuildContext context) {
-    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: colors.surface,
-        title: Text('정말 삭제할까요?', style: TextStyle(color: colors.textMain)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('취소', style: TextStyle(color: colors.textSub)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('삭제', style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
-      ),
     );
   }
 }
