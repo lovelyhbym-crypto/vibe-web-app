@@ -13,6 +13,7 @@ import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:vive_app/core/theme/theme_provider.dart';
 import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
 import 'package:vive_app/core/ui/vibe_image_effect.dart';
+import 'package:vive_app/features/home/providers/navigation_provider.dart';
 
 class WishlistScreen extends ConsumerStatefulWidget {
   const WishlistScreen({super.key});
@@ -21,12 +22,15 @@ class WishlistScreen extends ConsumerStatefulWidget {
   ConsumerState<WishlistScreen> createState() => _WishlistScreenState();
 }
 
-class _WishlistScreenState extends ConsumerState<WishlistScreen> {
+class _WishlistScreenState extends ConsumerState<WishlistScreen>
+    with WidgetsBindingObserver {
   late ConfettiController _confettiController;
+  int _animationTriggerId = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 3),
     );
@@ -34,8 +38,24 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _confettiController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _resetAnimation();
+    }
+  }
+
+  void _resetAnimation() {
+    if (mounted) {
+      setState(() {
+        _animationTriggerId++;
+      });
+    }
   }
 
   @override
@@ -51,6 +71,13 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
             ref.read(rewardStateProvider.notifier).consumeConfetti();
           }
         });
+      }
+    });
+
+    // 탭 전환 감시 (Index 1: 목표 탭)
+    ref.listen(navigationIndexProvider, (previous, next) {
+      if (next == 1 && previous != 1) {
+        _resetAnimation();
       }
     });
 
@@ -246,15 +273,17 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                                       ),
                                       const SizedBox(height: 12),
                                       TweenAnimationBuilder<double>(
-                                        key: ValueKey(progress),
+                                        key: ValueKey(
+                                          '$progress-$_animationTriggerId',
+                                        ),
                                         tween: Tween<double>(
                                           begin: 0.0,
                                           end: progress,
                                         ),
                                         duration: const Duration(
-                                          milliseconds: 1500,
+                                          milliseconds: 1000,
                                         ),
-                                        curve: Curves.easeOutExpo,
+                                        curve: Curves.easeOutCubic,
                                         builder: (context, value, child) {
                                           return LinearProgressIndicator(
                                             value: value,
@@ -347,13 +376,28 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                                         width: double.infinity,
                                         child: Hero(
                                           tag: 'wishlist_img_${item.id}',
-                                          child: VibeImageEffect(
-                                            imageUrl: item.imageUrl,
-                                            width: double.infinity,
-                                            height: double.infinity,
-                                            blurLevel: item.blurLevel,
-                                            isBroken: item.isBroken,
-                                            progress: progress,
+                                          child: TweenAnimationBuilder<double>(
+                                            key: ValueKey(
+                                              '$progress-$_animationTriggerId',
+                                            ),
+                                            tween: Tween<double>(
+                                              begin: 0.0,
+                                              end: progress,
+                                            ),
+                                            duration: const Duration(
+                                              milliseconds: 1000,
+                                            ),
+                                            curve: Curves.easeOutCubic,
+                                            builder: (context, value, child) {
+                                              return VibeImageEffect(
+                                                imageUrl: item.imageUrl,
+                                                width: double.infinity,
+                                                height: double.infinity,
+                                                blurLevel: item.blurLevel,
+                                                isBroken: item.isBroken,
+                                                progress: value,
+                                              );
+                                            },
                                           ),
                                         ),
                                       ),

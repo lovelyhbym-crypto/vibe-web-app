@@ -24,7 +24,8 @@ class WishlistDetailScreen extends ConsumerStatefulWidget {
       _WishlistDetailScreenState();
 }
 
-class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
+class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
+    with WidgetsBindingObserver {
   late TextEditingController _commentController;
   late TextEditingController _titleController;
   late TextEditingController _priceController;
@@ -34,10 +35,12 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
   bool _isEditing = false;
   bool _hasChanges = false;
   bool _isSaving = false;
+  int _animationTriggerId = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _commentController = TextEditingController(text: widget.item.comment);
     _titleController = TextEditingController(text: widget.item.title);
     _priceController = TextEditingController(
@@ -51,6 +54,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _commentController.removeListener(_onTextChanged);
     _titleController.removeListener(_onTextChanged);
     _priceController.removeListener(_onTextChanged);
@@ -58,6 +62,21 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
     _titleController.dispose();
     _priceController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _resetAnimation();
+    }
+  }
+
+  void _resetAnimation() {
+    if (mounted) {
+      setState(() {
+        _animationTriggerId++;
+      });
+    }
   }
 
   void _onTextChanged() {
@@ -373,10 +392,11 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
 
                         return TweenAnimationBuilder<double>(
                           key: ValueKey(
-                            item.savedAmount,
-                          ), // [중요] 저축액 변화시에만 애니메이션 실행
+                            '${item.savedAmount}-$_animationTriggerId',
+                          ), // 저축액 변화 및 트리거 발생 시 애니메이션 실행
                           tween: Tween<double>(begin: 0.0, end: progress),
-                          duration: const Duration(milliseconds: 1200),
+                          duration: const Duration(milliseconds: 1000),
+                          curve: Curves.easeOutCubic,
                           builder: (context, value, child) {
                             return Stack(
                               children: [
@@ -774,6 +794,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                         ),
                         const SizedBox(height: 8),
                         TweenAnimationBuilder<double>(
+                          key: ValueKey(
+                            '${item.savedAmount}-$_animationTriggerId',
+                          ),
                           tween: Tween<double>(end: progress),
                           duration: const Duration(milliseconds: 1000),
                           curve: Curves.easeOutCubic,
