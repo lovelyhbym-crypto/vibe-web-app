@@ -786,9 +786,10 @@ class WishlistNotifier extends _$WishlistNotifier {
       );
 
       if (currentItem != null) {
-        // [Merciless Logic] Penalty is 20% of Total Goal
-        // Saved Amount is SAFE. Penalty is stored in penaltyAmount.
-        penaltyValue = currentItem.totalGoal * 0.2;
+        // [Merciless Logic] Penalty is 20% of Total Goal + Existing Penalty
+        // Saved Amount is SAFE. Penalty increases cumulatively.
+        final additionalPenalty = currentItem.totalGoal * 0.2;
+        penaltyValue = currentItem.penaltyAmount + additionalPenalty;
 
         shouldShatter = true;
         brokenIndex = Random().nextInt(2) + 1; // 1 or 2
