@@ -583,6 +583,7 @@ class WishlistNotifier extends _$WishlistNotifier {
   }
 
   /// 꿈의 파괴 (100% 확률로 파괴, 이미지 랜덤 1~2)
+  /// [UPDATE] 패널티 적용: 성공 확률 20% 감소 (penaltyAmount 증가)
   Future<bool> shatterDream(String id) async {
     final wishlist = state.valueOrNull ?? [];
     final index = wishlist.indexWhere((item) => item.id == id);
@@ -594,6 +595,11 @@ class WishlistNotifier extends _$WishlistNotifier {
 
     final original = wishlist[index];
 
+    // [Merciless Logic] Penalty is 20% of Total Goal + Existing Penalty
+    // 기존 패널티에 추가로 20%를 더함 (중첩 가능)
+    final additionalPenalty = original.totalGoal * 0.2;
+    final newPenaltyAmount = original.penaltyAmount + additionalPenalty;
+
     // Optimistic Update
     final updatedItem = original.copyWith(
       isBroken: true,
@@ -601,6 +607,7 @@ class WishlistNotifier extends _$WishlistNotifier {
       brokenAt: DateTime.now(),
       questSavedAmount: 0.0,
       consecutiveValidDays: 0,
+      penaltyAmount: newPenaltyAmount, // 패널티 적용
     );
     final updatedList = List<WishlistModel>.from(wishlist);
     updatedList[index] = updatedItem;
@@ -623,6 +630,7 @@ class WishlistNotifier extends _$WishlistNotifier {
             'broken_at': DateTime.now().toIso8601String(),
             'quest_saved_amount': 0,
             'consecutive_valid_days': 0,
+            'penalty_amount': newPenaltyAmount, // DB 업데이트
           })
           .eq('id', id);
       return true;
