@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +12,7 @@ import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/services/image_service.dart';
 import 'package:intl/intl.dart';
+import 'package:vive_app/core/ui/vibe_image_effect.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {
   final WishlistModel item;
@@ -378,55 +378,30 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                           tween: Tween<double>(begin: 0.0, end: progress),
                           duration: const Duration(milliseconds: 1200),
                           builder: (context, value, child) {
-                            // 공통 이미지 위젯 (색상 간섭 제거 및 크기 고정)
-                            Widget buildUnifiedImage(bool isGrayscale) {
-                              final img = _selectedImage != null
-                                  ? (kIsWeb
-                                        ? Image.network(
-                                            _selectedImage!.path,
-                                            width: width,
-                                            height: height,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : Image.file(
-                                            File(_selectedImage!.path),
-                                            width: width,
-                                            height: height,
-                                            fit: BoxFit.cover,
-                                          ))
-                                  : (item.imageUrl != null
-                                        ? Image.network(
-                                            item.imageUrl!,
-                                            width: width,
-                                            height: height,
-                                            fit: BoxFit.cover,
-                                          )
-                                        : Container(color: Colors.grey[900]));
-
-                              if (isGrayscale) {
-                                return ColorFiltered(
-                                  colorFilter: const ColorFilter.matrix([
-                                    0.21, 0.72, 0.07, 0, -30, // Red
-                                    0.21, 0.72, 0.07, 0, -30, // Green
-                                    0.21, 0.72, 0.07, 0, -30, // Blue
-                                    0, 0, 0, 1, 0, // Alpha
-                                  ]),
-                                  child: img,
-                                );
-                              }
-                              return img;
-                            }
-
                             return Stack(
                               children: [
-                                Positioned.fill(
-                                  child: buildUnifiedImage(true), // 바닥: 흑백
+                                VibeImageEffect(
+                                  imageUrl: item.imageUrl,
+                                  localImage: _selectedImage,
+                                  blurLevel: item.blurLevel,
+                                  isBroken: item.isBroken,
+                                  width: width,
+                                  height: height,
+                                  isGrayscale: true,
                                 ),
                                 ClipRect(
                                   child: Align(
                                     alignment: Alignment.centerLeft,
-                                    widthFactor: value, // 게이지: 컬러
-                                    child: buildUnifiedImage(false),
+                                    widthFactor: value,
+                                    child: VibeImageEffect(
+                                      imageUrl: item.imageUrl,
+                                      localImage: _selectedImage,
+                                      blurLevel: item.blurLevel,
+                                      isBroken: item.isBroken,
+                                      width: width,
+                                      height: height,
+                                      isGrayscale: false,
+                                    ),
                                   ),
                                 ),
                                 // (C) 스캔 라인 효과

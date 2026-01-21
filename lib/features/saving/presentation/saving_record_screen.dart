@@ -65,6 +65,107 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     _amountController.text = (current + amount).toString();
   }
 
+  Future<void> _executeDefeatSequence(double amount) async {
+    // 1. Sound: 유리창 깨지는 소리 시뮬레이션 (안전 모드)
+    debugPrint('Sound Simulation: Glass Breaking Sound (Amount: $amount)');
+
+    // 2. State: 현재 위시리스트 파괴
+    final wishlistAsync = ref.read(wishlistProvider);
+    final activeWishlists = wishlistAsync.maybeWhen(
+      data: (list) => list.where((w) => !w.isAchieved).toList(),
+      orElse: () => [],
+    );
+
+    if (activeWishlists.isNotEmpty) {
+      final targetId = activeWishlists.first.id;
+      if (targetId != null) {
+        await ref.read(wishlistProvider.notifier).shatterDream(targetId);
+      }
+    }
+
+    // 3. Navigation: 즉시 위시리스트 탭으로 강제 전환
+    if (mounted) {
+      HapticFeedback.vibrate();
+      context.go('/');
+      ref.read(navigationIndexProvider.notifier).setIndex(1);
+    }
+  }
+
+  void _showDefeatDialog() {
+    final theme = Theme.of(context);
+    final vibeTheme = theme.extension<VibeThemeExtension>();
+    final colors = vibeTheme?.colors;
+    final controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: colors?.surface ?? Colors.grey[900],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+            const SizedBox(width: 8),
+            Text(
+              '패배를 인정하시겠습니까?',
+              style: TextStyle(
+                color: colors?.textMain ?? Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '얼마를 낭비했습니까?',
+              style: TextStyle(color: colors?.textSub ?? Colors.white70),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              style: TextStyle(color: colors?.textMain ?? Colors.white),
+              decoration: InputDecoration(
+                hintText: '금액 입력',
+                hintStyle: TextStyle(
+                  color: (colors?.textSub ?? Colors.white).withOpacity(0.4),
+                ),
+                enabledBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.redAccent),
+                ),
+                focusedBorder: const UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.redAccent, width: 2),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              final amount = double.tryParse(controller.text) ?? 0;
+              Navigator.pop(context);
+              _executeDefeatSequence(amount);
+            },
+            child: const Text('패배 선언'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _submit() async {
     if (_isLoading) return;
 
@@ -776,6 +877,42 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                         ),
                       );
                     },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Defeat Button (시인성 강화 버전)
+                  SizedBox(
+                    width: double.infinity,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.redAccent.withOpacity(0.5),
+                          width: 2,
+                        ),
+                      ),
+                      child: TextButton.icon(
+                        onPressed: _showDefeatDialog,
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.redAccent,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        icon: const Icon(Icons.warning_amber_rounded, size: 20),
+                        label: const Text(
+                          "패배 버튼",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 48),

@@ -484,6 +484,79 @@ class WishlistNotifier extends _$WishlistNotifier {
       throw Exception('Failed to set representative goal: $e');
     }
   }
+
+  /// 나태의 안개 정화 (blurLevel 차감)
+  Future<void> purifyFog(String id) async {
+    final wishlist = state.valueOrNull ?? [];
+    final index = wishlist.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final original = wishlist[index];
+    final newBlur = (original.blurLevel - 1.0).clamp(0.0, 10.0);
+
+    // Optimistic Update
+    final updatedItem = original.copyWith(
+      blurLevel: newBlur,
+      lastSavedAt: DateTime.now(), // 저축 시점 갱신
+    );
+    final updatedList = List<WishlistModel>.from(wishlist);
+    updatedList[index] = updatedItem;
+    state = AsyncValue.data(updatedList);
+
+    final authNotifier = ref.read(authProvider.notifier);
+    if (authNotifier.isGuest) {
+      final guestIndex = _guestWishlist.indexWhere((item) => item.id == id);
+      if (guestIndex != -1) _guestWishlist[guestIndex] = updatedItem;
+      return;
+    }
+
+    try {
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .update({
+            'blur_level': newBlur,
+            'last_saved_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', id);
+    } catch (e) {
+      debugPrint('Error purifying fog: $e');
+      ref.invalidateSelf();
+    }
+  }
+
+  /// 꿈의 파괴 (isBroken 설정)
+  Future<void> shatterDream(String id) async {
+    final wishlist = state.valueOrNull ?? [];
+    final index = wishlist.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final original = wishlist[index];
+
+    // Optimistic Update
+    final updatedItem = original.copyWith(isBroken: true);
+    final updatedList = List<WishlistModel>.from(wishlist);
+    updatedList[index] = updatedItem;
+    state = AsyncValue.data(updatedList);
+
+    final authNotifier = ref.read(authProvider.notifier);
+    if (authNotifier.isGuest) {
+      final guestIndex = _guestWishlist.indexWhere((item) => item.id == id);
+      if (guestIndex != -1) _guestWishlist[guestIndex] = updatedItem;
+      return;
+    }
+
+    try {
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .update({'is_broken': true})
+          .eq('id', id);
+    } catch (e) {
+      debugPrint('Error shattering dream: $e');
+      ref.invalidateSelf();
+    }
+  }
 }
 
 final wishlistProvider = wishlistNotifierProvider;

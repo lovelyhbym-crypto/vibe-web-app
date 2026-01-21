@@ -5,7 +5,10 @@ class WishlistItem {
   final DateTime createdAt;
   final bool isCompleted;
   final DateTime? completedAt; // Renamed from achievedAt
-  final String? comment; // Added
+  final String? comment;
+  final double blurLevel;
+  final bool isBroken;
+  final DateTime? lastSavedAt;
 
   WishlistItem({
     required this.id,
@@ -15,6 +18,9 @@ class WishlistItem {
     required this.isCompleted,
     this.completedAt,
     this.comment,
+    this.blurLevel = 0.0,
+    this.isBroken = false,
+    this.lastSavedAt,
   });
 
   factory WishlistItem.fromJson(Map<String, dynamic> json) {
@@ -28,6 +34,11 @@ class WishlistItem {
           ? DateTime.parse(json['completed_at'] as String)
           : null,
       comment: json['comment'] as String?,
+      blurLevel: (json['blur_level'] as num?)?.toDouble() ?? 0.0,
+      isBroken: json['is_broken'] as bool? ?? false,
+      lastSavedAt: json['last_saved_at'] != null
+          ? DateTime.parse(json['last_saved_at'] as String)
+          : null,
     );
   }
 
@@ -40,6 +51,9 @@ class WishlistItem {
       'is_completed': isCompleted,
       'completed_at': completedAt?.toIso8601String(),
       'comment': comment,
+      'blur_level': blurLevel,
+      'is_broken': isBroken,
+      'last_saved_at': lastSavedAt?.toIso8601String(),
     };
   }
 
@@ -51,6 +65,9 @@ class WishlistItem {
     bool? isCompleted,
     DateTime? completedAt,
     String? comment,
+    double? blurLevel,
+    bool? isBroken,
+    DateTime? lastSavedAt,
   }) {
     return WishlistItem(
       id: id ?? this.id,
@@ -60,6 +77,22 @@ class WishlistItem {
       isCompleted: isCompleted ?? this.isCompleted,
       completedAt: completedAt ?? this.completedAt,
       comment: comment ?? this.comment,
+      blurLevel: blurLevel ?? this.blurLevel,
+      isBroken: isBroken ?? this.isBroken,
+      lastSavedAt: lastSavedAt ?? this.lastSavedAt,
     );
+  }
+
+  /// 나태의 안개 농도 계산
+  /// lastSavedAt으로부터 현재까지 경과된 날(days) 1일당 +2.0 (최대 10.0)
+  double calculateCurrentBlur() {
+    if (lastSavedAt == null) return 0.0;
+
+    final now = DateTime.now();
+    final difference = now.difference(lastSavedAt!);
+    final days = difference.inDays;
+
+    double calculatedBlur = days * 2.0;
+    return calculatedBlur.clamp(0.0, 10.0);
   }
 }

@@ -11,6 +11,9 @@ class WishlistModel {
   final DateTime? targetDate;
   final String? comment;
   final bool isRepresentative;
+  final double blurLevel;
+  final bool isBroken;
+  final DateTime? lastSavedAt;
 
   WishlistModel({
     this.id,
@@ -25,6 +28,9 @@ class WishlistModel {
     DateTime? createdAt,
     this.comment,
     this.isRepresentative = false,
+    this.blurLevel = 0.0,
+    this.isBroken = false,
+    this.lastSavedAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
   /// (totalGoal - savedAmount) / (남은 일수)를 계산
@@ -64,15 +70,20 @@ class WishlistModel {
       'created_at': createdAt.toIso8601String(),
       'comment': comment,
       'is_representative': isRepresentative,
+      'blur_level': blurLevel,
+      'is_broken': isBroken,
     };
 
     if (targetDate != null) {
       data['target_date'] = targetDate!.toIso8601String();
     }
 
-    // Only include achieved_at if it exists and is not null
     if (achievedAt != null) {
       data['achieved_at'] = achievedAt!.toIso8601String();
+    }
+
+    if (lastSavedAt != null) {
+      data['last_saved_at'] = lastSavedAt!.toIso8601String();
     }
 
     // Include ID if it exists (though usually not for insert)
@@ -85,8 +96,7 @@ class WishlistModel {
 
   factory WishlistModel.fromJson(Map<String, dynamic> json) {
     return WishlistModel(
-      id: json['id']
-          ?.toString(), // Do not generate UUID here, let it be null if missing to detect errors
+      id: json['id']?.toString(),
       title: json['title'] as String,
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
       totalGoal: double.tryParse(json['total_goal']?.toString() ?? '0') ?? 0.0,
@@ -105,6 +115,11 @@ class WishlistModel {
           : null,
       comment: json['comment'] as String?,
       isRepresentative: json['is_representative'] as bool? ?? false,
+      blurLevel: (json['blur_level'] as num?)?.toDouble() ?? 0.0,
+      isBroken: json['is_broken'] as bool? ?? false,
+      lastSavedAt: json['last_saved_at'] != null
+          ? DateTime.parse(json['last_saved_at'] as String)
+          : null,
     );
   }
 
@@ -121,6 +136,9 @@ class WishlistModel {
     DateTime? createdAt,
     String? comment,
     bool? isRepresentative,
+    double? blurLevel,
+    bool? isBroken,
+    DateTime? lastSavedAt,
   }) {
     return WishlistModel(
       id: id ?? this.id,
@@ -135,7 +153,22 @@ class WishlistModel {
       createdAt: createdAt ?? this.createdAt,
       comment: comment ?? this.comment,
       isRepresentative: isRepresentative ?? this.isRepresentative,
+      blurLevel: blurLevel ?? this.blurLevel,
+      isBroken: isBroken ?? this.isBroken,
+      lastSavedAt: lastSavedAt ?? this.lastSavedAt,
     );
+  }
+
+  /// 나태의 안개 농도 계산
+  double calculateCurrentBlur() {
+    if (lastSavedAt == null) return 0.0;
+
+    final now = DateTime.now();
+    final difference = now.difference(lastSavedAt!);
+    final days = difference.inDays;
+
+    double calculatedBlur = days * 2.0;
+    return calculatedBlur.clamp(0.0, 10.0);
   }
 
   Map<String, int> calculateResistedCounts(List<dynamic> savings) {

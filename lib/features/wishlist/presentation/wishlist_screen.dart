@@ -12,6 +12,7 @@ import 'package:vive_app/core/ui/bouncy_button.dart';
 import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:vive_app/core/theme/theme_provider.dart';
 import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
+import 'package:vive_app/core/ui/vibe_image_effect.dart';
 
 class WishlistScreen extends ConsumerStatefulWidget {
   const WishlistScreen({super.key});
