@@ -668,17 +668,19 @@ class WishlistNotifier extends _$WishlistNotifier {
       }
     }
 
-    // 2. 금액 누적
+    // 2. 금액 누적 (퀘스트 누적액은 계속 추적하되, 이번 로직 수정으로 10% 한 방 조건을 위해 amount 자체를 비교)
     final newQuestAmount = item.questSavedAmount + amount;
     final newSavedAmount = item.savedAmount + amount;
 
-    // 3. 성공 조건 검사 (3일 연속 또는 원래 가격의 10% 지불 중 하나만 달성해도 성공)
-    final conditionA = newConsecutive >= 3;
-    final conditionB = newQuestAmount >= (item.totalGoal * 0.1);
+    // 3. 성공 조건 검사
+    // - 조건 A: 2일 연속 송금 (기존 3일 -> 2일)
+    // - 조건 B: 목표 금액의 10%를 '한 번에' 송금 (기존 누적 10% -> 1회 10%)
+    final conditionA = newConsecutive >= 2;
+    final conditionB = amount >= (item.totalGoal * 0.1);
     final isRecovered = conditionA || conditionB;
 
     if (isRecovered) {
-      // 복구 성공: 모든 퀘스트 필드 초기화 및 isBroken 해제
+      // 복구 성공: 모든 퀘스트 필드 초기화 및 isBroken 해제, 페널티 제거
       debugPrint('REDEMPTION SUCCESS: Goal "${item.title}" restored!');
       return item.copyWith(
         isBroken: false,
@@ -687,6 +689,7 @@ class WishlistNotifier extends _$WishlistNotifier {
         questSavedAmount: 0.0,
         consecutiveValidDays: 0,
         lastQuestSavingDate: null,
+        penaltyAmount: 0.0, // [보상] 성공 확률(게이지) 복구
       );
     } else {
       // 진행 중

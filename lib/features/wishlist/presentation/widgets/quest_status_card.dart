@@ -11,9 +11,12 @@ class QuestStatusCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 복구 조건 계산
-    final dayProgress = (item.consecutiveValidDays / 3).clamp(0.0, 1.0);
+    final dayProgress = (item.consecutiveValidDays / 2).clamp(0.0, 1.0);
     final amountGoal = item.totalGoal * 0.1;
-    final amountProgress = (item.questSavedAmount / amountGoal).clamp(0.0, 1.0);
+    final amountProgress = (item.questSavedAmount / amountGoal).clamp(
+      0.0,
+      1.0,
+    ); // 시각적으로는 누적액 보여줌
 
     return Material(
       type: MaterialType.transparency,
@@ -69,21 +72,23 @@ class QuestStatusCard extends ConsumerWidget {
 
             // 미션 1: 성실함 증명
             _buildMissionRow(
-              title: "성실함 증명: 3일 연속 송금하기",
+              title: "성실함 증명: 2일 연속 송금하기",
               progress: dayProgress,
-              progressText: "${item.consecutiveValidDays} / 3일",
-              isDone: item.consecutiveValidDays >= 3,
+              progressText: "${item.consecutiveValidDays} / 2일",
+              isDone: item.consecutiveValidDays >= 2,
             ),
 
             const SizedBox(height: 12),
 
             // 미션 2: 비용 지불
             _buildMissionRow(
-              title: "복구 비용 지불: 원래 가격의 10% 송금하기",
+              title: "복구 비용 지불: 원래 가격의 10% 일시불로 지불하기",
               progress: amountProgress,
               progressText:
                   "${formatCurrency(item.questSavedAmount)} / ${formatCurrency(amountGoal)}",
-              isDone: item.questSavedAmount >= amountGoal,
+              isDone:
+                  item.questSavedAmount >=
+                  amountGoal, // Note: Logic is now single transaction, but visual keeps cumulative status
             ),
           ],
         ),
