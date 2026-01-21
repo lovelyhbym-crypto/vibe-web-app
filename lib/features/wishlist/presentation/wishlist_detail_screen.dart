@@ -788,16 +788,23 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: isPureFinance
-                              ? colors.border
-                              : Colors.grey[800],
-                          color: isPureFinance
-                              ? colors.textMain
-                              : const Color(0xFFD4FF00),
-                          minHeight: 3.0,
-                          borderRadius: BorderRadius.circular(2.0),
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(end: progress),
+                          duration: const Duration(milliseconds: 1000),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, child) {
+                            return LinearProgressIndicator(
+                              value: value,
+                              backgroundColor: isPureFinance
+                                  ? colors.border
+                                  : Colors.grey[800],
+                              color: isPureFinance
+                                  ? colors.textMain
+                                  : const Color(0xFFD4FF00),
+                              minHeight: 4.0, // 약간 두껍게 수정
+                              borderRadius: BorderRadius.circular(2.0),
+                            );
+                          },
                         ),
                       ],
                     ),

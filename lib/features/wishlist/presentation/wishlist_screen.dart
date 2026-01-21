@@ -471,15 +471,11 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                                           ),
                                           const SizedBox(height: 12),
                                           TweenAnimationBuilder<double>(
-                                            key: ValueKey(progress),
-                                            tween: Tween<double>(
-                                              begin: 0.0,
-                                              end: progress,
-                                            ),
+                                            tween: Tween<double>(end: progress),
                                             duration: const Duration(
-                                              milliseconds: 1500,
+                                              milliseconds: 1000,
                                             ),
-                                            curve: Curves.easeOutExpo,
+                                            curve: Curves.easeOutCubic,
                                             builder: (context, value, child) {
                                               return LinearProgressIndicator(
                                                 value: value,

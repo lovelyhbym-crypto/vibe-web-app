@@ -85,7 +85,7 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: const Text('송금을 완료했나요?', style: TextStyle(color: Colors.white)),
         content: const Text(
@@ -98,7 +98,7 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
               setState(() {
                 _isWaitingForTransfer = false;
               });
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
             },
             child: const Text('취소', style: TextStyle(color: Colors.grey)),
           ),
@@ -108,30 +108,38 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
               foregroundColor: Colors.black,
             ),
             onPressed: () async {
-              if (mounted) Navigator.pop(context);
-              ref.read(rewardStateProvider.notifier).triggerConfetti();
+              if (mounted) Navigator.pop(dialogContext);
 
-              // 안개 정화 로직 호출
               final wishlists = ref.read(wishlistProvider).valueOrNull ?? [];
+              if (wishlists.isEmpty) return;
+
               final representative = wishlists.firstWhere(
                 (w) => w.isRepresentative,
-                orElse: () =>
-                    wishlists.isNotEmpty ? wishlists.first : wishlists.first,
-              ); // fallback to first if any
+                orElse: () => wishlists.first,
+              );
+              final targetId = representative.id;
 
-              if (wishlists.isNotEmpty) {
-                final targetId = representative.id;
-                if (targetId != null) {
-                  await ref.read(wishlistProvider.notifier).purifyFog(targetId);
-                }
+              // 1. 보상 장전 (전역 폭죽 신호)
+              ref.read(rewardStateProvider.notifier).triggerConfetti();
+
+              if (targetId != null) {
+                // 2. 안개 정화
+                await ref.read(wishlistProvider.notifier).purifyFog(targetId);
+
+                // 3. 위시리스트 금액 업데이트 (중요: SOS 저축액은 10,000원으로 고정)
+                await ref
+                    .read(wishlistProvider.notifier)
+                    .addFundsToSelectedItems(10000.0, [targetId]);
               }
 
+              // 4. 저축 데이터 기록
+              await _recordSaving();
+
+              // 5. 목표 탭으로 즉시 이동 (인덱스 1)
               if (mounted) {
                 context.go('/');
                 ref.read(navigationIndexProvider.notifier).setIndex(1);
               }
-
-              await _recordSaving();
             },
             child: const Text('네(확인)'),
           ),

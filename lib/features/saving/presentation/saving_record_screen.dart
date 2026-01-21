@@ -265,7 +265,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         backgroundColor: colors?.surface ?? Colors.grey[900],
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
@@ -285,7 +285,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               setState(() {
                 _isWaitingForTransfer = false;
               });
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
             },
             child: Text(
               '취소',
@@ -301,21 +301,21 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               ),
             ),
             onPressed: () async {
-              // 1. 팝업 먼저 닫기
-              Navigator.pop(context);
+              // 1. 팝업 먼저 닫기 (dialogContext 사용)
+              Navigator.pop(dialogContext);
 
               // 2. 보상 장전 (전역 폭죽 신호)
               ref.read(rewardStateProvider.notifier).triggerConfetti();
 
-              // 3. 목표 탭으로 즉시 이동 (인덱스 1)
-              // GoRouter를 통해 메인으로 강제 소환 후 인덱스 변경
+              // 3. 저축 데이터 기록
+              await _performActualSaving();
+
+              // 4. 목표 탭으로 즉시 이동 (메인 context 사용)
               if (mounted) {
+                // context.go('/') 대신 GoRouter.of(context).go('/') 사용 권장되나 context.go()도 screen context면 문제없음
                 context.go('/');
                 ref.read(navigationIndexProvider.notifier).setIndex(1);
               }
-
-              // 4. 저축 데이터 기록 (백그라운드에서 처리)
-              await _performActualSaving();
             },
             child: const Text('네(확인)'),
           ),
