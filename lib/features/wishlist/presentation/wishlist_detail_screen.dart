@@ -38,6 +38,53 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
   bool _hasChanges = false;
   bool _isSaving = false;
   int _animationTriggerId = 0;
+  bool _isSpinning = false;
+
+  void _spinPenaltySlotMachine() async {
+    if (_isSpinning) return;
+    // Prevent spinning if read-only
+    final item = widget.item;
+    final progress = item.totalGoal > 0
+        ? ((item.savedAmount - item.penaltyAmount) /
+              item.totalGoal) // Using basic progress for check
+        : 0.0;
+    if (item.isAchieved || progress >= 1.0) return;
+
+    setState(() => _isSpinning = true);
+
+    final penalties = [
+      "배달 앱(배민/쿠팡이츠 등) 하루 동안 삭제",
+      "사진첩의 쓸데없는 사진 20개 정리하기",
+      "물 1.5L 마시기(물 마실때마다 어플 생각)",
+      "스마트폰 없이 딱 15분동안 동네 산책하기",
+      "오늘 밤 자기 전 무지출 전략 세우기",
+      "하루 동안 '감사합니다' 혹은 '수고하셨습니다' 인사 5번 하기",
+      "지금 즉시 책상 혹은 방 바닥 청소하기",
+      "집에 있는 안 쓰는 물건 하나 비우기 (기부/나눔)",
+      "내일 하루 액상과당(제로 음료 포함) 0mg 실천",
+      "내일 평소보다 1시간 일찍 일어나기",
+    ];
+
+    // Slot Machine Animation Effect
+    for (int i = 0; i < 10; i++) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (!mounted) return;
+      setState(() {
+        _penaltyController.text = penalties[i % penalties.length];
+      });
+    }
+
+    // Final Random Selection
+    final random = DateTime.now().millisecondsSinceEpoch % penalties.length;
+    if (mounted) {
+      setState(() {
+        _penaltyController.text = penalties[random];
+        _isSpinning = false;
+      });
+      // Trigger change detection manually since programmatic updates might not always fire listeners dependent on focus
+      // But controller listener should catch it. logic in _onTextChanged will handle _hasChanges.
+    }
+  }
 
   @override
   void initState() {
@@ -1198,13 +1245,73 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                     const SizedBox(height: 40),
 
                     // Penalty Section (Editable)
-                    Text(
-                      '실패 시 나에게 주는 벌칙',
-                      style: TextStyle(
-                        color: isPureFinance ? colors.textMain : Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '실패 시 나에게 주는 벌칙',
+                          style: TextStyle(
+                            color: isPureFinance
+                                ? colors.textMain
+                                : Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (!(item.isAchieved ||
+                            progress >= 1.0)) // Only show if editable
+                          GestureDetector(
+                            onTap: _spinPenaltySlotMachine,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _isSpinning
+                                    ? (isPureFinance
+                                          ? colors.accent
+                                          : const Color(0xFFD4FF00))
+                                    : (isPureFinance
+                                          ? colors.surface
+                                          : Colors.black26),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isPureFinance
+                                      ? colors.border
+                                      : const Color(0xFFD4FF00),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.casino,
+                                    size: 16,
+                                    color: _isSpinning
+                                        ? Colors.black
+                                        : (isPureFinance
+                                              ? colors.textMain
+                                              : const Color(0xFFD4FF00)),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    "운명의 뽑기",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _isSpinning
+                                          ? Colors.black
+                                          : (isPureFinance
+                                                ? colors.textMain
+                                                : const Color(0xFFD4FF00)),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     GlassCard(
