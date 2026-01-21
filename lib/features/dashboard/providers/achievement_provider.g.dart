@@ -7,7 +7,7 @@ part of 'achievement_provider.dart';
 // **************************************************************************
 
 String _$achievementNotifierHash() =>
-    r'7bca4fcbd205b03f810217813f4c9d2aa32a2c5e';
+    r'1a49156a1dfeb4fec73e9c4fd86cd5cf52929e86';
 
 /// See also [AchievementNotifier].
 @ProviderFor(AchievementNotifier)

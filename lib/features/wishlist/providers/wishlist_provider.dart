@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -81,22 +82,51 @@ class WishlistNotifier extends _$WishlistNotifier {
 
       debugPrint('Supabase response: $response');
 
-      // Check raw response for ID before parsing (because fromJson now generates a fallback UUID)
       if (response['id'] == null) {
         throw Exception('서버 오류: ID 생성 실패 (Server returned null ID)');
       }
 
       final newItem = WishlistModel.fromJson(response);
-      debugPrint('Parsed item ID: ${newItem.id}');
-
-      // Update state with the new item containing the valid ID
       final previousList = state.valueOrNull ?? [];
       state = AsyncValue.data([...previousList, newItem]);
     } catch (e) {
-      debugPrint('Error adding wishlist item: $e'); // Debug log
+      debugPrint('Error adding wishlist item: $e');
+
+      // [PGRST204 Fix] Missing column 'broken_image_index' (or others)
+      if (e.toString().contains('PGRST204')) {
+        debugPrint('Retrying without new columns (broken_image_index)...');
+        try {
+          // Remove potential new columns preventing insert
+          final safeJson = item.toJson();
+          safeJson.remove('broken_image_index');
+          safeJson.remove('quest_saved_amount'); // Also might be missing
+          safeJson.remove('consecutive_valid_days');
+
+          final response = await ref
+              .read(supabaseProvider)
+              .from('wishlists')
+              .insert({...safeJson, 'user_id': user.id})
+              .select()
+              .single();
+
+          if (response['id'] == null) throw Exception('Retry failed: ID null');
+
+          final newItem = WishlistModel.fromJson(response);
+          final previousList = state.valueOrNull ?? [];
+          state = AsyncValue.data([...previousList, newItem]);
+          return; // Success on retry
+        } catch (retryError) {
+          debugPrint('Retry failed: $retryError');
+          throw Exception('Failed to add wishlist item (Retry): $retryError');
+        }
+      }
       throw Exception('Failed to add wishlist item: $e');
     }
   }
+
+  // ... (deleteWishlist methods unchanged)
+
+  // ...
 
   Future<void> deleteWishlist(String id) async {
     final authNotifier = ref.read(authProvider.notifier);
@@ -550,17 +580,22 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
   }
 
-  /// 꿈의 파괴 (isBroken 설정 및 퀘스트 초기화)
-  Future<void> shatterDream(String id) async {
+  /// 꿈의 파괴 (100% 확률로 파괴, 이미지 랜덤 1~2)
+  Future<bool> shatterDream(String id) async {
     final wishlist = state.valueOrNull ?? [];
     final index = wishlist.indexWhere((item) => item.id == id);
-    if (index == -1) return;
+    if (index == -1) return false;
+
+    // 1. 랜덤 이미지 인덱스 결정 (1 or 2)
+    final random = Random();
+    final brokenIndex = random.nextInt(2) + 1; // 1 or 2
 
     final original = wishlist[index];
 
-    // Optimistic Update: 퀘스트 필드 초기화
+    // Optimistic Update
     final updatedItem = original.copyWith(
       isBroken: true,
+      brokenImageIndex: brokenIndex,
       brokenAt: DateTime.now(),
       questSavedAmount: 0.0,
       consecutiveValidDays: 0,
@@ -573,7 +608,7 @@ class WishlistNotifier extends _$WishlistNotifier {
     if (authNotifier.isGuest) {
       final guestIndex = _guestWishlist.indexWhere((item) => item.id == id);
       if (guestIndex != -1) _guestWishlist[guestIndex] = updatedItem;
-      return;
+      return true;
     }
 
     try {
@@ -582,15 +617,15 @@ class WishlistNotifier extends _$WishlistNotifier {
           .from('wishlists')
           .update({
             'is_broken': true,
+            'broken_image_index': brokenIndex,
             'broken_at': DateTime.now().toIso8601String(),
             'quest_saved_amount': 0,
             'consecutive_valid_days': 0,
           })
           .eq('id', id);
+      return true;
     } catch (e) {
       debugPrint('Error shattering dream: $e');
-      // [중요] 스키마 캐시 에러(PGRST204)인 경우 강제 새로고침을 하지 않음
-      // 이를 통해 DB에 컬럼이 없더라도 로컬 상태는 유지되어 퀘스트 카드가 계속 유지됨
       if (e.toString().contains('PGRST204')) {
         debugPrint(
           'Warning: Supabase columns for Quest are missing. Working in local mode.',
@@ -598,6 +633,8 @@ class WishlistNotifier extends _$WishlistNotifier {
       } else {
         ref.invalidateSelf();
       }
+      // UI 입장에서는 일단 로컬 상태가 파괴되었으므로 true 반환
+      return true;
     }
   }
 

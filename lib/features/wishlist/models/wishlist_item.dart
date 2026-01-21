@@ -8,6 +8,7 @@ class WishlistItem {
   final String? comment;
   final double blurLevel;
   final bool isBroken;
+  final int brokenImageIndex; // Added for random broken image logic
   final DateTime? lastSavedAt;
 
   WishlistItem({
@@ -20,6 +21,7 @@ class WishlistItem {
     this.comment,
     this.blurLevel = 0.0,
     this.isBroken = false,
+    this.brokenImageIndex = 0, // Default 0
     this.lastSavedAt,
   });
 
@@ -36,6 +38,7 @@ class WishlistItem {
       comment: json['comment'] as String?,
       blurLevel: (json['blur_level'] as num?)?.toDouble() ?? 0.0,
       isBroken: json['is_broken'] as bool? ?? false,
+      brokenImageIndex: (json['broken_image_index'] as num?)?.toInt() ?? 0,
       lastSavedAt: json['last_saved_at'] != null
           ? DateTime.parse(json['last_saved_at'] as String)
           : null,
@@ -53,6 +56,7 @@ class WishlistItem {
       'comment': comment,
       'blur_level': blurLevel,
       'is_broken': isBroken,
+      'broken_image_index': brokenImageIndex,
       'last_saved_at': lastSavedAt?.toIso8601String(),
     };
   }
@@ -67,6 +71,7 @@ class WishlistItem {
     String? comment,
     double? blurLevel,
     bool? isBroken,
+    int? brokenImageIndex,
     DateTime? lastSavedAt,
   }) {
     return WishlistItem(
@@ -79,6 +84,7 @@ class WishlistItem {
       comment: comment ?? this.comment,
       blurLevel: blurLevel ?? this.blurLevel,
       isBroken: isBroken ?? this.isBroken,
+      brokenImageIndex: brokenImageIndex ?? this.brokenImageIndex,
       lastSavedAt: lastSavedAt ?? this.lastSavedAt,
     );
   }

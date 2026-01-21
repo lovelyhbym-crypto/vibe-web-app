@@ -10,6 +10,7 @@ class VibeImageEffect extends StatelessWidget {
   final XFile? localImage;
   final double blurLevel;
   final bool isBroken;
+  final int brokenImageIndex;
   final double width;
   final double height;
 
@@ -20,6 +21,7 @@ class VibeImageEffect extends StatelessWidget {
     required this.progress,
     required this.blurLevel,
     required this.isBroken,
+    this.brokenImageIndex = 0,
     required this.width,
     required this.height,
   });
@@ -81,9 +83,19 @@ class VibeImageEffect extends StatelessWidget {
                 Positioned.fill(
                   child: IgnorePointer(
                     child: Image.asset(
-                      'assets/images/broken_glass.png',
+                      brokenImageIndex > 0
+                          ? 'assets/images/broken_glass_$brokenImageIndex.png'
+                          : 'assets/images/broken_glass.png',
                       fit: BoxFit.cover,
                       opacity: const AlwaysStoppedAnimation(0.8),
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback to default if specific random image is missing
+                        return Image.asset(
+                          'assets/images/broken_glass.png',
+                          fit: BoxFit.cover,
+                          opacity: const AlwaysStoppedAnimation(0.8),
+                        );
+                      },
                     ),
                   ),
                 ),

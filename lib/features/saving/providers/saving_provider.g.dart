@@ -6,7 +6,7 @@ part of 'saving_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$savingNotifierHash() => r'3432897ab9cdd8577171cb4e2a5a357c8cffc7a5';
+String _$savingNotifierHash() => r'9121bf41432db428127ca5807fbb532c8044eed1';
 
 /// See also [SavingNotifier].
 @ProviderFor(SavingNotifier)

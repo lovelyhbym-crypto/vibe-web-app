@@ -13,6 +13,7 @@ class WishlistModel {
   final bool isRepresentative;
   final double blurLevel;
   final bool isBroken;
+  final int brokenImageIndex; // Added for random broken image logic
   final DateTime? lastSavedAt;
   final DateTime? brokenAt;
   final double questSavedAmount;
@@ -34,6 +35,7 @@ class WishlistModel {
     this.isRepresentative = false,
     this.blurLevel = 0.0,
     this.isBroken = false,
+    this.brokenImageIndex = 0, // Default 0
     this.lastSavedAt,
     this.brokenAt,
     this.questSavedAmount = 0.0,
@@ -80,6 +82,7 @@ class WishlistModel {
       'is_representative': isRepresentative,
       'blur_level': blurLevel,
       'is_broken': isBroken,
+      'broken_image_index': brokenImageIndex,
       'quest_saved_amount': questSavedAmount,
       'consecutive_valid_days': consecutiveValidDays,
     };
@@ -135,6 +138,7 @@ class WishlistModel {
       isRepresentative: json['is_representative'] as bool? ?? false,
       blurLevel: (json['blur_level'] as num?)?.toDouble() ?? 0.0,
       isBroken: json['is_broken'] as bool? ?? false,
+      brokenImageIndex: (json['broken_image_index'] as num?)?.toInt() ?? 0,
       lastSavedAt: json['last_saved_at'] != null
           ? DateTime.parse(json['last_saved_at'] as String)
           : null,
@@ -164,6 +168,7 @@ class WishlistModel {
     bool? isRepresentative,
     double? blurLevel,
     bool? isBroken,
+    int? brokenImageIndex,
     DateTime? lastSavedAt,
     DateTime? brokenAt,
     double? questSavedAmount,
@@ -185,6 +190,7 @@ class WishlistModel {
       isRepresentative: isRepresentative ?? this.isRepresentative,
       blurLevel: blurLevel ?? this.blurLevel,
       isBroken: isBroken ?? this.isBroken,
+      brokenImageIndex: brokenImageIndex ?? this.brokenImageIndex,
       lastSavedAt: lastSavedAt ?? this.lastSavedAt,
       brokenAt: brokenAt ?? this.brokenAt,
       questSavedAmount: questSavedAmount ?? this.questSavedAmount,

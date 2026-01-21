@@ -96,8 +96,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/audio/glass_break.mp3
-    - assets/images/broken_glass.png
+    - assets/images/
     - assets/audio/
 
   # An image asset can refer to one or more resolution-specific "variants", see

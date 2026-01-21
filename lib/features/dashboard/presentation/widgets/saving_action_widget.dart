@@ -224,20 +224,8 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
   }
 
   Future<void> _executeDefeatSequence(double amount) async {
-    // 1. Sound: 유리창 깨지는 소리 재생 (안전 모드: 오디오 파일 부재로 주석 처리)
-    debugPrint(
-      'Sound Simulation: Glass Breaking Sound Played (Amount: $amount)',
-    );
-    /*
-    try {
-      await _audioPlayer.setVolume(1.0);
-      await _audioPlayer.play(AssetSource('audio/glass_break.mp3'));
-    } catch (e) {
-      debugPrint('Sound Audio Error: $e');
-    }
-    */
-
-    // 2. State: 현재 위시리스트파괴
+    // 1. State: 현재 위시리스트 파괴 시도
+    bool isBroken = false;
     final wishlists = ref.read(wishlistProvider).valueOrNull ?? [];
     if (wishlists.isNotEmpty) {
       final representative = wishlists.firstWhere(
@@ -246,15 +234,40 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
       );
       final targetId = representative.id;
       if (targetId != null) {
-        await ref.read(wishlistProvider.notifier).shatterDream(targetId);
+        // [중요] 50% 확률 파괴 로직 호출 (결과 반환)
+        isBroken = await ref
+            .read(wishlistProvider.notifier)
+            .shatterDream(targetId);
       }
     }
 
-    // 3. Navigation: 즉시 위시리스트 탭으로 강제 전환
-    if (mounted) {
-      HapticFeedback.vibrate();
-      context.go('/');
-      ref.read(navigationIndexProvider.notifier).setIndex(1);
+    // 2. 결과에 따른 분기 처리
+    if (isBroken) {
+      // 2-A. 파괴됨 (Bad Luck)
+      debugPrint(
+        'Sound Simulation: Glass Breaking Sound Played (Amount: $amount)',
+      );
+
+      if (mounted) {
+        HapticFeedback.vibrate();
+        // 3. Navigation: 즉시 위시리스트 탭으로 강제 전환
+        context.go('/');
+        ref.read(navigationIndexProvider.notifier).setIndex(1);
+      }
+    } else {
+      // 2-B. 운 좋게 살아남음 (Good Luck)
+      debugPrint('LUCKY! No breakage.');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('운이 좋았습니다! 이번에는 꿈이 깨지지 않았습니다.'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        // 저축은 기록하지 않지만, 경각심은 주어야 함 (이미 대화상자에서 소비 금액 입력함)
+        // 여기서는 화면 전환 없이 스낵바만 띄우고 종료
+      }
     }
   }
 
