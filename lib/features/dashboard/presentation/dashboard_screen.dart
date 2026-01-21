@@ -913,10 +913,10 @@ class _MilestoneDialogState extends State<_MilestoneDialog> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isSuccess
                         ? (isPureFinance
-                              ? (colors!.accent)
+                              ? (colors.accent)
                               : const Color(0xFFFFD700))
                         : (isPureFinance
-                              ? (colors!.border)
+                              ? (colors.border)
                               : theme.primaryColor),
                     foregroundColor: isSuccess
                         ? Colors.white

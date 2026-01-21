@@ -353,10 +353,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
         : _buildDestructionZone();
   }
 
-  Widget _buildRealityCheckUI(MissionState state) {
-    // ... (Code omitted for brevity, but kept if needed later)
-    return const SizedBox();
-  }
+  // Unused _buildRealityCheckUI removed
 
   // ... (Keeping intervening methods)
 

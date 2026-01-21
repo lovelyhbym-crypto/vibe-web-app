@@ -347,63 +347,13 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen> {
                                         width: double.infinity,
                                         child: Hero(
                                           tag: 'wishlist_img_${item.id}',
-                                          child: LayoutBuilder(
-                                            builder: (context, constraints) {
-                                              final w = constraints.maxWidth;
-                                              final h = constraints.maxHeight;
-                                              return Stack(
-                                                children: [
-                                                  Positioned.fill(
-                                                    child: ColorFiltered(
-                                                      colorFilter:
-                                                          const ColorFilter.matrix(
-                                                            [
-                                                              0.2,
-                                                              0.5,
-                                                              0.1,
-                                                              0,
-                                                              -30,
-                                                              0.2,
-                                                              0.5,
-                                                              0.1,
-                                                              0,
-                                                              -30,
-                                                              0.2,
-                                                              0.5,
-                                                              0.1,
-                                                              0,
-                                                              -30,
-                                                              0,
-                                                              0,
-                                                              0,
-                                                              1,
-                                                              0,
-                                                            ],
-                                                          ),
-                                                      child: Image.network(
-                                                        item.imageUrl!,
-                                                        width: w,
-                                                        height: h,
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  ClipRect(
-                                                    child: Align(
-                                                      alignment:
-                                                          Alignment.centerLeft,
-                                                      widthFactor: progress,
-                                                      child: Image.network(
-                                                        item.imageUrl!,
-                                                        width: w,
-                                                        height: h,
-                                                        fit: BoxFit.cover,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              );
-                                            },
+                                          child: VibeImageEffect(
+                                            imageUrl: item.imageUrl,
+                                            width: double.infinity,
+                                            height: double.infinity,
+                                            blurLevel: item.blurLevel,
+                                            isBroken: item.isBroken,
+                                            isGrayscale: progress < 1.0,
                                           ),
                                         ),
                                       ),
