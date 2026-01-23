@@ -27,6 +27,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     with WidgetsBindingObserver {
   late ConfettiController _confettiController;
   int _animationTriggerId = 0;
+  bool _isFogTest = false;
 
   @override
   void initState() {
@@ -104,6 +105,11 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
             elevation: 0,
             iconTheme: IconThemeData(color: colors.textMain),
             actions: [
+              IconButton(
+                icon: Icon(_isFogTest ? Icons.cloud : Icons.cloud_queue),
+                color: _isFogTest ? Colors.lightBlueAccent : null,
+                onPressed: () => setState(() => _isFogTest = !_isFogTest),
+              ),
               IconButton(
                 icon: Icon(Icons.settings, color: colors.textMain),
                 onPressed: () => context.push('/settings'),
@@ -398,8 +404,9 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                                 imageUrl: item.imageUrl,
                                                 width: double.infinity,
                                                 height: double.infinity,
-                                                blurLevel: item
-                                                    .calculateCurrentBlur(),
+                                                blurLevel: _isFogTest
+                                                    ? 8.0
+                                                    : item.calculateCurrentBlur(),
                                                 isBroken: item.isBroken,
                                                 brokenImageIndex:
                                                     item.brokenImageIndex,
