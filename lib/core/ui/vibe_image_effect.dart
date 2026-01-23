@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -142,6 +143,13 @@ class VibeImageEffect extends StatelessWidget {
       );
     } else {
       img = Container(color: Colors.grey[900]);
+    }
+
+    if (blurLevel > 0) {
+      img = ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: blurLevel, sigmaY: blurLevel),
+        child: img,
+      );
     }
 
     if (grayscale) {

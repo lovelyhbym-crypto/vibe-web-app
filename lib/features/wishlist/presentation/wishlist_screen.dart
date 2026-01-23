@@ -398,7 +398,8 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                                 imageUrl: item.imageUrl,
                                                 width: double.infinity,
                                                 height: double.infinity,
-                                                blurLevel: item.blurLevel,
+                                                blurLevel: item
+                                                    .calculateCurrentBlur(),
                                                 isBroken: item.isBroken,
                                                 brokenImageIndex:
                                                     item.brokenImageIndex,
