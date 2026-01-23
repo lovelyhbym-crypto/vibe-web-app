@@ -10,6 +10,40 @@ class QuestStatusCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // [Priority Engine] 상태별 테마 결정
+    final priority = item.priority;
+    Color themeColor;
+    String titleText;
+    String descText;
+    IconData headerIcon;
+
+    switch (priority) {
+      case WishlistPriority.broken:
+        themeColor = Colors.redAccent;
+        titleText = "🔥 시스템 파괴! (복구 시 안개 완전 제거)";
+        descText = "아래 조건 중 하나만 달성해도 파괴된 꿈을 복구하고 안개를 걷어낼 수 있습니다.";
+        headerIcon = Icons.error_outline_rounded;
+        break;
+      case WishlistPriority.highBlur:
+        themeColor = Colors.deepOrangeAccent;
+        titleText = "🚨 위험! 목표가 잊히고 있습니다.";
+        descText = "안개가 너무 짙습니다. 즉시 생존 신고하거나 10% 이상 저축하여 세탁하세요.";
+        headerIcon = Icons.warning_amber_rounded;
+        break;
+      case WishlistPriority.lowBlur:
+        themeColor = Colors.amberAccent;
+        titleText = "⚠️ 주의! 나태의 안개 유입 중";
+        descText = "0원 버튼으로 가볍게 세탁하거나, 저축하여 안개를 제거하세요.";
+        headerIcon = Icons.wb_cloudy_outlined;
+        break;
+      default:
+        // Should not happen if filtered correctly, but fallback
+        themeColor = Colors.grey;
+        titleText = "상태 양호";
+        descText = "현재 특별한 조치가 필요하지 않습니다.";
+        headerIcon = Icons.check_circle_outline;
+    }
+
     // 복구 조건 계산
     final dayProgress = (item.consecutiveValidDays / 2).clamp(0.0, 1.0);
     final amountGoal = item.totalGoal * 0.1;
@@ -25,13 +59,10 @@ class QuestStatusCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.75),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.redAccent.withOpacity(0.6),
-            width: 1.5,
-          ),
+          border: Border.all(color: themeColor.withOpacity(0.6), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.redAccent.withOpacity(0.2),
+              color: themeColor.withOpacity(0.2),
               blurRadius: 15,
               spreadRadius: 2,
             ),
@@ -43,26 +74,25 @@ class QuestStatusCard extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.restore_from_trash_rounded,
-                  color: Colors.redAccent,
-                  size: 20,
-                ),
+                Icon(headerIcon, color: themeColor, size: 20),
                 const SizedBox(width: 8),
-                Text(
-                  "🚨 긴급 복구 퀘스트",
-                  style: TextStyle(
-                    color: Colors.redAccent,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
+                Expanded(
+                  child: Text(
+                    titleText,
+                    style: TextStyle(
+                      color: themeColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 6),
             Text(
-              "아래 조건 중 하나만 달성해도 파괴된 꿈을 복구할 수 있습니다.",
+              descText,
               style: TextStyle(
                 color: Colors.white.withOpacity(0.8),
                 fontSize: 11,

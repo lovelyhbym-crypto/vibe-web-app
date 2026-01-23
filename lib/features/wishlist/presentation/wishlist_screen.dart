@@ -1,11 +1,13 @@
 import 'dart:ui';
+import 'package:flutter/services.dart'; // HapticFeedback
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:confetti/confetti.dart';
+import 'package:vive_app/features/wishlist/domain/wishlist_model.dart';
 
 import 'package:vive_app/core/utils/i18n.dart';
-import 'package:vive_app/core/providers/wishlist_provider.dart';
+
 import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
 import 'package:vive_app/features/wishlist/presentation/add_wishlist_dialog.dart';
 import 'package:vive_app/core/ui/bouncy_button.dart';
@@ -26,6 +28,7 @@ class WishlistScreen extends ConsumerStatefulWidget {
 class _WishlistScreenState extends ConsumerState<WishlistScreen>
     with WidgetsBindingObserver {
   late ConfettiController _confettiController;
+  final GlobalKey _buttonKey = GlobalKey(); // For Overlay Positioning
   int _animationTriggerId = 0;
   // Test Variables
   int _testFogDays = 0; // Restored Step-by-Step Fog
@@ -347,10 +350,32 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
 
                           if (mounted) {
                             _confettiController.play();
+
+                            // [Haptic Feedback]
+                            HapticFeedback.lightImpact();
+
+                            // [Show Overlay]
+                            _showBonusOverlay();
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                  '🎉 생존 성공! 성공 확률 1% 상승 + 안개 제거 완료!',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                duration: const Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                                backgroundColor: colors.accent,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            );
                           }
                         }
                       : null,
                   child: Container(
+                    key: _buttonKey, // Attach Key
                     padding: const EdgeInsets.all(16),
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
@@ -853,19 +878,33 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
                     // [Quest] 깨진 아이템이 있다면 목표 탭 최하단에 노출
+                    // [Quest] Priority Engine: 가장 긴급한 퀘스트 하나만 노출
                     SliverToBoxAdapter(
                       child: wishlistAsync.maybeWhen(
                         data: (list) {
-                          final brokenItem = list.firstWhere(
-                            (item) => item.isBroken && !item.isAchieved,
-                            orElse: () => list.first,
+                          final activeItems = list
+                              .where((item) => !item.isAchieved)
+                              .toList();
+
+                          if (activeItems.isEmpty)
+                            return const SizedBox.shrink();
+
+                          // 우선순위 정렬 (Enum 순서: broken, highBlur, lowBlur, none)
+                          activeItems.sort(
+                            (a, b) =>
+                                a.priority.index.compareTo(b.priority.index),
                           );
-                          if (brokenItem.isBroken) {
+
+                          final urgentItem = activeItems.first;
+
+                          // P3(None)은 노출하지 않음
+                          if (urgentItem.priority != WishlistPriority.none) {
                             return Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
+                                vertical: 24, // 좀 더 여유 있게
                               ),
-                              child: QuestStatusCard(item: brokenItem),
+                              child: QuestStatusCard(item: urgentItem),
                             );
                           }
                           return const SizedBox.shrink();
@@ -962,6 +1001,105 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     showDialog(
       context: context,
       builder: (context) => const AddWishlistDialog(),
+    );
+  }
+
+  void _showBonusOverlay() {
+    final renderBox =
+        _buttonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final size = renderBox.size;
+    final offset = renderBox.localToGlobal(Offset.zero);
+
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+
+    entry = OverlayEntry(
+      builder: (context) => Positioned(
+        left: offset.dx,
+        top: offset.dy - 60, // Above the button
+        width: size.width,
+        child: Material(
+          color: Colors.transparent,
+          child: _BonusOverlayWidget(
+            onAnimationComplete: () {
+              entry.remove();
+            },
+          ),
+        ),
+      ),
+    );
+
+    overlay.insert(entry);
+  }
+}
+
+class _BonusOverlayWidget extends StatefulWidget {
+  final VoidCallback onAnimationComplete;
+
+  const _BonusOverlayWidget({required this.onAnimationComplete});
+
+  @override
+  State<_BonusOverlayWidget> createState() => _BonusOverlayWidgetState();
+}
+
+class _BonusOverlayWidgetState extends State<_BonusOverlayWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacity;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _opacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 20),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 40),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 40),
+    ]).animate(_controller);
+
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.5),
+      end: const Offset(0, -1.0),
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    _controller.forward().then((_) {
+      widget.onAnimationComplete();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _slide,
+      child: FadeTransition(
+        opacity: _opacity,
+        child: Center(
+          child: Text(
+            "+1% 확률 UP!",
+            style: TextStyle(
+              color: Colors.lightGreenAccent, // Neon Green
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(color: Colors.green.withOpacity(0.8), blurRadius: 10),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

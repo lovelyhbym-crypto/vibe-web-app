@@ -1,3 +1,5 @@
+enum WishlistPriority { broken, highBlur, lowBlur, none }
+
 class WishlistModel {
   final String? id;
   final String title;
@@ -75,6 +77,14 @@ class WishlistModel {
     }
 
     return remainingAmount / daysLeft;
+  }
+
+  /// [Priority Engine] 우선순위 판단 로직
+  WishlistPriority get priority {
+    if (isBroken) return WishlistPriority.broken;
+    if (blurLevel >= 6.0) return WishlistPriority.highBlur;
+    if (blurLevel >= 2.0) return WishlistPriority.lowBlur;
+    return WishlistPriority.none;
   }
 
   // Helper to safely parse strings to DateTime?
@@ -237,48 +247,10 @@ class WishlistModel {
     );
   }
 
-  /// 나태의 안개 농도 계산 (가중 처벌 로직)
-  /// 공식: (미접속 일수 * 4.0) + (접속했으나 저축 안 한 일수 * 2.0)
-  /// lastSurvivalCheckAt이 오늘 날짜라면 -2.0 차감
+  /// 나태의 안개 농도 계산 (단순화된 로직)
+  /// 이제 시간 계산 대신 저장된 [blurLevel]을 반환 (0.0~10.0 Clamp)
   double calculateCurrentBlur() {
-    if (lastSavedAt == null) return 0.0;
-
-    final now = DateTime.now();
-
-    // lastOpenedAt이 없거나, lastSavedAt보다 이르면 lastSavedAt을 기준점으로 사용
-    // (저축한 이후로 앱을 한 번도 안 켰다는 의미)
-    final effectiveLastOpen =
-        (lastOpenedAt != null && lastOpenedAt!.isAfter(lastSavedAt!))
-        ? lastOpenedAt!
-        : lastSavedAt!;
-
-    // 1. 접속했으나 저축 안 한 일수 (Save ~ Open) : 차분히 쌓이는 안개 (2.0)
-    // lastSavedAt -> effectiveLastOpen 까지의 기간
-    final openedDays = effectiveLastOpen.difference(lastSavedAt!).inDays;
-
-    // 2. 미접속 일수 (Open ~ Now) : 급격히 쌓이는 안개 (4.0)
-    // lastOpenedAt이 어제보다 이전이라면 '미접속 상태'로 간주 (즉, 차이가 2일 이상 등)
-    // effectiveLastOpen -> now 까지의 기간
-    final notOpenedDays = now.difference(effectiveLastOpen).inDays;
-
-    double calculatedBlur = (openedDays * 2.0) + (notOpenedDays * 4.0);
-
-    // 3. Survival Check Bonus
-    // 오늘 생존 신고를 했다면 2.0 차감
-    if (lastSurvivalCheckAt != null) {
-      final today = DateTime(now.year, now.month, now.day);
-      final checkDay = DateTime(
-        lastSurvivalCheckAt!.year,
-        lastSurvivalCheckAt!.month,
-        lastSurvivalCheckAt!.day,
-      );
-      if (today.isAtSameMomentAs(checkDay)) {
-        calculatedBlur -= 2.0;
-      }
-    }
-
-    // 최소 0.0 ~ 최대 10.0 제한
-    return calculatedBlur.clamp(0.0, 10.0);
+    return blurLevel.clamp(0.0, 10.0);
   }
 
   Map<String, int> calculateResistedCounts(List<dynamic> savings) {

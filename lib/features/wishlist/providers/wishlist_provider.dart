@@ -455,10 +455,72 @@ class WishlistNotifier extends _$WishlistNotifier {
         final updatedAmount = item.savedAmount + amount;
         final isNowAchieved =
             updatedAmount >= item.totalGoal && !item.isAchieved;
+
+        // [Fog Cleaning Logic for Local State]
+        // 1. 10% Check
+        final isTenPercent = amount >= (item.totalGoal * 0.1);
+
+        // 2. Consecutive Logic (Needs simpler check here as _applyQuestLogic is for broken items?)
+        // 일반 아이템도 연속 저축 체크 필요? QuestLogic은 "Broken Item"용이라 되어있음(443라인)
+        // 하지만 사용자 요청 "2일 연속 저축 체크"는 일반적인 상황일 수 있음.
+        // 현재 구조상 consecutiveValidDays는 Model에 있음.
+        // 일단 일반 아이템도 연속일수 계산 로직이 필요하다면 추가해야 함.
+        // 기존 로직은 "깨진 아이템"일 때만 _applyQuestLogic을 탔음.
+        // 일반 아이템의 연속 저축 로직이 없다면 여기서 구현.
+
+        int newConsecutive = item.consecutiveValidDays;
+
+        // 간단한 연속 저축 계산 (일반 아이템)
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+
+        // 날짜 비교
+        if (item.lastSavedAt != null) {
+          final last = DateTime(
+            item.lastSavedAt!.year,
+            item.lastSavedAt!.month,
+            item.lastSavedAt!.day,
+          );
+          final diff = today.difference(last).inDays;
+          if (diff == 1) {
+            newConsecutive += 1;
+          } else if (diff > 1) {
+            newConsecutive = 1; // 끊김 -> 다시 1일차
+          }
+          // diff == 0 (오늘 또 저축) -> 유지
+        } else {
+          newConsecutive = 1;
+        }
+
+        bool isConsecutiveTwo = newConsecutive == 2;
+
+        double newBlurLevel = item.blurLevel;
+
+        if (isTenPercent || isConsecutiveTwo) {
+          newBlurLevel = (newBlurLevel - 2.0).clamp(0.0, 10.0);
+        }
+
+        // [HEROIC RECOVERY] Local State Check
+        // If item was broken but now isn't (via QuestLogic which runs first for broken items?)
+        // Wait, _applyQuestLogic handles logic for Broken items.
+        // It returns updated Item. If that item has isBroken=false, then Recovery happened.
+        // But here we are in the 'else' block or 'if (item.isBroken)' logic?
+        // Ah, logic flow:
+        // if (item.isBroken) { return _applyQuestLogic(item, amount); }
+        // The _applyQuestLogic returns the item.
+        // So we need to modify _applyQuestLogic itself or the returned item?
+        // _applyQuestLogic is separate.
+        // This block is for NON-BROKEN items logic flow from line 462...
+        // Wait. Line 463: if (item.isBroken) return _applyQuestLogic(item, amount).
+        // So for Broken items, we MUST modify _applyQuestLogic to handle the blur reset!
+        // This block handles NORMAL items. So cleaning logic applies here too.
+
         return item.copyWith(
           savedAmount: updatedAmount,
           isAchieved: isNowAchieved ? true : item.isAchieved,
           achievedAt: isNowAchieved ? DateTime.now() : item.achievedAt,
+          blurLevel: newBlurLevel, // Cleaning Applied
+          consecutiveValidDays: newConsecutive,
         );
       }
       return item;
@@ -494,6 +556,18 @@ class WishlistNotifier extends _$WishlistNotifier {
             'saved_amount': item.savedAmount.toInt(),
           };
 
+          // [Fog Cleaning Logic]
+          // 1. 10% 이상 저축 시
+          final isTenPercent = amount >= (item.totalGoal * 0.1);
+
+          // 2. 2일 연속 저축 달성 시 (Quest Logic에서 계산된 값 참조)
+          final bool isConsecutiveTwo = item.consecutiveValidDays == 2;
+
+          if (isTenPercent || isConsecutiveTwo) {
+            final newBlurLevel = (item.blurLevel - 2.0).clamp(0.0, 10.0);
+            updates['blur_level'] = newBlurLevel;
+          }
+
           if (item.isBroken) {
             // [퀘스트 연동] 깨진 아이템인 경우 퀘스트 관련 모든 필드 업데이트
             updates.addAll({
@@ -504,6 +578,14 @@ class WishlistNotifier extends _$WishlistNotifier {
               'last_quest_saving_date': item.lastQuestSavingDate
                   ?.toIso8601String(),
             });
+
+            // [HEROIC RECOVERY] 깨진 상태가 복구(is_broken이 true->false)되었다면?
+            // 위에서 _applyQuestLogic이 item.isBroken을 false로 만들어서 리턴했다고 가정.
+            if (!item.isBroken) {
+              // 리턴된 item은 이미 false임
+              // 안개 완전 제거!
+              updates['blur_level'] = 0.0;
+            }
           }
 
           if (item.isAchieved) {
@@ -676,11 +758,18 @@ class WishlistNotifier extends _$WishlistNotifier {
         newSavedAmount >= original.totalGoal && !original.isAchieved;
 
     // Optimistic Update
+    // [Fog Cleaning] 2.0 감소 (직접 감소)
+    final newBlurLevel = (original.blurLevel - 2.0).clamp(0.0, 10.0);
+
+    // Optimistic Update
     final updatedItem = original.copyWith(
       lastSurvivalCheckAt: now,
       savedAmount: newSavedAmount,
       isAchieved: isNowAchieved ? true : original.isAchieved,
       achievedAt: isNowAchieved ? DateTime.now() : original.achievedAt,
+      blurLevel: newBlurLevel, // 반영
+      // lastSavedAt update is optional for logic but good for record.
+      // User said "currentBlurPoints를 2.0 감소".
     );
     final updatedList = List<WishlistModel>.from(wishlist);
     updatedList[index] = updatedItem;
@@ -697,6 +786,7 @@ class WishlistNotifier extends _$WishlistNotifier {
       final updates = <String, dynamic>{
         'last_survival_check_at': now.toIso8601String(),
         'saved_amount': newSavedAmount.toInt(),
+        'blur_level': newBlurLevel, // DB 반영
       };
 
       if (isNowAchieved) {
