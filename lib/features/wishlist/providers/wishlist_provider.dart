@@ -496,24 +496,11 @@ class WishlistNotifier extends _$WishlistNotifier {
 
         double newBlurLevel = item.blurLevel;
 
+        // [Direct Hit] Local State Cleaning Logic
         if (isTenPercent || isConsecutiveTwo) {
-          newBlurLevel = (newBlurLevel - 2.0).clamp(0.0, 10.0);
+          // [UPDATED] One-Shot Clear: 퀘스트급 행동 시 안개 완전 제거
+          newBlurLevel = 0.0;
         }
-
-        // [HEROIC RECOVERY] Local State Check
-        // If item was broken but now isn't (via QuestLogic which runs first for broken items?)
-        // Wait, _applyQuestLogic handles logic for Broken items.
-        // It returns updated Item. If that item has isBroken=false, then Recovery happened.
-        // But here we are in the 'else' block or 'if (item.isBroken)' logic?
-        // Ah, logic flow:
-        // if (item.isBroken) { return _applyQuestLogic(item, amount); }
-        // The _applyQuestLogic returns the item.
-        // So we need to modify _applyQuestLogic itself or the returned item?
-        // _applyQuestLogic is separate.
-        // This block is for NON-BROKEN items logic flow from line 462...
-        // Wait. Line 463: if (item.isBroken) return _applyQuestLogic(item, amount).
-        // So for Broken items, we MUST modify _applyQuestLogic to handle the blur reset!
-        // This block handles NORMAL items. So cleaning logic applies here too.
 
         return item.copyWith(
           savedAmount: updatedAmount,
@@ -550,6 +537,7 @@ class WishlistNotifier extends _$WishlistNotifier {
 
     try {
       // 2. Supabase Parallel Update
+      // 2. Supabase Parallel Update
       await Future.wait(
         updatedList.where((item) => selectedIds.contains(item.id)).map((item) {
           final updates = <String, dynamic>{
@@ -564,7 +552,8 @@ class WishlistNotifier extends _$WishlistNotifier {
           final bool isConsecutiveTwo = item.consecutiveValidDays == 2;
 
           if (isTenPercent || isConsecutiveTwo) {
-            final newBlurLevel = (item.blurLevel - 2.0).clamp(0.0, 10.0);
+            // [UPDATED] One-Shot Clear: 퀘스트급 행동 시 안개 완전 제거
+            final newBlurLevel = 0.0;
             updates['blur_level'] = newBlurLevel;
           }
 
@@ -726,6 +715,49 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
   }
 
+  /// [Test Only] 안개 레벨 강제 설정 (테스트용)
+  Future<void> setBlurLevel(String id, double level) async {
+    final wishlist = state.valueOrNull ?? [];
+    final index = wishlist.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final updatedItem = wishlist[index].copyWith(blurLevel: level);
+    final updatedList = List<WishlistModel>.from(wishlist);
+    updatedList[index] = updatedItem;
+    state = AsyncValue.data(updatedList);
+  }
+
+  /// [Test Mode] 생존 체크 강제 초기화 (오늘 다시 체크 가능하도록)
+  Future<void> resetSurvivalCheck(String id) async {
+    final wishlist = state.valueOrNull ?? [];
+    final index = wishlist.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final original = wishlist[index];
+
+    // 하루 전으로 돌려서 오늘 다시 체크 가능하게 함
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+
+    final updatedItem = original.copyWith(lastSurvivalCheckAt: yesterday);
+
+    final updatedList = List<WishlistModel>.from(wishlist);
+    updatedList[index] = updatedItem;
+    state = AsyncValue.data(updatedList);
+
+    // Optimistic only for test, or sync to DB if needed?
+    // User asked for "Force Update Data".
+    // For test mode, local state update is often enough, but let's sync to DB to be safe.
+    try {
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .update({'last_survival_check_at': yesterday.toIso8601String()})
+          .eq('id', id);
+    } catch (e) {
+      debugPrint('Error reseting survival check: $e');
+    }
+  }
+
   /// 0원 생존 체크 (Survival Check)
   /// - lastSurvivalCheckAt 갱신
   /// - 보상: 목표 금액의 1% 적립
@@ -811,20 +843,6 @@ class WishlistNotifier extends _$WishlistNotifier {
         ref.invalidateSelf();
       }
     }
-  }
-
-  // Test Only: 생존 체크 리셋 (테스트용)
-  Future<void> resetSurvivalCheck(String id) async {
-    final wishlist = state.valueOrNull ?? [];
-    final index = wishlist.indexWhere((item) => item.id == id);
-    if (index == -1) return;
-
-    final updatedItem = wishlist[index].copyWith(
-      lastSurvivalCheckAt: null, // Reset to null
-    );
-    final updatedList = List<WishlistModel>.from(wishlist);
-    updatedList[index] = updatedItem;
-    state = AsyncValue.data(updatedList);
   }
 
   /// 꿈의 파괴 (100% 확률로 파괴, 이미지 랜덤 1~2)
@@ -943,6 +961,7 @@ class WishlistNotifier extends _$WishlistNotifier {
         consecutiveValidDays: 0,
         lastQuestSavingDate: null,
         penaltyAmount: 0.0, // [보상] 성공 확률(게이지) 복구
+        blurLevel: 0.0, // [핵심] 복구 시 안개 완전 제거
       );
     } else {
       // 진행 중

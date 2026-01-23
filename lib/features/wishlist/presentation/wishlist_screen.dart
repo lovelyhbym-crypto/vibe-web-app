@@ -137,15 +137,32 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                         }
                       });
 
-                      // [Test logic] Fog Days 변경 시 생존 체크 리셋 (반복 테스트 지원)
+                      // [Test logic] Fog Days 변경 시 생존 체크 리셋 & 실제 Blur 처리 (데이터 주입)
                       final wishlist = wishlistAsync.valueOrNull ?? [];
                       final activeItems = wishlist
                           .where((item) => !item.isAchieved && item.id != null)
                           .toList();
+
                       if (activeItems.isNotEmpty) {
+                        final targetId = activeItems.first.id!;
+
+                        // 1. 생존 체크 리셋 (반복 테스트 지원)
                         ref
                             .read(wishlistProvider.notifier)
-                            .resetSurvivalCheck(activeItems.first.id!);
+                            .resetSurvivalCheck(targetId);
+
+                        // 2. 실제 모델 데이터에 Blur Level 주입 (2.0 * days)
+                        // Day 1: 2.0 (Low Blur)
+                        // Day 2: 4.0
+                        // Day 3: 6.0 (High Blur)
+                        // ...
+                        final newBlurLevel = (_testFogDays * 2.0).clamp(
+                          0.0,
+                          10.0,
+                        );
+                        ref
+                            .read(wishlistProvider.notifier)
+                            .setBlurLevel(targetId, newBlurLevel);
                       }
                     },
                   ),
@@ -674,11 +691,8 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                                 imageUrl: item.imageUrl,
                                                 width: double.infinity,
                                                 height: double.infinity,
-                                                blurLevel: _simulateNoAccess
-                                                    ? 4.0
-                                                    : (_testFogDays > 0
-                                                          ? (_testFogDays * 2.0)
-                                                          : item.calculateCurrentBlur()),
+                                                blurLevel: item
+                                                    .calculateCurrentBlur(),
                                                 isBroken: item.isBroken,
                                                 brokenImageIndex:
                                                     item.brokenImageIndex,
@@ -783,15 +797,46 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Text(
-                                                '성공 확률 : ${(progress * 100).toInt()}%',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: progress < 0
-                                                      ? Colors.redAccent
-                                                      : (isPureFinance
-                                                            ? Colors.grey[500]
-                                                            : Colors.white60),
+                                              AnimatedSwitcher(
+                                                duration: const Duration(
+                                                  milliseconds: 500,
+                                                ),
+                                                transitionBuilder:
+                                                    (
+                                                      Widget child,
+                                                      Animation<double>
+                                                      animation,
+                                                    ) {
+                                                      return SlideTransition(
+                                                        position: Tween<Offset>(
+                                                          begin: const Offset(
+                                                            0.0,
+                                                            0.5,
+                                                          ),
+                                                          end: Offset.zero,
+                                                        ).animate(animation),
+                                                        child: FadeTransition(
+                                                          opacity: animation,
+                                                          child: child,
+                                                        ),
+                                                      );
+                                                    },
+                                                child: Text(
+                                                  '성공 확률 : ${(progress * 100).toInt()}%',
+                                                  key: ValueKey<int>(
+                                                    (progress * 100).toInt(),
+                                                  ),
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: progress < 0
+                                                        ? Colors.redAccent
+                                                        : (isPureFinance
+                                                              ? Colors.grey[500]
+                                                              : const Color(
+                                                                  0xFFD4FF00,
+                                                                )), // Neon Green for impact
+                                                  ),
                                                 ),
                                               ),
                                               RichText(
