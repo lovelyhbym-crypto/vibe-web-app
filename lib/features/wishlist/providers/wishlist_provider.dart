@@ -55,7 +55,57 @@ class WishlistNotifier extends _$WishlistNotifier {
       );
     }
 
-    return safeResponse.map((e) => WishlistModel.fromJson(e)).toList();
+    final items = safeResponse.map((e) => WishlistModel.fromJson(e)).toList();
+
+    // [Auto Update] lastOpenedAt이 오늘이 아니면 갱신 (비동기, 결과 기다리지 않음)
+    _checkAndUpdateLastOpenedAt(items);
+
+    return items;
+  }
+
+  /// 사용자가 앱을 켰을 때, lastOpenedAt을 오늘로 갱신 (하루 1회)
+  Future<void> _checkAndUpdateLastOpenedAt(List<WishlistModel> items) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final user = ref.read(authProvider).asData?.value;
+
+    if (user == null) return;
+
+    final idsToUpdate = <String>[];
+
+    for (final item in items) {
+      bool needUpdate = false;
+      if (item.lastOpenedAt == null) {
+        needUpdate = true;
+      } else {
+        final last = DateTime(
+          item.lastOpenedAt!.year,
+          item.lastOpenedAt!.month,
+          item.lastOpenedAt!.day,
+        );
+        if (last.isBefore(today)) {
+          needUpdate = true;
+        }
+      }
+
+      if (needUpdate) {
+        idsToUpdate.add(item.id!);
+      }
+    }
+
+    if (idsToUpdate.isEmpty) return;
+
+    // Supabase Bulk Update
+    // last_opened_at 컬럼만 갱신
+    try {
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .update({'last_opened_at': now.toIso8601String()})
+          .filter('id', 'in', idsToUpdate);
+    } catch (e) {
+      debugPrint('Error updating lastOpenedAt: $e');
+    }
   }
 
   Future<void> addWishlist(WishlistModel item) async {
@@ -582,6 +632,78 @@ class WishlistNotifier extends _$WishlistNotifier {
           .eq('id', id);
     } catch (e) {
       debugPrint('Error purifying fog: $e');
+      ref.invalidateSelf();
+    }
+  }
+
+  /// 0원 생존 체크 (Survival Check)
+  /// - lastSurvivalCheckAt 갱신
+  /// - 보상: 목표 금액의 1% 적립
+  Future<void> performSurvivalCheck(String id) async {
+    final wishlist = state.valueOrNull ?? [];
+    final index = wishlist.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final original = wishlist[index];
+    final now = DateTime.now();
+
+    // 이미 오늘 체크했는지 확인 (선택 사항이지만 안전장치)
+    if (original.lastSurvivalCheckAt != null) {
+      final today = DateTime(now.year, now.month, now.day);
+      final lastCheck = DateTime(
+        original.lastSurvivalCheckAt!.year,
+        original.lastSurvivalCheckAt!.month,
+        original.lastSurvivalCheckAt!.day,
+      );
+      if (today.isAtSameMomentAs(lastCheck)) {
+        debugPrint('Already checked survival today.');
+        return;
+      }
+    }
+
+    // 보상 금액 (1%)
+    final bonusAmount = original.totalGoal * 0.01;
+    final newSavedAmount = original.savedAmount + bonusAmount;
+    final isNowAchieved =
+        newSavedAmount >= original.totalGoal && !original.isAchieved;
+
+    // Optimistic Update
+    final updatedItem = original.copyWith(
+      lastSurvivalCheckAt: now,
+      savedAmount: newSavedAmount,
+      isAchieved: isNowAchieved ? true : original.isAchieved,
+      achievedAt: isNowAchieved ? DateTime.now() : original.achievedAt,
+    );
+    final updatedList = List<WishlistModel>.from(wishlist);
+    updatedList[index] = updatedItem;
+    state = AsyncValue.data(updatedList);
+
+    final authNotifier = ref.read(authProvider.notifier);
+    if (authNotifier.isGuest) {
+      final guestIndex = _guestWishlist.indexWhere((item) => item.id == id);
+      if (guestIndex != -1) _guestWishlist[guestIndex] = updatedItem;
+      return;
+    }
+
+    try {
+      final updates = <String, dynamic>{
+        'last_survival_check_at': now.toIso8601String(),
+        'saved_amount': newSavedAmount.toInt(),
+      };
+
+      if (isNowAchieved) {
+        updates['is_achieved'] = true;
+        updates['achieved_at'] = updatedItem.achievedAt?.toIso8601String();
+      }
+
+      await ref
+          .read(supabaseProvider)
+          .from('wishlists')
+          .update(updates)
+          .eq('id', id);
+    } catch (e) {
+      debugPrint('Error performing survival check: $e');
+      // Revert on error
       ref.invalidateSelf();
     }
   }

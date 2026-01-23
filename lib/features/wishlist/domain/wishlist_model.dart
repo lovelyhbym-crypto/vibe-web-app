@@ -21,6 +21,8 @@ class WishlistModel {
   final DateTime? lastQuestSavingDate;
   final double penaltyAmount;
   final String? penaltyText;
+  final DateTime? lastOpenedAt;
+  final DateTime? lastSurvivalCheckAt;
 
   WishlistModel({
     this.id,
@@ -45,6 +47,8 @@ class WishlistModel {
     this.lastQuestSavingDate,
     this.penaltyAmount = 0.0,
     this.penaltyText,
+    this.lastOpenedAt,
+    this.lastSurvivalCheckAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
   /// (totalGoal - savedAmount) / (남은 일수)를 계산
@@ -71,6 +75,13 @@ class WishlistModel {
     }
 
     return remainingAmount / daysLeft;
+  }
+
+  // Helper to safely parse strings to DateTime?
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    return DateTime.tryParse(value.toString());
   }
 
   Map<String, dynamic> toJson() {
@@ -111,6 +122,14 @@ class WishlistModel {
 
     if (lastQuestSavingDate != null) {
       data['last_quest_saving_date'] = lastQuestSavingDate!.toIso8601String();
+    }
+
+    if (lastOpenedAt != null) {
+      data['last_opened_at'] = lastOpenedAt!.toIso8601String();
+    }
+
+    if (lastSurvivalCheckAt != null) {
+      data['last_survival_check_at'] = lastSurvivalCheckAt!.toIso8601String();
     }
 
     // Include ID if it exists (though usually not for insert)
@@ -159,6 +178,8 @@ class WishlistModel {
           : null,
       penaltyAmount: (json['penalty_amount'] as num?)?.toDouble() ?? 0.0,
       // penaltyText: json['penalty_text'] as String?, // Mapped from 'comment'
+      lastOpenedAt: _parseDateTime(json['last_opened_at']),
+      lastSurvivalCheckAt: _parseDateTime(json['last_survival_check_at']),
     );
   }
 
@@ -185,6 +206,8 @@ class WishlistModel {
     DateTime? lastQuestSavingDate,
     double? penaltyAmount,
     String? penaltyText,
+    DateTime? lastOpenedAt,
+    DateTime? lastSurvivalCheckAt,
   }) {
     return WishlistModel(
       id: id ?? this.id,
@@ -209,18 +232,51 @@ class WishlistModel {
       lastQuestSavingDate: lastQuestSavingDate ?? this.lastQuestSavingDate,
       penaltyAmount: penaltyAmount ?? this.penaltyAmount,
       penaltyText: penaltyText ?? this.penaltyText,
+      lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
+      lastSurvivalCheckAt: lastSurvivalCheckAt ?? this.lastSurvivalCheckAt,
     );
   }
 
   /// 나태의 안개 농도 계산
+  /// (앱을 켠 날 수 * 2.0) + (앱을 켜지도 않은 날 수 * 4.0)
+  /// 0원 생존 체크 시 -2.0 차감
   double calculateCurrentBlur() {
     if (lastSavedAt == null) return 0.0;
 
     final now = DateTime.now();
-    final difference = now.difference(lastSavedAt!);
-    final days = difference.inDays;
 
-    double calculatedBlur = days * 2.0;
+    // lastOpenedAt이 없거나, lastSavedAt보다 이르면 lastSavedAt을 기준점으로 사용
+    // (저축한 이후로 앱을 한 번도 안 켰다는 의미)
+    final effectiveLastOpen =
+        (lastOpenedAt != null && lastOpenedAt!.isAfter(lastSavedAt!))
+        ? lastOpenedAt!
+        : lastSavedAt!;
+
+    // 1. Opened Days (Save ~ Open) : 차분히 쌓이는 안개 (2.0)
+    // lastSavedAt -> effectiveLastOpen 까지의 기간
+    final openedDays = effectiveLastOpen.difference(lastSavedAt!).inDays;
+
+    // 2. Not Opened Days (Open ~ Now) : 급격히 쌓이는 안개 (4.0)
+    // effectiveLastOpen -> now 까지의 기간
+    final notOpenedDays = now.difference(effectiveLastOpen).inDays;
+
+    double calculatedBlur = (openedDays * 2.0) + (notOpenedDays * 4.0);
+
+    // 3. Survival Check Bonus
+    // 오늘 생존 신고를 했다면 2.0 차감 ("하루치 안개 걷어내기")
+    if (lastSurvivalCheckAt != null) {
+      final today = DateTime(now.year, now.month, now.day);
+      final checkDay = DateTime(
+        lastSurvivalCheckAt!.year,
+        lastSurvivalCheckAt!.month,
+        lastSurvivalCheckAt!.day,
+      );
+      if (today.isAtSameMomentAs(checkDay)) {
+        calculatedBlur -= 2.0;
+      }
+    }
+
+    // 최소 0.0 ~ 최대 10.0 제한
     return calculatedBlur.clamp(0.0, 10.0);
   }
 

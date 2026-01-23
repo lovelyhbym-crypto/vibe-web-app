@@ -27,7 +27,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     with WidgetsBindingObserver {
   late ConfettiController _confettiController;
   int _animationTriggerId = 0;
-  int _testFogDays = 0;
+  int _testFogDays = 0; // Restored for testing
 
   @override
   void initState() {
@@ -200,13 +200,139 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                 );
               }
 
+              // [Survival Check] Banner Widget
+              Widget buildSurvivalCheckBanner() {
+                final now = DateTime.now();
+                final isAfter8PM = now.hour >= 20;
+
+                // 이미 오늘 체크했는지 확인하려면 리스트의 첫 번째 아이템(혹은 대표)을 확인해야 함.
+                // 여기서는 리스트 전체 중 하나라도 오늘 체크된 게 있으면 '체크 완료'로 간주하거나,
+                // 개별 아이템마다 버튼을 두는 게 아니라 '오늘 하루'에 대한 선언이므로
+                // 대표 아이템(혹은 첫번째)에 기록한다고 가정?
+                // 아니면 performSurvivalCheck를 Global하게?
+                // Provider의 performSurvivalCheck는 ID를 받으므로, 활성화된 첫 번째 아이템에 적용하거나
+                // 가장 최근에 수정한 아이템? -> 일단 '활성 목표 중 첫 번째'에 적용.
+                if (activeWishlist.isEmpty) return const SizedBox.shrink();
+                final targetItem = activeWishlist.first;
+
+                bool isCheckedToday = false;
+                if (targetItem.lastSurvivalCheckAt != null) {
+                  final today = DateTime(now.year, now.month, now.day);
+                  final lastCheck = DateTime(
+                    targetItem.lastSurvivalCheckAt!.year,
+                    targetItem.lastSurvivalCheckAt!.month,
+                    targetItem.lastSurvivalCheckAt!.day,
+                  );
+                  if (today.isAtSameMomentAs(lastCheck)) {
+                    isCheckedToday = true;
+                  }
+                }
+
+                if (isCheckedToday) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(
+                      color: colors.surface.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.green),
+                        const SizedBox(width: 8),
+                        Text(
+                          "오늘의 생존 신고 완료! (+1% 적립)",
+                          style: TextStyle(
+                            color: colors.textMain,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return GestureDetector(
+                  onTap: isAfter8PM
+                      ? () async {
+                          // Trigger Logic
+                          await ref
+                              .read(wishlistProvider.notifier)
+                              .performSurvivalCheck(targetItem.id!);
+                          if (mounted) {
+                            _confettiController.play();
+                          }
+                        }
+                      : null,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(
+                      color: isAfter8PM
+                          ? colors.accent.withOpacity(0.1)
+                          : Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isAfter8PM
+                            ? colors.accent
+                            : colors.textSub.withOpacity(0.3),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.verified_user_outlined,
+                              color: isAfter8PM
+                                  ? colors.accent
+                                  : colors.textSub,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isAfter8PM ? "오늘 지출 0원 생존 신고" : "아직 시간이 안 됐어요",
+                              style: TextStyle(
+                                color: isAfter8PM
+                                    ? colors.textMain
+                                    : colors.textSub,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (!isAfter8PM) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            "저녁 8시 이후에 활성화됩니다",
+                            style: TextStyle(
+                              color: colors.textSub,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              }
+
               return CustomScrollView(
                 slivers: [
                   if (activeWishlist.isEmpty) ...[
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-                        child: buildBanner(),
+                        child: Column(
+                          children: [
+                            buildBanner(),
+                            const SizedBox(height: 16),
+                            buildSurvivalCheckBanner(),
+                          ],
+                        ),
                       ),
                     ),
                     SliverFillRemaining(
@@ -596,8 +722,63 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                               );
 
                         final card = BouncyButton(
-                          onTap: () =>
-                              context.push('/wishlist/detail', extra: item),
+                          onTap: () {
+                            // [Liar's Penalty Check]
+                            final now = DateTime.now();
+                            bool isCheckedToday = false;
+                            if (item.lastSurvivalCheckAt != null) {
+                              final today = DateTime(
+                                now.year,
+                                now.month,
+                                now.day,
+                              );
+                              final lastCheck = DateTime(
+                                item.lastSurvivalCheckAt!.year,
+                                item.lastSurvivalCheckAt!.month,
+                                item.lastSurvivalCheckAt!.day,
+                              );
+                              if (today.isAtSameMomentAs(lastCheck)) {
+                                isCheckedToday = true;
+                              }
+                            }
+
+                            if (isCheckedToday) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  backgroundColor: colors.surface,
+                                  title: const Text('⚠️ 정직함 테스트'),
+                                  content: const Text(
+                                    '이미 오늘 0원 지출을 선언하셨습니다.\n지금 저축을 기록하면 약속 파기 페널티로 안개가 4.0 더 짙어집니다.\n그래도 진행하시겠습니까?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text(
+                                        '취소',
+                                        style: TextStyle(color: colors.textSub),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        context.push(
+                                          '/wishlist/detail',
+                                          extra: item,
+                                        );
+                                      },
+                                      child: const Text(
+                                        '진행 (페널티 감수)',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            } else {
+                              context.push('/wishlist/detail', extra: item);
+                            }
+                          },
                           child: cardcontent,
                         );
 
@@ -617,6 +798,12 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                           vertical: 24,
                         ),
                         child: buildBanner(),
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: buildSurvivalCheckBanner(),
                       ),
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
