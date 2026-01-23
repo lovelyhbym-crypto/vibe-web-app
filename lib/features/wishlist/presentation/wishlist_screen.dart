@@ -27,7 +27,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     with WidgetsBindingObserver {
   late ConfettiController _confettiController;
   int _animationTriggerId = 0;
-  bool _isFogTest = false;
+  int _testFogDays = 0;
 
   @override
   void initState() {
@@ -105,10 +105,35 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
             elevation: 0,
             iconTheme: IconThemeData(color: colors.textMain),
             actions: [
-              IconButton(
-                icon: Icon(_isFogTest ? Icons.cloud : Icons.cloud_queue),
-                color: _isFogTest ? Colors.lightBlueAccent : null,
-                onPressed: () => setState(() => _isFogTest = !_isFogTest),
+              Row(
+                children: [
+                  if (_testFogDays > 0)
+                    Text(
+                      '$_testFogDays일',
+                      style: TextStyle(
+                        color: colors.textMain,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  IconButton(
+                    icon: Icon(
+                      _testFogDays > 0 ? Icons.cloud : Icons.cloud_queue,
+                    ),
+                    color: _testFogDays > 0
+                        ? Colors.blue.withOpacity(
+                            (0.2 * _testFogDays + 0.2).clamp(0.0, 1.0),
+                          )
+                        : colors.textSub,
+                    onPressed: () {
+                      setState(() {
+                        _testFogDays++;
+                        if (_testFogDays > 5) {
+                          _testFogDays = 0;
+                        }
+                      });
+                    },
+                  ),
+                ],
               ),
               IconButton(
                 icon: Icon(Icons.settings, color: colors.textMain),
@@ -404,8 +429,8 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                                 imageUrl: item.imageUrl,
                                                 width: double.infinity,
                                                 height: double.infinity,
-                                                blurLevel: _isFogTest
-                                                    ? 8.0
+                                                blurLevel: _testFogDays > 0
+                                                    ? (_testFogDays * 2.0)
                                                     : item.calculateCurrentBlur(),
                                                 isBroken: item.isBroken,
                                                 brokenImageIndex:
