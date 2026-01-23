@@ -27,7 +27,10 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     with WidgetsBindingObserver {
   late ConfettiController _confettiController;
   int _animationTriggerId = 0;
-  int _testFogDays = 0; // Restored for testing
+  // Test Variables
+  int _testFogDays = 0; // Restored Step-by-Step Fog
+  bool _isNightMode = false; // 8시 이후 상황 시뮬레이션
+  bool _simulateNoAccess = false; // 미접속 상황 시뮬레이션
 
   @override
   void initState() {
@@ -102,9 +105,8 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
               ),
             ),
             backgroundColor: colors.background,
-            elevation: 0,
-            iconTheme: IconThemeData(color: colors.textMain),
             actions: [
+              // [Restored] Cloud Button for Step-by-Step Test
               Row(
                 children: [
                   if (_testFogDays > 0)
@@ -131,7 +133,80 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                           _testFogDays = 0;
                         }
                       });
+
+                      // [Test logic] Fog Days 변경 시 생존 체크 리셋 (반복 테스트 지원)
+                      final wishlist = wishlistAsync.valueOrNull ?? [];
+                      final activeItems = wishlist
+                          .where((item) => !item.isAchieved && item.id != null)
+                          .toList();
+                      if (activeItems.isNotEmpty) {
+                        ref
+                            .read(wishlistProvider.notifier)
+                            .resetSurvivalCheck(activeItems.first.id!);
+                      }
                     },
+                  ),
+                ],
+              ),
+              // Test Menu Button
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.science),
+                onSelected: (value) {
+                  setState(() {
+                    if (value == 'night_mode') {
+                      _isNightMode = !_isNightMode;
+                    } else if (value == 'simulate_no_access') {
+                      _simulateNoAccess = !_simulateNoAccess;
+                    }
+                  });
+                  // [Test Enhancement] 모드 변경 시 생존 체크 리셋 (재테스트 가능하도록)
+                  // 활성화된 첫 번째 아이템의 체크 기록을 초기화
+                  final wishlist = wishlistAsync.valueOrNull ?? [];
+                  final activeItems = wishlist
+                      .where((item) => !item.isAchieved && item.id != null)
+                      .toList();
+                  if (activeItems.isNotEmpty) {
+                    ref
+                        .read(wishlistProvider.notifier)
+                        .resetSurvivalCheck(activeItems.first.id!);
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'night_mode',
+                    child: Row(
+                      children: [
+                        Icon(
+                          _isNightMode
+                              ? Icons.nightlight_round
+                              : Icons.wb_sunny,
+                          color: colors.textMain,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _isNightMode ? '8시 이후 모드 (ON)' : '8시 이전 모드',
+                          style: TextStyle(color: colors.textMain),
+                        ),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'simulate_no_access',
+                    child: Row(
+                      children: [
+                        Icon(
+                          _simulateNoAccess
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: colors.textMain,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _simulateNoAccess ? '미접속 시뮬레이션 (ON)' : '정상 모드',
+                          style: TextStyle(color: colors.textMain),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -243,7 +318,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                         const Icon(Icons.check_circle, color: Colors.green),
                         const SizedBox(width: 8),
                         Text(
-                          "오늘의 생존 신고 완료! (+1% 적립)",
+                          "오늘 생존 완료",
                           style: TextStyle(
                             color: colors.textMain,
                             fontWeight: FontWeight.bold,
@@ -255,12 +330,21 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                 }
 
                 return GestureDetector(
-                  onTap: isAfter8PM
+                  onTap: (isAfter8PM || _isNightMode || _testFogDays > 0)
                       ? () async {
                           // Trigger Logic
                           await ref
                               .read(wishlistProvider.notifier)
                               .performSurvivalCheck(targetItem.id!);
+
+                          // [Test Mode Enhancement]
+                          // 테스트 모드(_testFogDays > 0)라면, 버튼 클릭 시 시각적으로 1단계 블러 해제
+                          if (mounted && _testFogDays > 0) {
+                            setState(() {
+                              _testFogDays = (_testFogDays - 1).clamp(0, 10);
+                            });
+                          }
+
                           if (mounted) {
                             _confettiController.play();
                           }
@@ -270,12 +354,12 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                     padding: const EdgeInsets.all(16),
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
-                      color: isAfter8PM
+                      color: (isAfter8PM || _isNightMode || _testFogDays > 0)
                           ? colors.accent.withOpacity(0.1)
                           : Colors.grey.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: isAfter8PM
+                        color: (isAfter8PM || _isNightMode || _testFogDays > 0)
                             ? colors.accent
                             : colors.textSub.withOpacity(0.3),
                       ),
@@ -287,15 +371,23 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                           children: [
                             Icon(
                               Icons.verified_user_outlined,
-                              color: isAfter8PM
+                              color:
+                                  (isAfter8PM ||
+                                      _isNightMode ||
+                                      _testFogDays > 0)
                                   ? colors.accent
                                   : colors.textSub,
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              isAfter8PM ? "오늘 지출 0원 생존 신고" : "아직 시간이 안 됐어요",
+                              (isAfter8PM || _isNightMode || _testFogDays > 0)
+                                  ? "오늘 지출 0원"
+                                  : "8시 이후에 생존 보고가 가능합니다",
                               style: TextStyle(
-                                color: isAfter8PM
+                                color:
+                                    (isAfter8PM ||
+                                        _isNightMode ||
+                                        _testFogDays > 0)
                                     ? colors.textMain
                                     : colors.textSub,
                                 fontWeight: FontWeight.bold,
@@ -304,10 +396,12 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                             ),
                           ],
                         ),
-                        if (!isAfter8PM) ...[
+                        if (!(isAfter8PM ||
+                            _isNightMode ||
+                            _testFogDays > 0)) ...[
                           const SizedBox(height: 4),
                           Text(
-                            "저녁 8시 이후에 활성화됩니다",
+                            "현재 시각: ${now.hour}시 (20시부터 활성화)",
                             style: TextStyle(
                               color: colors.textSub,
                               fontSize: 12,
@@ -555,9 +649,11 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                                 imageUrl: item.imageUrl,
                                                 width: double.infinity,
                                                 height: double.infinity,
-                                                blurLevel: _testFogDays > 0
-                                                    ? (_testFogDays * 2.0)
-                                                    : item.calculateCurrentBlur(),
+                                                blurLevel: _simulateNoAccess
+                                                    ? 4.0
+                                                    : (_testFogDays > 0
+                                                          ? (_testFogDays * 2.0)
+                                                          : item.calculateCurrentBlur()),
                                                 isBroken: item.isBroken,
                                                 brokenImageIndex:
                                                     item.brokenImageIndex,
@@ -723,61 +819,9 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
 
                         final card = BouncyButton(
                           onTap: () {
-                            // [Liar's Penalty Check]
-                            final now = DateTime.now();
-                            bool isCheckedToday = false;
-                            if (item.lastSurvivalCheckAt != null) {
-                              final today = DateTime(
-                                now.year,
-                                now.month,
-                                now.day,
-                              );
-                              final lastCheck = DateTime(
-                                item.lastSurvivalCheckAt!.year,
-                                item.lastSurvivalCheckAt!.month,
-                                item.lastSurvivalCheckAt!.day,
-                              );
-                              if (today.isAtSameMomentAs(lastCheck)) {
-                                isCheckedToday = true;
-                              }
-                            }
-
-                            if (isCheckedToday) {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  backgroundColor: colors.surface,
-                                  title: const Text('⚠️ 정직함 테스트'),
-                                  content: const Text(
-                                    '이미 오늘 0원 지출을 선언하셨습니다.\n지금 저축을 기록하면 약속 파기 페널티로 안개가 4.0 더 짙어집니다.\n그래도 진행하시겠습니까?',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Text(
-                                        '취소',
-                                        style: TextStyle(color: colors.textSub),
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        context.push(
-                                          '/wishlist/detail',
-                                          extra: item,
-                                        );
-                                      },
-                                      child: const Text(
-                                        '진행 (페널티 감수)',
-                                        style: TextStyle(color: Colors.red),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            } else {
-                              context.push('/wishlist/detail', extra: item);
-                            }
+                            // [Liar's Penalty Removed]
+                            // 생존 신고 여부와 상관없이 바로 상세 페이지로 이동
+                            context.push('/wishlist/detail', extra: item);
                           },
                           child: cardcontent,
                         );

@@ -237,9 +237,9 @@ class WishlistModel {
     );
   }
 
-  /// 나태의 안개 농도 계산
-  /// (앱을 켠 날 수 * 2.0) + (앱을 켜지도 않은 날 수 * 4.0)
-  /// 0원 생존 체크 시 -2.0 차감
+  /// 나태의 안개 농도 계산 (가중 처벌 로직)
+  /// 공식: (미접속 일수 * 4.0) + (접속했으나 저축 안 한 일수 * 2.0)
+  /// lastSurvivalCheckAt이 오늘 날짜라면 -2.0 차감
   double calculateCurrentBlur() {
     if (lastSavedAt == null) return 0.0;
 
@@ -252,18 +252,19 @@ class WishlistModel {
         ? lastOpenedAt!
         : lastSavedAt!;
 
-    // 1. Opened Days (Save ~ Open) : 차분히 쌓이는 안개 (2.0)
+    // 1. 접속했으나 저축 안 한 일수 (Save ~ Open) : 차분히 쌓이는 안개 (2.0)
     // lastSavedAt -> effectiveLastOpen 까지의 기간
     final openedDays = effectiveLastOpen.difference(lastSavedAt!).inDays;
 
-    // 2. Not Opened Days (Open ~ Now) : 급격히 쌓이는 안개 (4.0)
+    // 2. 미접속 일수 (Open ~ Now) : 급격히 쌓이는 안개 (4.0)
+    // lastOpenedAt이 어제보다 이전이라면 '미접속 상태'로 간주 (즉, 차이가 2일 이상 등)
     // effectiveLastOpen -> now 까지의 기간
     final notOpenedDays = now.difference(effectiveLastOpen).inDays;
 
     double calculatedBlur = (openedDays * 2.0) + (notOpenedDays * 4.0);
 
     // 3. Survival Check Bonus
-    // 오늘 생존 신고를 했다면 2.0 차감 ("하루치 안개 걷어내기")
+    // 오늘 생존 신고를 했다면 2.0 차감
     if (lastSurvivalCheckAt != null) {
       final today = DateTime(now.year, now.month, now.day);
       final checkDay = DateTime(

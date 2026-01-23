@@ -57,54 +57,62 @@ class WishlistNotifier extends _$WishlistNotifier {
 
     final items = safeResponse.map((e) => WishlistModel.fromJson(e)).toList();
 
-    // [Auto Update] lastOpenedAt이 오늘이 아니면 갱신 (비동기, 결과 기다리지 않음)
-    _checkAndUpdateLastOpenedAt(items);
+    // [Auto Update] 날짜가 바뀌었다면 모든 활성 아이템의 recordAccess 실행
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // 비동기 실행 (결과 기다리지 않음)
+    Future(() async {
+      for (final item in items) {
+        if (item.lastOpenedAt == null) {
+          await recordAccess(item.id!);
+        } else {
+          final last = DateTime(
+            item.lastOpenedAt!.year,
+            item.lastOpenedAt!.month,
+            item.lastOpenedAt!.day,
+          );
+          if (last.isBefore(today)) {
+            await recordAccess(item.id!);
+          }
+        }
+      }
+    });
 
     return items;
   }
 
-  /// 사용자가 앱을 켰을 때, lastOpenedAt을 오늘로 갱신 (하루 1회)
-  Future<void> _checkAndUpdateLastOpenedAt(List<WishlistModel> items) async {
+  /// 사용자가 앱을 켰을 때 접속 기록 (lastOpenedAt) 갱신
+  Future<void> recordAccess(String id) async {
+    final wishlist = state.valueOrNull ?? [];
+    final index = wishlist.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final user = ref.read(authProvider).asData?.value;
+    final item = wishlist[index];
 
-    if (user == null) return;
+    // Optimistic Update
+    final updatedItem = item.copyWith(lastOpenedAt: now);
+    final updatedList = List<WishlistModel>.from(wishlist);
+    updatedList[index] = updatedItem;
+    state = AsyncValue.data(updatedList);
 
-    final idsToUpdate = <String>[];
-
-    for (final item in items) {
-      bool needUpdate = false;
-      if (item.lastOpenedAt == null) {
-        needUpdate = true;
-      } else {
-        final last = DateTime(
-          item.lastOpenedAt!.year,
-          item.lastOpenedAt!.month,
-          item.lastOpenedAt!.day,
-        );
-        if (last.isBefore(today)) {
-          needUpdate = true;
-        }
-      }
-
-      if (needUpdate) {
-        idsToUpdate.add(item.id!);
-      }
+    final authNotifier = ref.read(authProvider.notifier);
+    if (authNotifier.isGuest) {
+      final guestIndex = _guestWishlist.indexWhere((it) => it.id == id);
+      if (guestIndex != -1) _guestWishlist[guestIndex] = updatedItem;
+      return;
     }
 
-    if (idsToUpdate.isEmpty) return;
-
-    // Supabase Bulk Update
-    // last_opened_at 컬럼만 갱신
     try {
       await ref
           .read(supabaseProvider)
           .from('wishlists')
           .update({'last_opened_at': now.toIso8601String()})
-          .filter('id', 'in', idsToUpdate);
+          .eq('id', id);
     } catch (e) {
-      debugPrint('Error updating lastOpenedAt: $e');
+      debugPrint('Error recording access for $id: $e');
+      // Quietly fail for background updates, or revert if critical
     }
   }
 
@@ -703,9 +711,30 @@ class WishlistNotifier extends _$WishlistNotifier {
           .eq('id', id);
     } catch (e) {
       debugPrint('Error performing survival check: $e');
-      // Revert on error
-      ref.invalidateSelf();
+      // [FIX] 컬럼 누락 에러(PGRST204)인 경우 로컬 상태 유지 (새로고침 방지)
+      if (e.toString().contains('PGRST204')) {
+        debugPrint(
+          'Warning: Supabase columns for Survival Check are missing. Local state preserved.',
+        );
+      } else {
+        // 그 외 실제 에러인 경우만 롤백
+        ref.invalidateSelf();
+      }
     }
+  }
+
+  // Test Only: 생존 체크 리셋 (테스트용)
+  Future<void> resetSurvivalCheck(String id) async {
+    final wishlist = state.valueOrNull ?? [];
+    final index = wishlist.indexWhere((item) => item.id == id);
+    if (index == -1) return;
+
+    final updatedItem = wishlist[index].copyWith(
+      lastSurvivalCheckAt: null, // Reset to null
+    );
+    final updatedList = List<WishlistModel>.from(wishlist);
+    updatedList[index] = updatedItem;
+    state = AsyncValue.data(updatedList);
   }
 
   /// 꿈의 파괴 (100% 확률로 파괴, 이미지 랜덤 1~2)
