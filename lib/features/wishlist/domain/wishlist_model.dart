@@ -90,6 +90,18 @@ class WishlistModel {
   /// PRD Requirement: 'currentBlurPoints' 필드를 통해 안개를 관리
   double get currentBlurPoints => blurLevel.clamp(0.0, 10.0);
 
+  /// [Time Pressure] 남은 시간 계산
+  Duration get timeRemaining {
+    if (targetDate == null) return Duration.zero;
+    return targetDate!.difference(DateTime.now());
+  }
+
+  /// [Time Pressure] 긴급 상태 (24시간 미만)
+  bool get isUrgent {
+    final remaining = timeRemaining;
+    return remaining.inSeconds > 0 && remaining.inHours < 24;
+  }
+
   // Helper to safely parse strings to DateTime?
   static DateTime? _parseDateTime(dynamic value) {
     if (value == null) return null;

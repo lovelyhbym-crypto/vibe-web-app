@@ -7,7 +7,6 @@ import 'package:vive_app/core/ui/bouncy_button.dart';
 import 'package:vive_app/core/ui/vibe_image_effect.dart';
 import 'package:vive_app/core/utils/i18n.dart';
 import 'package:vive_app/features/wishlist/domain/wishlist_model.dart';
-import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
 
 class WishlistCard extends ConsumerWidget {
   final WishlistModel item;
@@ -165,18 +164,74 @@ class WishlistCard extends ConsumerWidget {
     VibeColors colors,
     bool isPureFinance,
   ) {
+    // Calculate D-Day
+    String? dDayText;
+    if (item.targetDate != null && !item.isAchieved) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final target = DateTime(
+        item.targetDate!.year,
+        item.targetDate!.month,
+        item.targetDate!.day,
+      );
+      final days = target.difference(today).inDays;
+
+      if (days == 0)
+        dDayText = 'D-Day';
+      else if (days > 0)
+        dDayText = 'D-$days';
+      else
+        dDayText = 'D+${days.abs()}';
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center, // Align vertically
       children: [
         Expanded(
-          child: Text(
-            item.title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: isPureFinance ? const Color(0xFF191F28) : colors.textMain,
-            ),
-            overflow: TextOverflow.ellipsis,
+          child: Row(
+            children: [
+              Flexible(
+                child: Text(
+                  item.title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: isPureFinance
+                        ? const Color(0xFF191F28)
+                        : colors.textMain,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (dDayText != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isPureFinance
+                        ? Colors.grey[200]
+                        : colors.accent.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color: isPureFinance ? Colors.transparent : colors.accent,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    dDayText,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isPureFinance ? Colors.grey[700] : colors.accent,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
         const SizedBox(width: 8),
@@ -187,20 +242,6 @@ class WishlistCard extends ConsumerWidget {
             fontWeight: FontWeight.bold,
             color: colors.textMain,
           ),
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(),
-          icon: Icon(
-            item.isRepresentative ? Icons.star : Icons.star_border,
-            color: item.isRepresentative
-                ? const Color(0xFFFFC107)
-                : (isPureFinance ? Colors.grey[400] : colors.textSub),
-            size: 22,
-          ),
-          onPressed: () =>
-              ref.read(wishlistProvider.notifier).setRepresentative(item.id!),
         ),
       ],
     );

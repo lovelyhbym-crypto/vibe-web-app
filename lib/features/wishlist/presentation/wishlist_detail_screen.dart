@@ -16,6 +16,7 @@ import 'package:vive_app/core/ui/vibe_image_effect.dart';
 import 'package:flutter/services.dart';
 import 'package:vive_app/features/auth/providers/user_profile_provider.dart';
 import '../../../core/services/sound_service.dart';
+import 'widgets/countdown_timer_widget.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {
   final WishlistModel item;
@@ -1055,6 +1056,19 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                         );
                       },
                     ),
+                    // [Time Pressure] Countdown Timer Overlay
+                    if (item.targetDate != null &&
+                        !item.isAchieved &&
+                        !_isEditing)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: CountdownTimerWidget(
+                          targetDate: item.targetDate!,
+                          isAchieved: item.isAchieved,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -1116,70 +1130,30 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                   ),
                                 ),
                         ),
-                        if ((item.targetDate != null || _editedDate != null) &&
-                                !item.isAchieved ||
-                            _isEditing)
+                        if (_isEditing) // Show date picker ONLY when editing
                           GestureDetector(
-                            onTap: _isEditing ? _pickDate : null,
+                            onTap: _pickDate,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: isPureFinance
-                                    ? colors.surface
-                                    : colors.accent.withOpacity(0.2),
+                                color: colors.surface,
                                 borderRadius: BorderRadius.circular(20),
-                                border: isPureFinance
-                                    ? null
-                                    : Border.all(
-                                        color: colors.accent,
-                                        width: 1.5,
-                                      ),
-                                boxShadow: _isEditing
-                                    ? [
-                                        BoxShadow(
-                                          color: colors.accent.withOpacity(0.5),
-                                          blurRadius: 8,
-                                          spreadRadius: 1,
-                                        ),
-                                      ]
-                                    : null,
+                                border: Border.all(
+                                  color: colors.accent,
+                                  width: 1.5,
+                                ),
                               ),
                               child: Text(
-                                _isEditing && _editedDate != null
+                                _editedDate != null
                                     ? DateFormat(
                                         'yyyy.MM.dd',
                                       ).format(_editedDate!)
-                                    : () {
-                                        final baseDate = _isEditing
-                                            ? _editedDate
-                                            : item.targetDate;
-                                        if (baseDate == null) return '기한 설정';
-
-                                        final now = DateTime.now();
-                                        final today = DateTime(
-                                          now.year,
-                                          now.month,
-                                          now.day,
-                                        );
-                                        final target = DateTime(
-                                          baseDate.year,
-                                          baseDate.month,
-                                          baseDate.day,
-                                        );
-                                        final days = target
-                                            .difference(today)
-                                            .inDays;
-                                        if (days == 0) return 'D-Day';
-                                        if (days < 0) return '기한 도과';
-                                        return 'D-$days';
-                                      }(),
+                                    : '기한 설정',
                                 style: TextStyle(
-                                  color: isPureFinance
-                                      ? colors.textSub
-                                      : colors.accent,
+                                  color: colors.accent,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                 ),

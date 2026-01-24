@@ -24,6 +24,12 @@ final selectedWishlistIndexProvider =
 
 final selectedWishlistIdsProvider = StateProvider<List<String>>((ref) => []);
 
+/// [Time Pressure] Countdown Stream (1-second tick)
+/// Handles app lifecycle to prevent battery drain
+final countdownProvider = StreamProvider.autoDispose<int>((ref) {
+  return Stream.periodic(const Duration(seconds: 1), (i) => i);
+});
+
 @Riverpod(keepAlive: true)
 class WishlistNotifier extends _$WishlistNotifier {
   // Local storage for guest users
