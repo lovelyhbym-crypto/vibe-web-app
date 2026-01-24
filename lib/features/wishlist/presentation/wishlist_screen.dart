@@ -7,6 +7,7 @@ import 'package:confetti/confetti.dart';
 import 'package:vive_app/features/wishlist/domain/wishlist_model.dart';
 
 import 'package:vive_app/core/utils/i18n.dart';
+import 'package:vive_app/core/services/sound_service.dart';
 
 import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
 import 'package:vive_app/features/wishlist/presentation/add_wishlist_dialog.dart';
@@ -82,6 +83,22 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
         });
       }
     });
+
+    // Check for deferred shatter effect (Passive check for navigation arrival)
+    final rewardState = ref.watch(rewardStateProvider);
+    if (rewardState.isShatterTriggered) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Delay to allow screen transition to complete visually
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && ref.read(rewardStateProvider).isShatterTriggered) {
+            SoundService().playShatter();
+            HapticFeedback.heavyImpact();
+            // Consume the trigger so it doesn't play again
+            ref.read(rewardStateProvider.notifier).consumeShatter();
+          }
+        });
+      });
+    }
 
     // 탭 전환 감시 (Index 1: 목표 탭)
     ref.listen(navigationIndexProvider, (previous, next) {
@@ -502,7 +519,6 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                           item: item,
                           animationTriggerId: _animationTriggerId,
                         );
-
                       }, childCount: activeWishlist.length),
                     ),
                     SliverToBoxAdapter(

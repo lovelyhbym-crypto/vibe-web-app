@@ -4,22 +4,26 @@ class RewardState {
   final bool isMonochrome;
   final bool showConfetti;
   final bool isTriggered; // 폭죽 대기 신호
+  final bool isShatterTriggered; // 깨짐 소리 대기 신호
 
   RewardState({
     this.isMonochrome = true,
     this.showConfetti = false,
     this.isTriggered = false,
+    this.isShatterTriggered = false,
   });
 
   RewardState copyWith({
     bool? isMonochrome,
     bool? showConfetti,
     bool? isTriggered,
+    bool? isShatterTriggered,
   }) {
     return RewardState(
       isMonochrome: isMonochrome ?? this.isMonochrome,
       showConfetti: showConfetti ?? this.showConfetti,
       isTriggered: isTriggered ?? this.isTriggered,
+      isShatterTriggered: isShatterTriggered ?? this.isShatterTriggered,
     );
   }
 }
@@ -47,12 +51,23 @@ class RewardStateNotifier extends StateNotifier<RewardState> {
     state = state.copyWith(isTriggered: false);
   }
 
+  // 깨짐 효과 장전 (패배 확정 후 호출)
+  void triggerShatter() {
+    state = state.copyWith(isShatterTriggered: true);
+  }
+
+  // 깨짐 효과 소비 (목표 탭 진입 후 호출)
+  void consumeShatter() {
+    state = state.copyWith(isShatterTriggered: false);
+  }
+
   // 다시 흑백으로 리셋 (자정 등 초기화용)
   void resetToGloom() {
     state = state.copyWith(
       isMonochrome: true,
       showConfetti: false,
       isTriggered: false,
+      isShatterTriggered: false,
     );
   }
 }

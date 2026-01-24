@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:vive_app/core/utils/i18n.dart';
 import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:vive_app/core/services/bank_account_service.dart';
+import 'package:vive_app/core/services/sound_service.dart';
 
 import 'package:vive_app/features/saving/domain/category_model.dart';
 import 'package:vive_app/features/saving/providers/category_provider.dart';
@@ -61,13 +62,17 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
   }
 
   void _addAmount(int amount) {
+    // [Added] Sensory Feedback: Chip Sound & Light Vibration
+    SoundService().playChip();
+    HapticFeedback.lightImpact();
+
     final current = int.tryParse(_amountController.text) ?? 0;
     _amountController.text = (current + amount).toString();
   }
 
   void _executeDefeatSequence(double amount) async {
-    // 1. Sound: 유리창 깨지는 소리 시뮬레이션 (안전 모드)
-    debugPrint('Sound Simulation: Glass Breaking Sound (Amount: $amount)');
+    // 1. Sound: 유리창 깨지는 소리 시뮬레이션 (삭제: 목표 탭 진입 시 재생)
+    debugPrint('Sound Simulation: Glass Breaking Sound (Deferred)');
 
     // 2. State: 현재 위시리스트 파괴
     final wishlistAsync = ref.read(wishlistProvider);
@@ -88,7 +93,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     // 3. Confrontation Mode (Full Screen Overlay)
     if (mounted) {
       // Haptic Feedback for impact
-      HapticFeedback.heavyImpact();
+      HapticFeedback.mediumImpact();
 
       await showGeneralDialog(
         context: context,
@@ -179,6 +184,10 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                           shadowColor: Colors.redAccent.withOpacity(0.5),
                         ),
                         onPressed: () {
+                          // [Added] Trigger Shatter Sound for next screen
+                          ref
+                              .read(rewardStateProvider.notifier)
+                              .triggerShatter();
                           Navigator.of(context).pop(); // Close overlay
                         },
                         child: const Text(
@@ -437,8 +446,11 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               // 1. 팝업 먼저 닫기 (dialogContext 사용)
               Navigator.pop(dialogContext);
 
-              // 2. 보상 장전 (전역 폭죽 신호)
+              // 2. 보상 장전 (전역 폭죽 신호 + 사운드)
               ref.read(rewardStateProvider.notifier).triggerConfetti();
+              // [Added] Sensory Feedback: Firework Sound & Strong Vibration
+              SoundService().playFirework();
+              HapticFeedback.vibrate();
 
               // 3. 저축 데이터 기록
               await _performActualSaving();
@@ -803,6 +815,11 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                     child: TextField(
                       controller: _amountController,
                       keyboardType: TextInputType.number,
+                      // [Added] Sensory Feedback: Chip Sound on Typing
+                      onChanged: (_) {
+                        SoundService().playChip();
+                        HapticFeedback.lightImpact();
+                      },
                       style: TextStyle(
                         color: colors.textMain,
                         fontSize: 24,

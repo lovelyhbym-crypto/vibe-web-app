@@ -15,6 +15,7 @@ import 'package:intl/intl.dart';
 import 'package:vive_app/core/ui/vibe_image_effect.dart';
 import 'package:flutter/services.dart';
 import 'package:vive_app/features/auth/providers/user_profile_provider.dart';
+import '../../../core/services/sound_service.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {
   final WishlistModel item;
@@ -840,6 +841,14 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
 
                         if (confirmed == true) {
                           try {
+                            // [Added] Sensory Feedback: Shatter Sound & Heavy Vibration
+                            SoundService().playShatter();
+                            HapticFeedback.heavyImpact();
+                            await Future.delayed(
+                              const Duration(milliseconds: 100),
+                            );
+                            HapticFeedback.heavyImpact(); // Double impact for dramatic effect
+
                             await ref
                                 .read(wishlistProvider.notifier)
                                 .deleteWishlist(widget.item.id!);
