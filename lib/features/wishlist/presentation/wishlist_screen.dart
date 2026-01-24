@@ -89,7 +89,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     if (rewardState.isShatterTriggered) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // Delay to allow screen transition to complete visually
-        Future.delayed(const Duration(milliseconds: 500), () {
+        Future.delayed(const Duration(milliseconds: 200), () {
           if (mounted && ref.read(rewardStateProvider).isShatterTriggered) {
             SoundService().playShatter();
             HapticFeedback.heavyImpact();

@@ -1,5 +1,7 @@
+import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 class SoundService {
   static final SoundService _instance = SoundService._internal();
@@ -31,11 +33,24 @@ class SoundService {
     try {
       if (_chipPlayers.isEmpty) await initialize();
 
+      // Haptic Sync
+      HapticFeedback.lightImpact();
+
       // Round-robin for overlapping sounds
       final player = _chipPlayers[_chipPlayerIndex];
       _chipPlayerIndex = (_chipPlayerIndex + 1) % _chipPoolSize;
 
-      await player.play(AssetSource('audio/chip.mp3'), volume: 1.0);
+      if (player.state == PlayerState.playing) {
+        await player.stop();
+      }
+
+      // Random Pitch (0.95 - 1.05) & Volume (0.5 - 0.7)
+      final random = Random();
+      final pitch = 0.95 + random.nextDouble() * 0.10;
+      final volume = 0.5 + random.nextDouble() * 0.2;
+
+      await player.setPlaybackRate(pitch);
+      await player.play(AssetSource('audio/chip.mp3'), volume: volume);
     } catch (e) {
       debugPrint('Error playing chip sound: $e');
     }
