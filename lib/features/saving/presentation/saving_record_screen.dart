@@ -168,6 +168,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     }
 
     // 3. Confrontation Mode (Full Screen Overlay)
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+
     if (mounted) {
       // Haptic Feedback for impact
       HapticFeedback.mediumImpact();
@@ -211,7 +213,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                         color: const Color(0xFF1A0000),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.redAccent.withOpacity(0.5),
+                          color: colors.danger.withOpacity(0.5),
                         ),
                       ),
                       child: Column(
@@ -219,7 +221,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                           const Text(
                             "약속하신 벌칙",
                             style: TextStyle(
-                              color: Colors.redAccent,
+                              color: Colors.red,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
@@ -252,13 +254,13 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                       height: 56,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
+                          backgroundColor: colors.danger,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 8,
-                          shadowColor: Colors.redAccent.withOpacity(0.5),
+                          shadowColor: colors.danger.withOpacity(0.5),
                         ),
                         onPressed: () {
                           // [Added] Trigger Shatter Sound for next screen
@@ -313,19 +315,22 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF111111),
+        backgroundColor: colors?.background ?? const Color(0xFF111111),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: const BorderSide(color: Colors.redAccent),
+          side: BorderSide(color: colors?.danger ?? Colors.redAccent),
         ),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+            Icon(
+              Icons.warning_amber_rounded,
+              color: colors?.danger ?? Colors.redAccent,
+            ),
             SizedBox(width: 8),
             Text(
               '마지막 경고',
               style: TextStyle(
-                color: Colors.redAccent,
+                color: colors?.danger ?? Colors.redAccent,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -353,11 +358,16 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               decoration: InputDecoration(
                 hintText: '금액 입력',
                 hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-                enabledBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.redAccent),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+                    color: colors?.danger ?? Colors.redAccent,
+                  ),
                 ),
-                focusedBorder: const UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.redAccent, width: 2),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(
+                    color: colors?.danger ?? Colors.redAccent,
+                    width: 2,
+                  ),
                 ),
               ),
             ),
@@ -370,7 +380,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[900],
+              backgroundColor: colors?.danger ?? Colors.red[900],
               foregroundColor: Colors.white,
             ),
             onPressed: () {
@@ -843,7 +853,6 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                   // Save Button
                   Builder(
                     builder: (context) {
-                      final limeColor = const Color(0xFFD4FF00);
                       final amountText = _amountController.text.isEmpty
                           ? '0'
                           : _amountController.text;
@@ -928,12 +937,11 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                             horizontal: 24,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black,
-                            border: Border.all(color: limeColor, width: 3),
+                            color: colors.accent,
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: limeColor.withOpacity(0.3),
+                                color: colors.accent.withOpacity(0.4),
                                 blurRadius: 15,
                                 spreadRadius: 2,
                               ),
@@ -947,7 +955,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                                   const Icon(
                                     Icons.send_rounded,
                                     size: 50,
-                                    color: Color(0xFFD4FF00),
+                                    color: Colors.black,
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
@@ -961,7 +969,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.w900,
-                                            color: Colors.white,
+                                            color: Colors.black,
                                             letterSpacing: -0.5,
                                           ),
                                         ),
@@ -970,8 +978,10 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                                           '토스뱅크로 ${amountText}원 송금',
                                           style: TextStyle(
                                             fontSize: 12,
-                                            color: limeColor.withOpacity(0.8),
-                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black.withOpacity(
+                                              0.7,
+                                            ),
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ],
@@ -981,7 +991,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                               ),
                               if (_isLoading)
                                 const CircularProgressIndicator(
-                                  color: Color(0xFFD4FF00),
+                                  color: Colors.black,
                                 ),
                             ],
                           ),
@@ -997,17 +1007,17 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                     width: double.infinity,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.05),
+                        color: colors.danger.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.redAccent.withOpacity(0.5),
+                          color: colors.danger.withOpacity(0.5),
                           width: 2,
                         ),
                       ),
                       child: TextButton.icon(
                         onPressed: _showDefeatDialog,
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.redAccent,
+                          foregroundColor: colors.danger,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),

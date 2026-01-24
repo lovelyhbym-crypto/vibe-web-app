@@ -31,23 +31,23 @@ abstract class VibeColors {
 // 3. [Cyberpunk] 기존 네온 스타일 구현체
 class CyberpunkColors implements VibeColors {
   @override
-  Color get background => const Color(0xFF121212); // Deep Dark
+  Color get background => const Color(0xFF0A0A0E); // Deep Navy Black
   @override
-  Color get surface => const Color(0xFF1E1E1E);
+  Color get surface => const Color(0xFF1C1C1E); // 더 깊은 카드 배경색
   @override
-  Color get textMain => const Color(0xFFE0E0E0);
+  Color get textMain => const Color(0xFFF2F2F7); // Off-White
   @override
-  Color get textSub => const Color(0xFFAAAAAA);
+  Color get textSub => const Color(0xFF8E8E93); // 중간 회색
   @override
-  Color get accent => const Color(0xFFD4FF00); // Neon Yellow/Lime
+  Color get accent => const Color(0xFFCCFF00); // Electric Lime
   @override
-  Color get success => const Color(0xFF00FF00); // Pure Neon Green
+  Color get success => const Color(0xFFCCFF00); // Electric Lime
   @override
-  Color get danger => const Color(0xFFFF003C); // Neon Red
+  Color get danger => const Color(0xFFFF3B30); // Neon Red
   @override
-  Color get border => const Color(0xFF333333);
+  Color get border => const Color(0xFF2C2C2E);
   @override
-  Color get gridLine => const Color(0xFF2A2A2A);
+  Color get gridLine => const Color(0xFF1C1C1E);
 }
 
 // 4. [Pure Finance] 토스 스타일 구현체 (New!)

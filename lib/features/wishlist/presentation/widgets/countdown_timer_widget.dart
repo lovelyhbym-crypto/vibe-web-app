@@ -3,6 +3,7 @@ import 'dart:ui' as dart_ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
+import 'package:vive_app/core/theme/app_theme.dart';
 
 class CountdownTimerWidget extends ConsumerWidget {
   final DateTime targetDate;
@@ -69,20 +70,22 @@ class CountdownTimerWidget extends ConsumerWidget {
     // 긴급 상태 판단 (24시간 미만)
     final isUrgent = difference.inHours < 24 && days == 0;
 
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+
     // 긴급 상태일 때 깜빡임 효과 (초 단위 짝/홀 이용)
     final isBlinking = isUrgent && (seconds % 2 != 0);
     final urgentColor = isBlinking
-        ? Colors.red.withOpacity(0.5)
-        : Colors.redAccent;
+        ? colors.danger.withOpacity(0.5)
+        : colors.danger;
 
     // 폰트 스타일 정의
-    // GoogleFonts.shareTechMono() 또는 기본 Monospace 사용
-    final baseStyle = GoogleFonts.shareTechMono(
+    final baseStyle = GoogleFonts.robotoMono(
       color: isUrgent
           ? urgentColor
-          : Colors.white.withOpacity(0.7), // Semi-transparent white
+          : colors.textMain.withOpacity(0.7), // Semi-transparent white
       fontSize: 16,
-      fontWeight: FontWeight.w500, // Revert bump, 500 is good for glass
+      fontWeight: FontWeight.bold,
+      letterSpacing: -0.5,
       shadows: [
         BoxShadow(
           color: Colors.black.withOpacity(0.3), // Softer shadow
@@ -92,17 +95,24 @@ class CountdownTimerWidget extends ConsumerWidget {
       ],
     );
 
-    final highlightStyle = GoogleFonts.shareTechMono(
-      color: const Color(0xFFFF003C).withOpacity(0.85), // Semi-transparent Neon
+    final highlightStyle = GoogleFonts.robotoMono(
+      color: colors.danger, // Neon Red for seconds
       fontSize: 18,
       fontWeight: FontWeight.bold,
+      letterSpacing: -0.5,
       shadows: [
         BoxShadow(
-          color: const Color(0xFFFF003C).withOpacity(0.4), // Softer glow
+          color: colors.danger.withOpacity(0.4), // Softer glow
           blurRadius: 8,
           spreadRadius: 2,
         ),
       ],
+    );
+
+    final unitStyle = TextStyle(
+      color: Colors.white38,
+      fontSize: 12,
+      fontWeight: FontWeight.normal,
     );
 
     return ClipRRect(
@@ -116,13 +126,9 @@ class CountdownTimerWidget extends ConsumerWidget {
           decoration: BoxDecoration(
             color: Colors.black.withOpacity(0.4),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            border: Border(
-              top: BorderSide(
-                color: isUrgent
-                    ? Colors.redAccent.withOpacity(0.5)
-                    : Colors.white12,
-                width: 1,
-              ),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.1),
+              width: 0.5,
             ),
           ),
           child: Row(
@@ -134,9 +140,14 @@ class CountdownTimerWidget extends ConsumerWidget {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              if (days > 0) ...[Text('D-$days일 ', style: baseStyle)],
-              Text('$hours시간 ', style: baseStyle),
-              Text('$minutes분 ', style: baseStyle),
+              if (days > 0) ...[
+                Text('D-$days', style: baseStyle),
+                Text('일 ', style: unitStyle),
+              ],
+              Text('$hours', style: baseStyle),
+              Text('시간 ', style: unitStyle),
+              Text('$minutes', style: baseStyle),
+              Text('분 ', style: unitStyle),
               // 초 단위 강조
               SizedBox(
                 width: 32,
@@ -148,10 +159,7 @@ class CountdownTimerWidget extends ConsumerWidget {
                   textAlign: TextAlign.center,
                 ),
               ),
-              Text(
-                '초',
-                style: isUrgent ? baseStyle : baseStyle.copyWith(fontSize: 14),
-              ),
+              Text('초', style: unitStyle),
             ],
           ),
         ),

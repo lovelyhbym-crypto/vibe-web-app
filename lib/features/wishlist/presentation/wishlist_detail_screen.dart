@@ -1,4 +1,5 @@
 import 'dart:ui' as ui;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -230,6 +231,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
       _isSaving = true;
     });
 
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
     try {
       FocusScope.of(context).unfocus();
 
@@ -256,10 +258,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('수정 실패: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
+          SnackBar(content: Text('수정 실패: $e'), backgroundColor: colors.danger),
         );
       }
     } finally {
@@ -452,6 +451,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     double currentSaved,
     double penaltyAmount,
   ) async {
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
     final totalGoal = widget.item.totalGoal;
     final double safeTotal = totalGoal > 0 ? totalGoal : 1.0;
 
@@ -464,19 +464,19 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            backgroundColor: const Color(0xFF2A0000), // Dark Red
+            backgroundColor: Color(0xFF2A0000), // Dark Red
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: Colors.redAccent),
+              side: BorderSide(color: colors.danger),
             ),
-            title: const Row(
+            title: Row(
               children: [
-                Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+                Icon(Icons.warning_amber_rounded, color: colors.danger),
                 SizedBox(width: 8),
                 Text(
                   '[위험] 페널티 발생',
                   style: TextStyle(
-                    color: Colors.redAccent,
+                    color: colors.danger,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -486,31 +486,31 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '이미 무료 기회를 사용하셨습니다.\n성공 확률이 -20% 감소합니다.',
                   style: TextStyle(color: Colors.white, height: 1.5),
                 ),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   '⚠ 주의: 목표물도 파괴되며\n구원 퀘스트를 수행해야 복구됩니다.',
                   style: TextStyle(
-                    color: Colors.redAccent,
+                    color: colors.danger,
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   '또한, 확률 게이지가 빚(Debt)으로 전환됩니다.',
                   style: TextStyle(
-                    color: Colors.redAccent,
+                    color: colors.danger,
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
                 ),
                 const SizedBox(height: 20),
                 // Preview Visualization
-                const Text(
+                Text(
                   '성공 확률 변화',
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
@@ -565,7 +565,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                               child: Container(
                                 height: 12,
                                 decoration: BoxDecoration(
-                                  color: Colors.redAccent,
+                                  color: colors.danger,
                                   borderRadius: BorderRadius.circular(6),
                                   boxShadow: [
                                     BoxShadow(
@@ -615,8 +615,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                     ),
                     Text(
                       '${(newProgress * 100).toInt()}%', // e.g. -10%
-                      style: const TextStyle(
-                        color: Colors.redAccent,
+                      style: TextStyle(
+                        color: colors.danger,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
@@ -635,7 +635,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
+                  backgroundColor: colors.danger,
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(context, true),
@@ -648,6 +648,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
   }
 
   Future<void> _deleteWishlistAction() async {
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -671,7 +672,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               TextSpan(
                 text: "'실패 기록'",
                 style: TextStyle(
-                  color: Colors.redAccent.shade100,
+                  color: colors.danger.withOpacity(0.8),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -730,6 +731,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
   }
 
   void _showEdgeMenu(WishlistModel item) {
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
     HapticFeedback.lightImpact();
     showGeneralDialog(
       context: context,
@@ -797,7 +799,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                             "부서진 꿈을 방치한 채 도망갈 수 없습니다.\n[긴급 복구 퀘스트]를 먼저 완료하십시오.",
                             textAlign: TextAlign.right,
                             style: TextStyle(
-                              color: Colors.redAccent,
+                              color: colors.danger,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               height: 1.5,
@@ -950,6 +952,22 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                       height: height,
                                       progress: value,
                                     ),
+                                    // [Refinement] Image-Timer Vignette
+                                    Positioned.fill(
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.bottomCenter,
+                                            end: Alignment.topCenter,
+                                            colors: [
+                                              Colors.black.withOpacity(0.8),
+                                              Colors.transparent,
+                                            ],
+                                            stops: const [0.0, 0.4],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
 
                                     // (C) 스캔 라인 효과
                                     if (value > 0 && value < 1.0)
@@ -1076,12 +1094,13 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                   : Text(
                                       item.title,
                                       style: TextStyle(
-                                        fontSize: 32,
-                                        fontWeight: FontWeight.bold,
+                                        fontSize: 48,
+                                        fontWeight: FontWeight.w900,
                                         color: isPureFinance
                                             ? colors.textMain
-                                            : Colors.white,
-                                        height: 1.2,
+                                            : const Color(0xFFF2F2F7),
+                                        letterSpacing: -1.5,
+                                        height: 1.1,
                                       ),
                                     ),
                             ),
@@ -1162,19 +1181,21 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                         style: TextStyle(
                                           color: isPureFinance
                                               ? colors.textSub
-                                              : Colors.white70,
-                                          fontSize: 13,
+                                              : Colors.white38,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.normal,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         i18n.formatCurrency(item.dailyQuota),
-                                        style: TextStyle(
+                                        style: GoogleFonts.robotoMono(
                                           color: isPureFinance
                                               ? colors.textMain
                                               : colors.accent,
                                           fontSize: 22,
-                                          fontWeight: FontWeight.w900,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: -0.5,
                                         ),
                                       ),
                                     ],
@@ -1198,8 +1219,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                     style: TextStyle(
                                       color: isPureFinance
                                           ? colors.textSub
-                                          : Colors.grey[400],
-                                      fontSize: 14,
+                                          : Colors.white38,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.normal,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -1207,12 +1229,13 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                       ? TextField(
                                           controller: _priceController,
                                           keyboardType: TextInputType.number,
-                                          style: TextStyle(
+                                          style: GoogleFonts.robotoMono(
                                             color: isPureFinance
                                                 ? colors.accent
                                                 : Colors.blueAccent,
                                             fontSize: 20,
                                             fontWeight: FontWeight.bold,
+                                            letterSpacing: -0.5,
                                           ),
                                           decoration: InputDecoration(
                                             filled: true,
@@ -1248,12 +1271,13 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                         )
                                       : Text(
                                           i18n.formatCurrency(item.totalGoal),
-                                          style: TextStyle(
+                                          style: GoogleFonts.robotoMono(
                                             color: isPureFinance
                                                 ? colors.textMain
                                                 : Colors.white,
                                             fontSize: 20,
-                                            fontWeight: FontWeight.w600,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: -0.5,
                                           ),
                                         ),
                                 ],
@@ -1268,19 +1292,21 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                     style: TextStyle(
                                       color: isPureFinance
                                           ? colors.textSub
-                                          : Colors.grey[400],
-                                      fontSize: 14,
+                                          : Colors.white38,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.normal,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     i18n.formatCurrency(remaining),
-                                    style: TextStyle(
+                                    style: GoogleFonts.robotoMono(
                                       color: isPureFinance
                                           ? colors.textMain
                                           : Colors.white,
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
+                                      letterSpacing: -0.5,
                                     ),
                                   ),
                                 ],
@@ -1299,14 +1325,26 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  '성공 확률 : ${(progress * 100).toInt()}%',
+                                  '성공 확률 : ',
                                   style: TextStyle(
+                                    color: isPureFinance
+                                        ? colors.textSub
+                                        : Colors.white38,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.normal,
+                                  ),
+                                ),
+                                Text(
+                                  '${(progress * 100).toInt()}%',
+                                  style: GoogleFonts.robotoMono(
                                     color: progress < 0
-                                        ? Colors.redAccent
+                                        ? colors.danger
                                         : (isPureFinance
                                               ? colors.textMain
-                                              : Colors.white70),
+                                              : colors.accent),
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    letterSpacing: -0.5,
                                   ),
                                 ),
                               ],
@@ -1331,8 +1369,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                   color: isPureFinance
                                       ? colors.textMain
                                       : (value < 0
-                                            ? Colors.redAccent
-                                            : const Color(0xFFD4FF00)),
+                                            ? colors.danger
+                                            : colors.accent),
                                   minHeight: 4.0, // 약간 두껍게 수정
                                   borderRadius: BorderRadius.circular(2.0),
                                 );
