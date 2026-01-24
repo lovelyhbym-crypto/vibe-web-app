@@ -17,6 +17,7 @@ import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
 import 'package:vive_app/core/theme/theme_provider.dart';
 import 'package:vive_app/features/home/providers/navigation_provider.dart';
 import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
+import 'package:vive_app/features/saving/presentation/widgets/custom_keypad.dart';
 
 class SavingRecordScreen extends ConsumerStatefulWidget {
   const SavingRecordScreen({super.key});
@@ -82,6 +83,67 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
         return Icons.more_horiz;
       default:
         return Icons.category;
+    }
+  }
+
+  Future<void> _showKeypad(BuildContext context) async {
+    // 키패드 호출 (Modal Bottom Sheet)
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // 높이 제어 가능
+      backgroundColor: Colors.transparent, // 배경 투명 (Glassmorphism 유지)
+      builder: (context) => CustomKeypad(onKeyTap: _onKeyTap),
+    );
+
+    // 키패드가 닫힌 후 필요한 작업이 있다면 여기에 작성
+    // 예: 포커스 해제 등
+    if (mounted) {
+      FocusScope.of(context).unfocus();
+    }
+  }
+
+  void _onKeyTap(String key) {
+    String currentText = _amountController.text.replaceAll(',', '');
+
+    if (key == 'back') {
+      if (currentText.isNotEmpty) {
+        currentText = currentText.substring(0, currentText.length - 1);
+      }
+    } else if (key == '00') {
+      if (currentText.isNotEmpty && currentText.length < 7) {
+        currentText += '00';
+      }
+    } else {
+      // Numbers 0-9
+      if (currentText.length < 8) {
+        if (currentText == '0') {
+          currentText = key;
+        } else {
+          currentText += key;
+        }
+      }
+    }
+
+    // Format with commas handled via int parsing? Or explicit?
+    // User requested "input logic". existing code usually expects plain text?
+    // _submit uses integer parsing which handles raw digits.
+    // But UI usually shows formatted with commas.
+    // I will format it nicely:
+    if (currentText.isEmpty) {
+      _amountController.text = "";
+      return;
+    }
+
+    final number = int.tryParse(currentText);
+    if (number != null) {
+      // Simple comma formatting
+      final formatted = number.toString().replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (Match m) => '${m[1]},',
+      );
+      _amountController.text = formatted;
+    } else {
+      _amountController.text = currentText;
     }
   }
 
@@ -587,6 +649,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     final isPure = colors.background != const Color(0xFF121212); // Check mode
 
     return Scaffold(
+      resizeToAvoidBottomInset: false, // Prevent OS keyboard resizing
       backgroundColor: colors.background,
       appBar: AppBar(
         title: Text(
@@ -716,20 +779,22 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                     ),
                     child: TextField(
                       controller: _amountController,
-                      keyboardType: TextInputType.number,
-                      // [Added] Sensory Feedback: Chip Sound on Typing
-                      onChanged: (_) {
-                        SoundService().playChip();
-                        HapticFeedback.lightImpact();
-                      },
+                      // [Step 1] Custom Keypad Setup
+                      readOnly: true, // Prevent system keyboard
+                      onTap: () => _showKeypad(context),
+                      showCursor: true, // Show cursor to indicate focus
+                      keyboardType: TextInputType.none, // No system keyboard
                       style: TextStyle(
                         color: colors.textMain,
                         fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900, // Thick font
                       ),
                       decoration: InputDecoration(
-                        hintText: i18n.amountLabel,
-                        hintStyle: TextStyle(color: colors.textSub),
+                        hintText: '0', // Hint is '0'
+                        hintStyle: TextStyle(
+                          color: colors.textSub,
+                          fontWeight: FontWeight.w900, // Thick hint
+                        ),
                         border: InputBorder.none,
                         suffixText: i18n.isKorean ? "원" : "",
                         suffixStyle: TextStyle(

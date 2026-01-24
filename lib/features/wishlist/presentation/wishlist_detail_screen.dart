@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,6 +18,7 @@ import 'package:flutter/services.dart';
 import 'package:vive_app/features/auth/providers/user_profile_provider.dart';
 import '../../../core/services/sound_service.dart';
 import 'widgets/countdown_timer_widget.dart';
+import 'package:vive_app/core/ui/floating_input_field.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {
   final WishlistModel item;
@@ -645,38 +647,178 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
         false;
   }
 
-  Widget _LockedButton({required Widget child, required bool isBroken}) {
-    if (!isBroken) return child;
-
-    return Stack(
-      children: [
-        AbsorbPointer(child: child),
-        Positioned.fill(
-          child: GestureDetector(
-            onTap: () {
-              HapticFeedback.vibrate();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text(
-                    "부서진 꿈을 방치한 채 도망갈 수 없습니다. [긴급 복구 퀘스트]를 먼저 완료하십시오.",
-                  ),
-                  backgroundColor: Colors.redAccent.withOpacity(0.9),
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black54, // Opacity 0.6 equivalent
-                borderRadius: BorderRadius.circular(20), // Matches button shape
+  Future<void> _deleteWishlistAction() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          '정말 포기하시겠습니까?',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: RichText(
+          text: TextSpan(
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 16,
+              height: 1.5,
+            ),
+            children: [
+              const TextSpan(
+                text: "지금 포기하면 당신이 견뎌낸 그 모든 고통스러운 시간들은 아무런 의미 없는 ",
               ),
-              child: const Center(
-                child: Icon(Icons.lock, color: Colors.white, size: 20),
+              TextSpan(
+                text: "'실패 기록'",
+                style: TextStyle(
+                  color: Colors.redAccent.shade100,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const TextSpan(text: "으로 남게 됩니다.\n\n정말 당신의 노력을 버리시겠습니까?"),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(
+              '취소',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
             ),
           ),
-        ),
-      ],
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.grey[900],
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(color: Colors.grey[800]!),
+              ),
+            ),
+            child: const Text(
+              '목표 파기',
+              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        SoundService().playShatter();
+        HapticFeedback.heavyImpact();
+        await Future.delayed(const Duration(milliseconds: 100));
+        HapticFeedback.heavyImpact();
+        await ref
+            .read(wishlistProvider.notifier)
+            .deleteWishlist(widget.item.id!);
+        if (mounted) context.pop();
+      } catch (e) {
+        if (mounted)
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('삭제 중 오류가 발생했습니다: $e')));
+      }
+    }
+  }
+
+  void _showEdgeMenu() {
+    HapticFeedback.lightImpact();
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Menu",
+      barrierColor: Colors.transparent,
+      pageBuilder: (context, _, __) {
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(color: Colors.black.withOpacity(0.2)),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(right: 40),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (_isEditing || _hasChanges) ...[
+                        _buildMenuAction(
+                          _isSaving ? "SAVING..." : "SAVE",
+                          onTap: _isSaving
+                              ? () {}
+                              : () {
+                                  Navigator.pop(context);
+                                  _saveChanges();
+                                },
+                        ),
+                        const SizedBox(height: 60),
+                      ],
+                      _buildMenuAction(
+                        "EDIT",
+                        onTap: () {
+                          Navigator.pop(context);
+                          _enterEditMode();
+                        },
+                      ),
+                      const SizedBox(height: 60),
+                      _buildMenuAction(
+                        "DESTROY",
+                        isDanger: true,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _deleteWishlistAction();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+      transitionBuilder: (context, anim, __, child) {
+        return FadeTransition(opacity: anim, child: child);
+      },
+    );
+  }
+
+  Widget _buildMenuAction(
+    String label, {
+    required VoidCallback onTap,
+    bool isDanger = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Courier', // Tech feel
+          fontSize: 32,
+          fontWeight: FontWeight
+              .bold, // Thin but readable? User asked "Thin and sophisticated".
+          // Courier Bold is techy. Or use standard thin?
+          // User: "아주 얇고 세련된 폰트".
+          // Let's use fontWeight: FontWeight.w100 if possible, or w300.
+          // And color.
+          color: isDanger ? const Color(0xFFFF0000) : Colors.white,
+          letterSpacing: 4.0,
+        ).copyWith(fontWeight: FontWeight.w200),
+      ),
     );
   }
 
@@ -709,557 +851,163 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     return BackgroundGradient(
       child: Scaffold(
         backgroundColor: isPureFinance ? colors.background : Colors.transparent,
-        body: CustomScrollView(
-          slivers: [
-            // App Bar
-            SliverAppBar(
-              expandedHeight:
-                  (item.imageUrl != null ||
-                      _selectedImage != null ||
-                      _isEditing)
-                  ? 300
-                  : 60,
-              pinned: true,
-              backgroundColor: isPureFinance
-                  ? colors.background
-                  : Colors.transparent,
-              elevation: 0,
-              leading: Container(
-                margin: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isPureFinance
-                      ? Colors.white.withOpacity(0.9)
-                      : Colors.black.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back_ios_new,
-                    color: isPureFinance ? Colors.black : colors.accent,
-                  ),
-                  onPressed: () => context.pop(),
-                ),
-              ),
-              actions: [
-                // Delete Button
-                _LockedButton(
-                  isBroken: item.isBroken,
-                  child: Container(
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: isPureFinance
-                          ? Colors.white.withOpacity(0.9)
-                          : Colors.black.withOpacity(0.5),
-                      shape: BoxShape.circle,
+        body: Stack(
+          children: [
+            CustomScrollView(
+              slivers: [
+                // App Bar
+                SliverAppBar(
+                  expandedHeight:
+                      (item.imageUrl != null ||
+                          _selectedImage != null ||
+                          _isEditing)
+                      ? 300
+                      : 60,
+                  pinned: true,
+                  backgroundColor: isPureFinance
+                      ? colors.background
+                      : Colors.transparent,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: Icon(
+                      Icons.chevron_left,
+                      size: 32, // Larger, thin icon
+                      color: isPureFinance ? Colors.black : colors.accent,
                     ),
-                    child: IconButton(
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: isPureFinance
-                            ? Colors.redAccent
-                            : Colors.redAccent,
-                      ),
-                      onPressed: () async {
-                        final confirmed = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            backgroundColor: const Color(
-                              0xFF1E1E1E,
-                            ), // Dark background for drama
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            title: const Text(
-                              '정말 포기하시겠습니까?',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                    onPressed: () => context.pop(),
+                  ),
+                  actions: [], // Actions removed for Side Edge Menu
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final double width = constraints.maxWidth;
+                            final double height = constraints.maxHeight;
+
+                            return TweenAnimationBuilder<double>(
+                              key: ValueKey(
+                                '${item.savedAmount}-$_animationTriggerId',
+                              ), // 저축액 변화 및 트리거 발생 시 애니메이션 실행
+                              tween: Tween<double>(
+                                begin: 0.0,
+                                end: progress.clamp(
+                                  0.0,
+                                  1.0,
+                                ), // Image effect stays positive
                               ),
-                            ),
-                            content: RichText(
-                              text: TextSpan(
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 16,
-                                  height: 1.5,
-                                ),
-                                children: [
-                                  const TextSpan(
-                                    text:
-                                        "지금 포기하면 당신이 견뎌낸 그 모든 고통스러운 시간들은 아무런 의미 없는 ",
-                                  ),
-                                  TextSpan(
-                                    text: "'실패 기록'",
-                                    style: TextStyle(
-                                      color: Colors.redAccent.shade100,
-                                      fontWeight: FontWeight.bold,
+                              duration: const Duration(milliseconds: 1000),
+                              curve: Curves.easeOutCubic,
+                              builder: (context, value, child) {
+                                return Stack(
+                                  children: [
+                                    VibeImageEffect(
+                                      imageUrl: item.imageUrl,
+                                      localImage: _selectedImage,
+                                      blurLevel: item.blurLevel,
+                                      isBroken: item.isBroken,
+                                      width: width,
+                                      height: height,
+                                      progress: value,
                                     ),
-                                  ),
-                                  const TextSpan(
-                                    text: "으로 남게 됩니다.\n\n정말 당신의 노력을 버리시겠습니까?",
-                                  ),
-                                ],
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(false),
-                                child: const Text(
-                                  '취소',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.of(context).pop(true),
-                                style: TextButton.styleFrom(
-                                  backgroundColor: Colors.grey[900],
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 12,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                    side: BorderSide(color: Colors.grey[800]!),
-                                  ),
-                                ),
-                                child: const Text(
-                                  '목표 파기',
-                                  style: TextStyle(
-                                    color: Colors.grey, // Dark/Grey tone
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
 
-                        if (confirmed == true) {
-                          try {
-                            // [Added] Sensory Feedback: Shatter Sound & Heavy Vibration
-                            SoundService().playShatter();
-                            HapticFeedback.heavyImpact();
-                            await Future.delayed(
-                              const Duration(milliseconds: 100),
-                            );
-                            HapticFeedback.heavyImpact(); // Double impact for dramatic effect
-
-                            await ref
-                                .read(wishlistProvider.notifier)
-                                .deleteWishlist(widget.item.id!);
-                            if (mounted) context.pop(); // Close detail screen
-                          } catch (e) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('삭제 중 오류가 발생했습니다: $e')),
-                              );
-                            }
-                          }
-                        }
-                      },
-                    ),
-                  ),
-                ),
-                // Pivot / Edit Button
-                _LockedButton(
-                  isBroken: item.isBroken,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isPureFinance
-                          ? Colors.white.withOpacity(0.9)
-                          : Colors.black.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(
-                        20,
-                      ), // Pill shape if text
-                    ),
-                    child: _isEditing
-                        ? IconButton(
-                            icon: const Icon(Icons.close),
-                            color: isPureFinance
-                                ? Colors.black87
-                                : colors.accent,
-                            onPressed: () {
-                              setState(() {
-                                _isEditing = false;
-                                // Revert changes logic...
-                                _titleController.text = widget.item.title;
-                                _priceController.text = widget.item.price
-                                    .toInt()
-                                    .toString();
-                                _editedDate = widget.item.targetDate;
-                                _selectedImage = null;
-                              });
-                            },
-                          )
-                        : TextButton.icon(
-                            onPressed: _enterEditMode,
-                            icon: Icon(
-                              Icons.swap_horiz_rounded, // Pivot icon
-                              size: 18,
-                              color: isPureFinance
-                                  ? Colors.black87
-                                  : colors.accent,
-                            ),
-                            label: Text(
-                              "목표물 변경",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: isPureFinance
-                                    ? Colors.black87
-                                    : colors.accent,
-                              ),
-                            ),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              minimumSize: const Size(0, 36),
-                            ),
-                          ),
-                  ),
-                ),
-                // Save Button (visible when changes exist or editing)
-                if (_isEditing || _hasChanges)
-                  _LockedButton(
-                    isBroken: item.isBroken,
-                    child: Container(
-                      margin: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isPureFinance
-                            ? Colors.white.withOpacity(0.9)
-                            : Colors.black.withOpacity(0.5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: IconButton(
-                        onPressed: _isSaving ? null : _saveChanges,
-                        icon: _isSaving
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: isPureFinance
-                                      ? Colors.black
-                                      : colors.accent,
-                                ),
-                              )
-                            : Icon(
-                                Icons.check,
-                                color: isPureFinance
-                                    ? Colors.black87
-                                    : colors.accent,
-                                size: 28,
-                              ),
-                      ),
-                    ),
-                  ),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final double width = constraints.maxWidth;
-                        final double height = constraints.maxHeight;
-
-                        return TweenAnimationBuilder<double>(
-                          key: ValueKey(
-                            '${item.savedAmount}-$_animationTriggerId',
-                          ), // 저축액 변화 및 트리거 발생 시 애니메이션 실행
-                          tween: Tween<double>(
-                            begin: 0.0,
-                            end: progress.clamp(
-                              0.0,
-                              1.0,
-                            ), // Image effect stays positive
-                          ),
-                          duration: const Duration(milliseconds: 1000),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, value, child) {
-                            return Stack(
-                              children: [
-                                VibeImageEffect(
-                                  imageUrl: item.imageUrl,
-                                  localImage: _selectedImage,
-                                  blurLevel: item.blurLevel,
-                                  isBroken: item.isBroken,
-                                  width: width,
-                                  height: height,
-                                  progress: value,
-                                ),
-
-                                // (C) 스캔 라인 효과
-                                if (value > 0 && value < 1.0)
-                                  Positioned(
-                                    left: width * value - 1,
-                                    top: 0,
-                                    bottom: 0,
-                                    child: Container(
-                                      width: 2,
-                                      decoration: BoxDecoration(
-                                        color: colors.accent,
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: colors.accent.withOpacity(
-                                              0.8,
-                                            ),
-                                            blurRadius: 8,
-                                            spreadRadius: 2,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                // (D) 수정 모드 오버레이
-                                if (_isEditing)
-                                  Positioned.fill(
-                                    child: GestureDetector(
-                                      onTap: _pickImage,
-                                      child: Container(
-                                        color: Colors.black45,
-                                        child: const Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.camera_alt,
-                                              color: Colors.white,
-                                              size: 40,
-                                            ),
-                                            SizedBox(height: 8),
-                                            Text(
-                                              '사진 변경',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
+                                    // (C) 스캔 라인 효과
+                                    if (value > 0 && value < 1.0)
+                                      Positioned(
+                                        left: width * value - 1,
+                                        top: 0,
+                                        bottom: 0,
+                                        child: Container(
+                                          width: 2,
+                                          decoration: BoxDecoration(
+                                            color: colors.accent,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: colors.accent
+                                                    .withOpacity(0.8),
+                                                blurRadius: 8,
+                                                spreadRadius: 2,
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-                              ],
+                                    // (D) 수정 모드 오버레이
+                                    if (_isEditing)
+                                      Positioned.fill(
+                                        child: GestureDetector(
+                                          onTap: _pickImage,
+                                          child: Container(
+                                            color: Colors.black45,
+                                            child: const Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.camera_alt,
+                                                  color: Colors.white,
+                                                  size: 40,
+                                                ),
+                                                SizedBox(height: 8),
+                                                Text(
+                                                  '사진 변경',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
                             );
                           },
-                        );
-                      },
-                    ),
-                    // [Time Pressure] Countdown Timer Overlay
-                    if (item.targetDate != null &&
-                        !item.isAchieved &&
-                        !_isEditing)
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: CountdownTimerWidget(
-                          targetDate: item.targetDate!,
-                          isAchieved: item.isAchieved,
                         ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Content
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title and D-Day Badge
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: _isEditing
-                              ? TextField(
-                                  controller: _titleController,
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: colors.textMain,
-                                  ),
-                                  decoration: InputDecoration(
-                                    labelText: '목표 이름 수정', // 라벨 부여
-                                    filled: true,
-                                    fillColor: colors.surface,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: isPureFinance
-                                          ? BorderSide.none
-                                          : BorderSide(
-                                              color: colors.accent.withOpacity(
-                                                0.5,
-                                              ),
-                                            ),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  item.title,
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: isPureFinance
-                                        ? colors.textMain
-                                        : Colors.white,
-                                    height: 1.2,
-                                  ),
-                                ),
-                        ),
-                        if (_isEditing) // Show date picker ONLY when editing
-                          GestureDetector(
-                            onTap: _pickDate,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: colors.surface,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: colors.accent,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Text(
-                                _editedDate != null
-                                    ? DateFormat(
-                                        'yyyy.MM.dd',
-                                      ).format(_editedDate!)
-                                    : '기한 설정',
-                                style: TextStyle(
-                                  color: colors.accent,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
+                        // [Time Pressure] Countdown Timer Overlay
+                        if (item.targetDate != null &&
+                            !item.isAchieved &&
+                            !_isEditing)
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: CountdownTimerWidget(
+                              targetDate: item.targetDate!,
+                              isAchieved: item.isAchieved,
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                  ),
+                ),
 
-                    // Daily Goal Section (Secondary Color Highlight)
-                    if (item.targetDate != null &&
-                        !item.isAchieved &&
-                        item.dailyQuota > 0)
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 32),
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          border: isPureFinance
-                              ? null
-                              : Border.all(color: colors.border, width: 1),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: isPureFinance
-                                    ? colors.background
-                                    : colors.accent.withOpacity(0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.rocket_launch,
-                                color: isPureFinance
-                                    ? colors.textSub
-                                    : colors.accent,
-                                size: 28,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '목표를 위해 오늘 아껴야 할 금액',
-                                    style: TextStyle(
-                                      color: isPureFinance
-                                          ? colors.textSub
-                                          : Colors.white70,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    i18n.formatCurrency(item.dailyQuota),
-                                    style: TextStyle(
-                                      color: isPureFinance
-                                          ? colors.textMain
-                                          : colors.accent,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                    // Price Info
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                // Content
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '총 가격',
-                                style: TextStyle(
-                                  color: isPureFinance
-                                      ? colors.textSub
-                                      : Colors.grey[400],
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              _isEditing
+                        // Title and D-Day Badge
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: _isEditing
                                   ? TextField(
-                                      controller: _priceController,
-                                      keyboardType: TextInputType.number,
+                                      controller: _titleController,
                                       style: TextStyle(
-                                        color: isPureFinance
-                                            ? colors.accent
-                                            : Colors.blueAccent,
-                                        fontSize: 20,
+                                        fontSize: 24,
                                         fontWeight: FontWeight.bold,
+                                        color: colors.textMain,
                                       ),
                                       decoration: InputDecoration(
+                                        labelText: '목표 이름 수정', // 라벨 부여
                                         filled: true,
                                         fillColor: colors.surface,
                                         border: OutlineInputBorder(
@@ -1281,246 +1029,429 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                         ),
                                         contentPadding:
                                             const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8,
+                                              horizontal: 16,
+                                              vertical: 12,
                                             ),
-                                        suffixText: '원',
-                                        helperText: '수정할 목표 금액을 입력하세요',
-                                        helperStyle: TextStyle(
-                                          color: isPureFinance
-                                              ? colors.textSub
-                                              : Colors.white60,
-                                        ),
                                       ),
                                     )
                                   : Text(
-                                      i18n.formatCurrency(item.totalGoal),
+                                      item.title,
                                       style: TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.bold,
                                         color: isPureFinance
                                             ? colors.textMain
                                             : Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w600,
+                                        height: 1.2,
                                       ),
                                     ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                '남은 금액',
-                                style: TextStyle(
-                                  color: isPureFinance
-                                      ? colors.textSub
-                                      : Colors.grey[400],
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                i18n.formatCurrency(remaining),
-                                style: TextStyle(
-                                  color: isPureFinance
-                                      ? colors.textMain
-                                      : Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Progress Bar
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '성공 확률 : ${(progress * 100).toInt()}%',
-                              style: TextStyle(
-                                color: progress < 0
-                                    ? Colors.redAccent
-                                    : (isPureFinance
-                                          ? colors.textMain
-                                          : Colors.white70),
-                                fontWeight: FontWeight.bold,
-                              ),
                             ),
+                            if (_isEditing) // Show date picker ONLY when editing
+                              GestureDetector(
+                                onTap: _pickDate,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: colors.surface,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: colors.accent,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _editedDate != null
+                                        ? DateFormat(
+                                            'yyyy.MM.dd',
+                                          ).format(_editedDate!)
+                                        : '기한 설정',
+                                    style: TextStyle(
+                                      color: colors.accent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        TweenAnimationBuilder<double>(
-                          key: ValueKey(
-                            '${item.savedAmount}-$_animationTriggerId',
-                          ),
-                          tween: Tween<double>(end: progress),
-                          duration: const Duration(milliseconds: 1000),
-                          curve: Curves.easeOutCubic,
-                          builder: (context, value, child) {
-                            return LinearProgressIndicator(
-                              value: value.clamp(
-                                0.0,
-                                1.0,
-                              ), // Ensure valid range for indicator
-                              backgroundColor: isPureFinance
-                                  ? colors.border
-                                  : Colors.grey[800],
-                              color: isPureFinance
-                                  ? colors.textMain
-                                  : (value < 0
-                                        ? Colors.redAccent
-                                        : const Color(0xFFD4FF00)),
-                              minHeight: 4.0, // 약간 두껍게 수정
-                              borderRadius: BorderRadius.circular(2.0),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                        const SizedBox(height: 24),
 
-                    const SizedBox(height: 40),
-
-                    // Penalty Section (Editable)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '실패 시 나에게 주는 벌칙',
-                          style: TextStyle(
-                            color: isPureFinance
-                                ? colors.textMain
-                                : Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (!(item.isAchieved ||
-                            progress >= 1.0)) // Only show if editable
-                          GestureDetector(
-                            onTap: _spinPenaltySlotMachine,
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _isSpinning
-                                    ? (isPureFinance
-                                          ? colors.accent
-                                          : const Color(0xFFD4FF00))
-                                    : (isPureFinance
-                                          ? colors.surface
-                                          : Colors.black26),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isPureFinance
-                                      ? colors.border
-                                      : const Color(0xFFD4FF00),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.casino,
-                                    size: 16,
-                                    color: _isSpinning
-                                        ? Colors.black
-                                        : (isPureFinance
-                                              ? colors.textMain
-                                              : const Color(0xFFD4FF00)),
+                        // Daily Goal Section (Secondary Color Highlight)
+                        if (item.targetDate != null &&
+                            !item.isAchieved &&
+                            item.dailyQuota > 0)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 32),
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: colors.surface,
+                              borderRadius: BorderRadius.circular(20),
+                              border: isPureFinance
+                                  ? null
+                                  : Border.all(color: colors.border, width: 1),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: isPureFinance
+                                        ? colors.background
+                                        : colors.accent.withOpacity(0.15),
+                                    shape: BoxShape.circle,
                                   ),
-                                  const SizedBox(width: 4),
+                                  child: Icon(
+                                    Icons.rocket_launch,
+                                    color: isPureFinance
+                                        ? colors.textSub
+                                        : colors.accent,
+                                    size: 28,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '목표를 위해 오늘 아껴야 할 금액',
+                                        style: TextStyle(
+                                          color: isPureFinance
+                                              ? colors.textSub
+                                              : Colors.white70,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        i18n.formatCurrency(item.dailyQuota),
+                                        style: TextStyle(
+                                          color: isPureFinance
+                                              ? colors.textMain
+                                              : colors.accent,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        // Price Info
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
-                                    "운명의 뽑기",
+                                    '총 가격',
                                     style: TextStyle(
-                                      fontSize: 12,
-                                      color: _isSpinning
-                                          ? Colors.black
-                                          : (isPureFinance
+                                      color: isPureFinance
+                                          ? colors.textSub
+                                          : Colors.grey[400],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  _isEditing
+                                      ? TextField(
+                                          controller: _priceController,
+                                          keyboardType: TextInputType.number,
+                                          style: TextStyle(
+                                            color: isPureFinance
+                                                ? colors.accent
+                                                : Colors.blueAccent,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          decoration: InputDecoration(
+                                            filled: true,
+                                            fillColor: colors.surface,
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              borderSide: BorderSide.none,
+                                            ),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              borderSide: isPureFinance
+                                                  ? BorderSide.none
+                                                  : BorderSide(
+                                                      color: colors.accent
+                                                          .withOpacity(0.5),
+                                                    ),
+                                            ),
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 8,
+                                                ),
+                                            suffixText: '원',
+                                            helperText: '수정할 목표 금액을 입력하세요',
+                                            helperStyle: TextStyle(
+                                              color: isPureFinance
+                                                  ? colors.textSub
+                                                  : Colors.white60,
+                                            ),
+                                          ),
+                                        )
+                                      : Text(
+                                          i18n.formatCurrency(item.totalGoal),
+                                          style: TextStyle(
+                                            color: isPureFinance
                                                 ? colors.textMain
-                                                : const Color(0xFFD4FF00)),
+                                                : Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '남은 금액',
+                                    style: TextStyle(
+                                      color: isPureFinance
+                                          ? colors.textSub
+                                          : Colors.grey[400],
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    i18n.formatCurrency(remaining),
+                                    style: TextStyle(
+                                      color: isPureFinance
+                                          ? colors.textMain
+                                          : Colors.white,
+                                      fontSize: 24,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    GlassCard(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 10,
-                      ),
-                      width: double.infinity,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          TextField(
-                            controller: _penaltyController,
-                            maxLines: 4,
-                            minLines: 1,
-                            style: TextStyle(
-                              color: isPureFinance
-                                  ? colors.textMain
-                                  : Colors.white,
-                              fontSize: 16,
-                              height: 1.5,
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Progress Bar
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '성공 확률 : ${(progress * 100).toInt()}%',
+                                  style: TextStyle(
+                                    color: progress < 0
+                                        ? Colors.redAccent
+                                        : (isPureFinance
+                                              ? colors.textMain
+                                              : Colors.white70),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                            // Penalty is always editable unless completed & achieved
-                            readOnly: item.isAchieved || progress >= 1.0,
-                            decoration: InputDecoration(
-                              hintText: (item.isAchieved || progress >= 1.0)
-                                  ? "성공한 목표에는 벌칙이 없습니다"
-                                  : "실패 시 수행할 벌칙을 입력하세요",
-                              hintStyle: TextStyle(
-                                color: isPureFinance
-                                    ? colors.textSub
-                                    : Colors.white30,
+                            const SizedBox(height: 8),
+                            TweenAnimationBuilder<double>(
+                              key: ValueKey(
+                                '${item.savedAmount}-$_animationTriggerId',
                               ),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                              fillColor: isPureFinance
-                                  ? colors.surface
-                                  : Colors.transparent,
-                              filled: isPureFinance,
-                            ),
-                            cursorColor: isPureFinance
-                                ? colors.textMain
-                                : const Color(0xFFD4FF00),
-                          ),
-                          if (_hasChanges)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                '저장하려면 상단 체크 버튼을 눌러주세요',
-                                style: TextStyle(
+                              tween: Tween<double>(end: progress),
+                              duration: const Duration(milliseconds: 1000),
+                              curve: Curves.easeOutCubic,
+                              builder: (context, value, child) {
+                                return LinearProgressIndicator(
+                                  value: value.clamp(
+                                    0.0,
+                                    1.0,
+                                  ), // Ensure valid range for indicator
+                                  backgroundColor: isPureFinance
+                                      ? colors.border
+                                      : Colors.grey[800],
                                   color: isPureFinance
-                                      ? colors.textSub
-                                      : const Color(0xFFD4FF00).withAlpha(179),
-                                  fontSize: 13,
+                                      ? colors.textMain
+                                      : (value < 0
+                                            ? Colors.redAccent
+                                            : const Color(0xFFD4FF00)),
+                                  minHeight: 4.0, // 약간 두껍게 수정
+                                  borderRadius: BorderRadius.circular(2.0),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 40),
+
+                        // Penalty Section (Editable)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '실패 시 나에게 주는 벌칙',
+                              style: TextStyle(
+                                color: isPureFinance
+                                    ? colors.textMain
+                                    : Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (!(item.isAchieved ||
+                                progress >= 1.0)) // Only show if editable
+                              GestureDetector(
+                                onTap: _spinPenaltySlotMachine,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _isSpinning
+                                        ? (isPureFinance
+                                              ? colors.accent
+                                              : const Color(0xFFD4FF00))
+                                        : (isPureFinance
+                                              ? colors.surface
+                                              : Colors.black26),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isPureFinance
+                                          ? colors.border
+                                          : const Color(0xFFD4FF00),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.casino,
+                                        size: 16,
+                                        color: _isSpinning
+                                            ? Colors.black
+                                            : (isPureFinance
+                                                  ? colors.textMain
+                                                  : const Color(0xFFD4FF00)),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "운명의 뽑기",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: _isSpinning
+                                              ? Colors.black
+                                              : (isPureFinance
+                                                    ? colors.textMain
+                                                    : const Color(0xFFD4FF00)),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                    ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        GlassCard(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          width: double.infinity,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              FloatingInputField(
+                                controller: _penaltyController,
+                                label: (item.isAchieved || progress >= 1.0)
+                                    ? "성공한 목표에는 벌칙이 없습니다"
+                                    : "실패 시 수행할 벌칙을 입력하세요",
+                                readOnly: item.isAchieved || progress >= 1.0,
+                                maxLines: 4,
+                                style: TextStyle(
+                                  color: isPureFinance
+                                      ? colors.textMain
+                                      : Colors.white,
+                                  fontSize: 16,
+                                  height: 1.5,
+                                ),
+                                accentColor: isPureFinance
+                                    ? colors.accent
+                                    : const Color(0xFFD4FF00),
+                              ),
+                              if (_hasChanges)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    '저장하려면 상단 체크 버튼을 눌러주세요',
+                                    style: TextStyle(
+                                      color: isPureFinance
+                                          ? colors.textSub
+                                          : const Color(
+                                              0xFFD4FF00,
+                                            ).withAlpha(179),
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
 
-                    const SizedBox(height: 100), // Bottom padding
-                  ],
+                        const SizedBox(height: 100), // Bottom padding
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            // Side Edge Handle
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 20,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _showEdgeMenu,
+                onLongPress: _showEdgeMenu,
+                child: Center(
+                  child: Container(
+                    width: 4,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.1),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
