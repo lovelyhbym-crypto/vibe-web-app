@@ -22,6 +22,7 @@ import 'package:vive_app/features/home/providers/navigation_provider.dart';
 import 'package:vive_app/features/vibe_shifter/presentation/vibe_shifter_dialog.dart';
 
 import 'package:vive_app/core/theme/theme_provider.dart';
+import 'package:vive_app/features/auth/providers/user_profile_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -134,7 +135,51 @@ class DashboardScreen extends ConsumerWidget {
                     categoryData: data.categoryBreakdown,
                   ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1, end: 0),
 
-                const SizedBox(height: 100),
+                const SizedBox(height: 48),
+
+                // [Ghost Data] The Ghost of Failed Dreams
+                Consumer(
+                  builder: (context, ref, _) {
+                    final userProfile = ref
+                        .watch(userProfileNotifierProvider)
+                        .valueOrNull;
+                    final failedCount = userProfile?.failedCount ?? 0;
+
+                    if (failedCount == 0) return const SizedBox.shrink();
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 24, left: 16),
+                      child: GestureDetector(
+                        onTap: () {
+                          // [Sound] Play Low Pitch Sound
+                          // await rumble.playLowPitch();
+                          HapticFeedback.heavyImpact();
+                          context.push('/failed-dreams');
+                        },
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.circle,
+                              size: 4,
+                              color: colors.textSub.withOpacity(0.25),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '포기한 꿈: $failedCount개',
+                              textAlign: TextAlign.left,
+                              style: TextStyle(
+                                color: colors.textSub.withOpacity(0.25),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w300,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),

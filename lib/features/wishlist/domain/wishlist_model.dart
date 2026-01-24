@@ -82,10 +82,13 @@ class WishlistModel {
   /// [Priority Engine] 우선순위 판단 로직
   WishlistPriority get priority {
     if (isBroken) return WishlistPriority.broken;
-    if (blurLevel >= 6.0) return WishlistPriority.highBlur;
-    if (blurLevel >= 2.0) return WishlistPriority.lowBlur;
+    if (currentBlurPoints >= 6.0) return WishlistPriority.highBlur;
+    if (currentBlurPoints >= 2.0) return WishlistPriority.lowBlur;
     return WishlistPriority.none;
   }
+
+  /// PRD Requirement: 'currentBlurPoints' 필드를 통해 안개를 관리
+  double get currentBlurPoints => blurLevel.clamp(0.0, 10.0);
 
   // Helper to safely parse strings to DateTime?
   static DateTime? _parseDateTime(dynamic value) {

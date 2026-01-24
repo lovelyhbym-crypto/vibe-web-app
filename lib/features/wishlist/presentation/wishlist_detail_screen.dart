@@ -761,31 +761,75 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                         final confirmed = await showDialog<bool>(
                           context: context,
                           builder: (context) => AlertDialog(
-                            backgroundColor: colors.surface,
-                            title: Text(
-                              '정말 포기하시겠습니까?',
-                              style: TextStyle(color: colors.textMain),
+                            backgroundColor: const Color(
+                              0xFF1E1E1E,
+                            ), // Dark background for drama
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            content: Text(
-                              '이 결정은 되돌릴 수 없습니다.',
-                              style: TextStyle(color: colors.textSub),
+                            title: const Text(
+                              '정말 포기하시겠습니까?',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            content: RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
+                                  height: 1.5,
+                                ),
+                                children: [
+                                  const TextSpan(
+                                    text:
+                                        "지금 포기하면 당신이 견뎌낸 그 모든 고통스러운 시간들은 아무런 의미 없는 ",
+                                  ),
+                                  TextSpan(
+                                    text: "'실패 기록'",
+                                    style: TextStyle(
+                                      color: Colors.redAccent.shade100,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const TextSpan(
+                                    text: "으로 남게 됩니다.\n\n정말 당신의 노력을 버리시겠습니까?",
+                                  ),
+                                ],
+                              ),
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () =>
                                     Navigator.of(context).pop(false),
-                                child: Text(
+                                child: const Text(
                                   '취소',
-                                  style: TextStyle(color: colors.textSub),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
                                 ),
                               ),
                               TextButton(
                                 onPressed: () =>
                                     Navigator.of(context).pop(true),
+                                style: TextButton.styleFrom(
+                                  backgroundColor: Colors.grey[900],
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: BorderSide(color: Colors.grey[800]!),
+                                  ),
+                                ),
                                 child: const Text(
                                   '목표 파기',
                                   style: TextStyle(
-                                    color: Colors.redAccent,
+                                    color: Colors.grey, // Dark/Grey tone
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -795,11 +839,17 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                         );
 
                         if (confirmed == true) {
-                          if (widget.item.id != null) {
+                          try {
                             await ref
                                 .read(wishlistProvider.notifier)
                                 .deleteWishlist(widget.item.id!);
                             if (mounted) context.pop(); // Close detail screen
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('삭제 중 오류가 발생했습니다: $e')),
+                              );
+                            }
                           }
                         }
                       },

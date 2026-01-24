@@ -23,6 +23,8 @@ UserProfile _$UserProfileFromJson(Map<String, dynamic> json) {
 mixin _$UserProfile {
   String get id => throw _privateConstructorUsedError;
   bool get hasFreePass => throw _privateConstructorUsedError;
+  @JsonKey(name: 'failed_count')
+  int get failedCount => throw _privateConstructorUsedError;
 
   /// Serializes this UserProfile to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -41,7 +43,11 @@ abstract class $UserProfileCopyWith<$Res> {
     $Res Function(UserProfile) then,
   ) = _$UserProfileCopyWithImpl<$Res, UserProfile>;
   @useResult
-  $Res call({String id, bool hasFreePass});
+  $Res call({
+    String id,
+    bool hasFreePass,
+    @JsonKey(name: 'failed_count') int failedCount,
+  });
 }
 
 /// @nodoc
@@ -58,7 +64,11 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? id = null, Object? hasFreePass = null}) {
+  $Res call({
+    Object? id = null,
+    Object? hasFreePass = null,
+    Object? failedCount = null,
+  }) {
     return _then(
       _value.copyWith(
             id: null == id
@@ -69,6 +79,10 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
                 ? _value.hasFreePass
                 : hasFreePass // ignore: cast_nullable_to_non_nullable
                       as bool,
+            failedCount: null == failedCount
+                ? _value.failedCount
+                : failedCount // ignore: cast_nullable_to_non_nullable
+                      as int,
           )
           as $Val,
     );
@@ -84,7 +98,11 @@ abstract class _$$UserProfileImplCopyWith<$Res>
   ) = __$$UserProfileImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, bool hasFreePass});
+  $Res call({
+    String id,
+    bool hasFreePass,
+    @JsonKey(name: 'failed_count') int failedCount,
+  });
 }
 
 /// @nodoc
@@ -100,7 +118,11 @@ class __$$UserProfileImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? id = null, Object? hasFreePass = null}) {
+  $Res call({
+    Object? id = null,
+    Object? hasFreePass = null,
+    Object? failedCount = null,
+  }) {
     return _then(
       _$UserProfileImpl(
         id: null == id
@@ -111,6 +133,10 @@ class __$$UserProfileImplCopyWithImpl<$Res>
             ? _value.hasFreePass
             : hasFreePass // ignore: cast_nullable_to_non_nullable
                   as bool,
+        failedCount: null == failedCount
+            ? _value.failedCount
+            : failedCount // ignore: cast_nullable_to_non_nullable
+                  as int,
       ),
     );
   }
@@ -119,7 +145,11 @@ class __$$UserProfileImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$UserProfileImpl implements _UserProfile {
-  const _$UserProfileImpl({required this.id, this.hasFreePass = true});
+  const _$UserProfileImpl({
+    required this.id,
+    this.hasFreePass = true,
+    @JsonKey(name: 'failed_count') this.failedCount = 0,
+  });
 
   factory _$UserProfileImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserProfileImplFromJson(json);
@@ -129,10 +159,13 @@ class _$UserProfileImpl implements _UserProfile {
   @override
   @JsonKey()
   final bool hasFreePass;
+  @override
+  @JsonKey(name: 'failed_count')
+  final int failedCount;
 
   @override
   String toString() {
-    return 'UserProfile(id: $id, hasFreePass: $hasFreePass)';
+    return 'UserProfile(id: $id, hasFreePass: $hasFreePass, failedCount: $failedCount)';
   }
 
   @override
@@ -142,12 +175,14 @@ class _$UserProfileImpl implements _UserProfile {
             other is _$UserProfileImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.hasFreePass, hasFreePass) ||
-                other.hasFreePass == hasFreePass));
+                other.hasFreePass == hasFreePass) &&
+            (identical(other.failedCount, failedCount) ||
+                other.failedCount == failedCount));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, hasFreePass);
+  int get hashCode => Object.hash(runtimeType, id, hasFreePass, failedCount);
 
   /// Create a copy of UserProfile
   /// with the given fields replaced by the non-null parameter values.
@@ -167,6 +202,7 @@ abstract class _UserProfile implements UserProfile {
   const factory _UserProfile({
     required final String id,
     final bool hasFreePass,
+    @JsonKey(name: 'failed_count') final int failedCount,
   }) = _$UserProfileImpl;
 
   factory _UserProfile.fromJson(Map<String, dynamic> json) =
@@ -176,6 +212,9 @@ abstract class _UserProfile implements UserProfile {
   String get id;
   @override
   bool get hasFreePass;
+  @override
+  @JsonKey(name: 'failed_count')
+  int get failedCount;
 
   /// Create a copy of UserProfile
   /// with the given fields replaced by the non-null parameter values.

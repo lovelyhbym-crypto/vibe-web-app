@@ -86,13 +86,13 @@ class VibeImageEffect extends StatelessWidget {
                     child: Image.asset(
                       brokenImageIndex > 0
                           ? 'assets/images/broken_glass_$brokenImageIndex.png'
-                          : 'assets/images/broken_glass.png',
+                          : 'assets/images/broken_glass_1.png', // Use _1 as default
                       fit: BoxFit.cover,
                       opacity: const AlwaysStoppedAnimation(0.8),
                       errorBuilder: (context, error, stackTrace) {
-                        // Fallback to default if specific random image is missing
+                        // Fallback to _1 if specific random image is missing
                         return Image.asset(
-                          'assets/images/broken_glass.png',
+                          'assets/images/broken_glass_1.png',
                           fit: BoxFit.cover,
                           opacity: const AlwaysStoppedAnimation(0.8),
                         );

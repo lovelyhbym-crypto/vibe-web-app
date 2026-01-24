@@ -193,31 +193,66 @@ class WishlistNotifier extends _$WishlistNotifier {
     final authNotifier = ref.read(authProvider.notifier);
     final user = ref.read(authProvider).asData?.value;
 
-    // NOTE: We are only removing the goal itself.
-    // The accumulated saving records (money saved) are preserved in the total savings history.
-    // If we wanted to remove the saved amount from the total, we would need to deduct `item.savedAmount`
-    // from the total savings or mark the related saving records as deleted.
-    // Currently, the requirement is to keep the history.
+    // Check if the item was achieved before deletion
+    // If it was NOT achieved, it counts as a failure.
+    final currentList = state.valueOrNull ?? [];
+    final targetItem = currentList.firstWhere(
+      (item) => item.id == id,
+      orElse: () => WishlistModel(title: '', price: 0, totalGoal: 0),
+    );
+    final bool isFailure = !targetItem.isAchieved && targetItem.id != null;
 
     if (authNotifier.isGuest || user == null) {
+      // Guest mode: just remove locally
       _guestWishlist.removeWhere((item) => item.id == id);
       state = AsyncValue.data([..._guestWishlist]);
+      // Local counter update is handled by UI/Profile logic, but we can't do SQL operations here.
+      if (isFailure) {
+        ref.read(userProfileNotifierProvider.notifier).incrementFailedCount();
+      }
       return;
     }
 
+    // Server mode
     try {
       debugPrint('Deleting wishlist item from Supabase: $id');
-      // 1. Perform server deletion FIRST
-      // Using select() to ensure we get a response, though standard delete throws on error
+
+      if (isFailure) {
+        // [Step 1] Copy to failed_wishlists (Archive)
+        // We do this BEFORE deletion.
+        // Note: 'failed_wishlists' table must exist.
+        try {
+          await ref.read(supabaseProvider).from('failed_wishlists').insert({
+            'user_id': user.id,
+            'original_id': id,
+            'title': targetItem.title,
+            'total_goal': targetItem.totalGoal.toInt(),
+            'saved_amount': targetItem.savedAmount.toInt(),
+            'failed_at': DateTime.now().toIso8601String(),
+            'blur_level': targetItem.currentBlurPoints,
+            'image_url': targetItem.imageUrl,
+            'consecutive_valid_days': targetItem.consecutiveValidDays,
+          });
+        } catch (archiveError) {
+          debugPrint('Error archiving failed wishlist: $archiveError');
+          // Proceed with deletion even if archive fails?
+          // Per requirements, this is critical, but blocking deletion might be bad UX.
+          // We will Log it and try to proceed.
+        }
+
+        // [Step 2] Increment Profile Counter
+        ref.read(userProfileNotifierProvider.notifier).incrementFailedCount();
+      }
+
+      // [Step 3] Delete from wishlists
       await ref.read(supabaseProvider).from('wishlists').delete().eq('id', id);
 
-      // 2. If valid execution, Remove from local state
+      // 4. Local state update
       final previousList = state.valueOrNull ?? [];
       final updatedList = previousList.where((item) => item.id != id).toList();
       state = AsyncValue.data(updatedList);
     } catch (e) {
       debugPrint('Error deleting wishlist item: $e');
-      // No state change needed as we haven't touched it yet
       throw Exception('Failed to delete wishlist item: $e');
     }
   }

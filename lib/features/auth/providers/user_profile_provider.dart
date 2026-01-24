@@ -99,6 +99,43 @@ class UserProfileNotifier extends _$UserProfileNotifier {
     }
   }
 
+  // Increment Failed Count
+  Future<void> incrementFailedCount() async {
+    final current = state.value;
+    if (current == null) return;
+
+    // Optimistic Update
+    final updated = current.copyWith(failedCount: current.failedCount + 1);
+    state = AsyncValue.data(updated);
+
+    // Persist
+    final user = ref.read(authProvider).asData?.value;
+
+    // 1. Local Persistence
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, jsonEncode(updated.toJson()));
+
+    // 2. Remote Persistence (If Logged In)
+    if (user != null) {
+      try {
+        await ref
+            .read(supabaseProvider)
+            .rpc('increment_failed_count', params: {'user_id': user.id});
+      } catch (e) {
+        // Simple update fallback if RPC not available
+        try {
+          await ref
+              .read(supabaseProvider)
+              .from('user_profiles')
+              .update({'failed_count': updated.failedCount})
+              .eq('id', user.id);
+        } catch (innerE) {
+          print('Error updating failed count: $innerE');
+        }
+      }
+    }
+  }
+
   // Debug/Reset
   Future<void> resetProfile() async {
     // ... Implementation if needed, mostly for dev

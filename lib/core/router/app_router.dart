@@ -14,6 +14,7 @@ import '../../features/wishlist/presentation/wishlist_detail_screen.dart';
 import '../../features/wishlist/domain/wishlist_model.dart';
 import '../../features/wishlist/presentation/pages/glory_report_screen.dart';
 import '../../features/mission/presentation/pages/reality_awareness_screen.dart';
+import '../../features/wishlist/presentation/failed_dreams_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -77,6 +78,10 @@ GoRouter goRouter(Ref ref) {
       GoRoute(
         path: '/wishlist/glory-report',
         builder: (context, state) => const GloryReportScreen(),
+      ),
+      GoRoute(
+        path: '/failed-dreams',
+        builder: (context, state) => const FailedDreamsScreen(),
       ),
     ],
   );
