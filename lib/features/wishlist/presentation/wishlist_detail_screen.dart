@@ -999,6 +999,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                   height: height,
                                   progress: value,
                                 ),
+
                                 // (C) 스캔 라인 효과
                                 if (value > 0 && value < 1.0)
                                   Positioned(
