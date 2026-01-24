@@ -88,10 +88,7 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
       builder: (dialogContext) => AlertDialog(
         backgroundColor: Colors.grey[900],
         title: const Text('송금을 완료했나요?', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          '확인을 누르면 실제 저축 데이터가 생성됩니다.',
-          style: TextStyle(color: Colors.white70),
-        ),
+        // Description removed as per request
         actions: [
           TextButton(
             onPressed: () {
@@ -141,7 +138,7 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
                 ref.read(navigationIndexProvider.notifier).setIndex(1);
               }
             },
-            child: const Text('네(확인)'),
+            child: const Text('송금 완료'),
           ),
         ],
       ),
