@@ -28,11 +28,9 @@ class SavingRecordScreen extends ConsumerStatefulWidget {
 class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     with WidgetsBindingObserver {
   final _amountController = TextEditingController();
-  final _customCategoryController = TextEditingController();
   final _bankAccountService = BankAccountService();
   late ConfettiController _confettiController;
   String? _selectedCategoryId;
-  bool _addToCategories = false;
   bool _isLoading = false;
   bool _isWaitingForTransfer = false;
 
@@ -49,7 +47,6 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _amountController.dispose();
-    _customCategoryController.dispose();
     _confettiController.dispose();
     super.dispose();
   }
@@ -68,6 +65,24 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
 
     final current = int.tryParse(_amountController.text) ?? 0;
     _amountController.text = (current + amount).toString();
+  }
+
+  IconData _getIconData(String? iconPath) {
+    if (iconPath == null) return Icons.category;
+    switch (iconPath) {
+      case 'fastfood':
+        return Icons.fastfood;
+      case 'local_bar':
+        return Icons.local_bar;
+      case 'local_taxi':
+        return Icons.local_taxi;
+      case 'shopping_bag':
+        return Icons.shopping_bag;
+      case 'more_horiz':
+        return Icons.more_horiz;
+      default:
+        return Icons.category;
+    }
   }
 
   void _executeDefeatSequence(double amount) async {
@@ -493,19 +508,12 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     try {
       String finalCategoryName = '';
       final categories = ref.read(categoryProvider).value ?? [];
-      if (_selectedCategoryId == 'other') {
-        final customName = _customCategoryController.text.trim();
-        finalCategoryName = customName;
-        if (_addToCategories) {
-          await ref.read(categoryProvider.notifier).addCategory(customName);
-        }
-      } else {
-        final category = categories.firstWhere(
-          (c) => c.id == _selectedCategoryId,
-          orElse: () => const CategoryModel(id: 'unknown', name: 'Unknown'),
-        );
-        finalCategoryName = category.name;
-      }
+
+      final category = categories.firstWhere(
+        (c) => c.id == _selectedCategoryId,
+        orElse: () => const CategoryModel(id: 'unknown', name: 'Unknown'),
+      );
+      finalCategoryName = category.name;
 
       // 목표 확인
       final wishlistAsync = ref.read(wishlistProvider);
@@ -538,10 +546,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
 
         if (mounted) {
           _amountController.clear();
-          _customCategoryController.clear();
           setState(() {
             _selectedCategoryId = null;
-            _addToCategories = false;
             _isLoading = false;
             _isWaitingForTransfer = false;
           });
@@ -611,183 +617,79 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
 
                   // Category Grid
                   Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      ...categories.map((category) {
-                        final isSelected = _selectedCategoryId == category.id;
-                        return GestureDetector(
-                          onLongPress: category.isCustom
-                              ? () {
-                                  // Simplified delete dialog for custom categories
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      backgroundColor: colors.surface,
-                                      title: Text(
-                                        i18n.isKorean ? '삭제' : 'Delete',
-                                        style: TextStyle(
-                                          color: colors.textMain,
-                                        ),
-                                      ),
-                                      content: Text(
-                                        "'${category.name}'",
-                                        style: TextStyle(color: colors.textSub),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => context.pop(),
-                                          child: const Text("Cancel"),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            ref
-                                                .read(categoryProvider.notifier)
-                                                .deleteCategory(category.id);
-                                            if (isSelected)
-                                              setState(
-                                                () =>
-                                                    _selectedCategoryId = null,
-                                              );
-                                            context.pop();
-                                          },
-                                          child: const Text(
-                                            "Delete",
-                                            style: TextStyle(color: Colors.red),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }
-                              : null,
-                          child: FilterChip(
-                            label: Text(category.name),
-                            selected: isSelected,
-                            onSelected: (selected) {
-                              setState(
-                                () => _selectedCategoryId = selected
-                                    ? category.id
-                                    : null,
-                              );
-                            },
-                            backgroundColor: isPureFinance
-                                ? colors.surface
-                                : Colors.black, // Cyberpunk: Black
-                            selectedColor: isPureFinance
-                                ? colors.accent
-                                : Colors
-                                      .black, // Cyberpunk: Keep background black
-                            labelStyle: TextStyle(
-                              color: isSelected
-                                  ? (isPureFinance
-                                        ? Colors.white
-                                        : const Color(
-                                            0xFFD4FF00,
-                                          )) // Cyberpunk: Neon Green
-                                  : (isPureFinance
-                                        ? colors.textMain
-                                        : Colors.white70),
-                              fontWeight: FontWeight.w600,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? (isPureFinance
-                                          ? colors.accent
-                                          : const Color(
-                                              0xFFD4FF00,
-                                            )) // Cyberpunk: Neon Green
-                                    : (isPureFinance
-                                          ? Colors.transparent
-                                          : Colors.white12),
-                                width: isSelected ? 2 : 1,
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                      // Other Category
-                      FilterChip(
-                        label: Text(i18n.categoryName('Other')),
-                        selected: _selectedCategoryId == 'other',
-                        onSelected: (selected) {
-                          setState(
-                            () =>
-                                _selectedCategoryId = selected ? 'other' : null,
-                          );
-                        },
-                        backgroundColor: isPureFinance
-                            ? colors.surface
-                            : Colors.black,
-                        selectedColor: isPureFinance
-                            ? colors.accent
-                            : Colors.black,
-                        labelStyle: TextStyle(
-                          color: _selectedCategoryId == 'other'
-                              ? (isPureFinance
-                                    ? Colors.white
-                                    : const Color(0xFFD4FF00))
-                              : (isPureFinance
-                                    ? colors.textMain
-                                    : Colors.white70),
-                          fontWeight: FontWeight.w600,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          side: BorderSide(
-                            color: _selectedCategoryId == 'other'
-                                ? (isPureFinance
-                                      ? colors.accent
-                                      : const Color(0xFFD4FF00))
-                                : (isPureFinance
-                                      ? Colors.transparent
-                                      : Colors.white12),
-                            width: _selectedCategoryId == 'other' ? 2 : 1,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: categories.map((category) {
+                      final isSelected = _selectedCategoryId == category.id;
+                      final iconData = _getIconData(category.iconPath);
 
-                  if (_selectedCategoryId == 'other') ...[
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _customCategoryController,
-                      decoration: InputDecoration(
-                        labelText: i18n.categoryName('Other'),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colors.border),
+                      return GestureDetector(
+                        onTap: () {
+                          // [Added] Sensory Feedback
+                          HapticFeedback.lightImpact();
+                          setState(() {
+                            if (isSelected) {
+                              _selectedCategoryId = null;
+                            } else {
+                              _selectedCategoryId = category.id;
+                            }
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? colors.accent.withOpacity(0.2)
+                                : colors.surface,
+                            borderRadius: BorderRadius.circular(30),
+                            border: Border.all(
+                              color: isSelected
+                                  ? colors
+                                        .accent // Neon Green
+                                  : Colors.transparent,
+                              width: isSelected ? 2 : 1,
+                            ),
+                            boxShadow: isSelected
+                                ? [
+                                    BoxShadow(
+                                      color: colors.accent.withOpacity(0.4),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    ),
+                                  ]
+                                : [],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                iconData,
+                                size: 20,
+                                color: isSelected
+                                    ? colors.accent
+                                    : Colors.white70,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                category.name,
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? colors.accent
+                                      : Colors.white70,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: colors.border),
-                        ),
-                        filled: true,
-                        fillColor: colors.surface,
-                        hintText: 'ex) Bubble Tea',
-                        hintStyle: TextStyle(color: colors.textSub),
-                        labelStyle: TextStyle(color: colors.textSub),
-                      ),
-                      style: TextStyle(color: colors.textMain),
-                    ),
-                    const SizedBox(height: 8),
-                    CheckboxListTile(
-                      value: _addToCategories,
-                      onChanged: (value) =>
-                          setState(() => _addToCategories = value ?? false),
-                      title: Text(
-                        i18n.isKorean ? '새 카테고리로 추가' : 'Add to categories',
-                        style: TextStyle(color: colors.textMain),
-                      ),
-                      checkColor: Colors.white,
-                      activeColor: colors.accent,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ],
+                      );
+                    }).toList(),
+                  ),
 
                   const SizedBox(height: 40),
                   _buildSectionTitle(i18n.howMuchSaved, colors),

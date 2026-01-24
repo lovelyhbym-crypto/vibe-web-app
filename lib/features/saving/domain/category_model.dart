@@ -9,6 +9,7 @@ class CategoryModel with _$CategoryModel {
     required String id,
     required String name,
     String? iconPath,
+    String? color,
     @Default(false) bool isCustom,
   }) = _CategoryModel;
 

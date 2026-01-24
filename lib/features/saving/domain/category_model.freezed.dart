@@ -24,6 +24,7 @@ mixin _$CategoryModel {
   String get id => throw _privateConstructorUsedError;
   String get name => throw _privateConstructorUsedError;
   String? get iconPath => throw _privateConstructorUsedError;
+  String? get color => throw _privateConstructorUsedError;
   bool get isCustom => throw _privateConstructorUsedError;
 
   /// Serializes this CategoryModel to a JSON map.
@@ -43,7 +44,13 @@ abstract class $CategoryModelCopyWith<$Res> {
     $Res Function(CategoryModel) then,
   ) = _$CategoryModelCopyWithImpl<$Res, CategoryModel>;
   @useResult
-  $Res call({String id, String name, String? iconPath, bool isCustom});
+  $Res call({
+    String id,
+    String name,
+    String? iconPath,
+    String? color,
+    bool isCustom,
+  });
 }
 
 /// @nodoc
@@ -64,6 +71,7 @@ class _$CategoryModelCopyWithImpl<$Res, $Val extends CategoryModel>
     Object? id = null,
     Object? name = null,
     Object? iconPath = freezed,
+    Object? color = freezed,
     Object? isCustom = null,
   }) {
     return _then(
@@ -79,6 +87,10 @@ class _$CategoryModelCopyWithImpl<$Res, $Val extends CategoryModel>
             iconPath: freezed == iconPath
                 ? _value.iconPath
                 : iconPath // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            color: freezed == color
+                ? _value.color
+                : color // ignore: cast_nullable_to_non_nullable
                       as String?,
             isCustom: null == isCustom
                 ? _value.isCustom
@@ -99,7 +111,13 @@ abstract class _$$CategoryModelImplCopyWith<$Res>
   ) = __$$CategoryModelImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, String name, String? iconPath, bool isCustom});
+  $Res call({
+    String id,
+    String name,
+    String? iconPath,
+    String? color,
+    bool isCustom,
+  });
 }
 
 /// @nodoc
@@ -119,6 +137,7 @@ class __$$CategoryModelImplCopyWithImpl<$Res>
     Object? id = null,
     Object? name = null,
     Object? iconPath = freezed,
+    Object? color = freezed,
     Object? isCustom = null,
   }) {
     return _then(
@@ -134,6 +153,10 @@ class __$$CategoryModelImplCopyWithImpl<$Res>
         iconPath: freezed == iconPath
             ? _value.iconPath
             : iconPath // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        color: freezed == color
+            ? _value.color
+            : color // ignore: cast_nullable_to_non_nullable
                   as String?,
         isCustom: null == isCustom
             ? _value.isCustom
@@ -151,6 +174,7 @@ class _$CategoryModelImpl implements _CategoryModel {
     required this.id,
     required this.name,
     this.iconPath,
+    this.color,
     this.isCustom = false,
   });
 
@@ -164,12 +188,14 @@ class _$CategoryModelImpl implements _CategoryModel {
   @override
   final String? iconPath;
   @override
+  final String? color;
+  @override
   @JsonKey()
   final bool isCustom;
 
   @override
   String toString() {
-    return 'CategoryModel(id: $id, name: $name, iconPath: $iconPath, isCustom: $isCustom)';
+    return 'CategoryModel(id: $id, name: $name, iconPath: $iconPath, color: $color, isCustom: $isCustom)';
   }
 
   @override
@@ -181,13 +207,15 @@ class _$CategoryModelImpl implements _CategoryModel {
             (identical(other.name, name) || other.name == name) &&
             (identical(other.iconPath, iconPath) ||
                 other.iconPath == iconPath) &&
+            (identical(other.color, color) || other.color == color) &&
             (identical(other.isCustom, isCustom) ||
                 other.isCustom == isCustom));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, name, iconPath, isCustom);
+  int get hashCode =>
+      Object.hash(runtimeType, id, name, iconPath, color, isCustom);
 
   /// Create a copy of CategoryModel
   /// with the given fields replaced by the non-null parameter values.
@@ -208,6 +236,7 @@ abstract class _CategoryModel implements CategoryModel {
     required final String id,
     required final String name,
     final String? iconPath,
+    final String? color,
     final bool isCustom,
   }) = _$CategoryModelImpl;
 
@@ -220,6 +249,8 @@ abstract class _CategoryModel implements CategoryModel {
   String get name;
   @override
   String? get iconPath;
+  @override
+  String? get color;
   @override
   bool get isCustom;
 
