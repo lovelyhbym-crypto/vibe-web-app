@@ -729,7 +729,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     }
   }
 
-  void _showEdgeMenu() {
+  void _showEdgeMenu(WishlistModel item) {
     HapticFeedback.lightImpact();
     showGeneralDialog(
       context: context,
@@ -740,9 +740,12 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
         return Stack(
           children: [
             Positioned.fill(
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(color: Colors.black.withOpacity(0.2)),
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context), // 화면 다른 곳 누르면 닫기
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(color: Colors.black.withOpacity(0.2)),
+                ),
               ),
             ),
             Align(
@@ -757,7 +760,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                     children: [
                       if (_isEditing || _hasChanges) ...[
                         _buildMenuAction(
-                          _isSaving ? "SAVING..." : "SAVE",
+                          _isSaving ? "저장 중..." : "저장하기",
+                          isLocked: item.isBroken,
                           onTap: _isSaving
                               ? () {}
                               : () {
@@ -768,7 +772,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                         const SizedBox(height: 60),
                       ],
                       _buildMenuAction(
-                        "EDIT",
+                        "목표물 변경",
+                        isLocked: item.isBroken,
                         onTap: () {
                           Navigator.pop(context);
                           _enterEditMode();
@@ -776,13 +781,30 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                       ),
                       const SizedBox(height: 60),
                       _buildMenuAction(
-                        "DESTROY",
+                        "포기하기",
                         isDanger: true,
+                        isLocked: item.isBroken,
                         onTap: () {
                           Navigator.pop(context);
                           _deleteWishlistAction();
                         },
                       ),
+                      if (item.isBroken) ...[
+                        const SizedBox(height: 80),
+                        const SizedBox(
+                          width: 250,
+                          child: Text(
+                            "부서진 꿈을 방치한 채 도망갈 수 없습니다.\n[긴급 복구 퀘스트]를 먼저 완료하십시오.",
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              color: Colors.redAccent,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -801,23 +823,40 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     String label, {
     required VoidCallback onTap,
     bool isDanger = false,
+    bool isLocked = false,
   }) {
     return InkWell(
-      onTap: onTap,
-      child: Text(
-        label,
-        style: TextStyle(
-          fontFamily: 'Courier', // Tech feel
-          fontSize: 32,
-          fontWeight: FontWeight
-              .bold, // Thin but readable? User asked "Thin and sophisticated".
-          // Courier Bold is techy. Or use standard thin?
-          // User: "아주 얇고 세련된 폰트".
-          // Let's use fontWeight: FontWeight.w100 if possible, or w300.
-          // And color.
-          color: isDanger ? const Color(0xFFFF0000) : Colors.white,
-          letterSpacing: 4.0,
-        ).copyWith(fontWeight: FontWeight.w200),
+      onTap: isLocked
+          ? () {
+              HapticFeedback.vibrate();
+            }
+          : onTap,
+      child: Opacity(
+        opacity: isLocked ? 0.3 : 1.0,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isLocked) ...[
+              const Icon(Icons.lock, color: Colors.white54, size: 24),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Courier', // Tech feel
+                fontSize: 32,
+                fontWeight: FontWeight
+                    .bold, // Thin but readable? User asked "Thin and sophisticated".
+                // Courier Bold is techy. Or use standard thin?
+                // User: "아주 얇고 세련된 폰트".
+                // Let's use fontWeight: FontWeight.w100 if possible, or w300.
+                // And color.
+                color: isDanger ? const Color(0xFFFF0000) : Colors.white,
+                letterSpacing: 4.0,
+              ).copyWith(fontWeight: FontWeight.w200),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1435,8 +1474,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               width: 20,
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
-                onTap: _showEdgeMenu,
-                onLongPress: _showEdgeMenu,
+                onTap: () => _showEdgeMenu(item),
+                onLongPress: () => _showEdgeMenu(item),
                 child: Center(
                   child: Container(
                     width: 4,

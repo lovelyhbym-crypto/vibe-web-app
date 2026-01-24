@@ -20,8 +20,8 @@ class QuestStatusCard extends ConsumerWidget {
     switch (priority) {
       case WishlistPriority.broken:
         themeColor = Colors.redAccent;
-        titleText = "🔥 시스템 파괴! (복구 시 안개 완전 제거)";
-        descText = "아래 조건 중 하나만 달성해도 파괴된 꿈을 복구하고 안개를 걷어낼 수 있습니다.";
+        titleText = "🔥 시스템 파괴! (복구 시 위시리스트 수리)";
+        descText = "아래 조건 중 하나만 달성해도 파괴된 꿈을 복구할수 있습니다.";
         headerIcon = Icons.error_outline_rounded;
         break;
       case WishlistPriority.highBlur:
