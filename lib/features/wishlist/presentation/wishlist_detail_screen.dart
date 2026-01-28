@@ -762,19 +762,6 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      if (_isEditing || _hasChanges) ...[
-                        _buildMenuAction(
-                          _isSaving ? "저장 중..." : "저장하기",
-                          isLocked: item.isBroken,
-                          onTap: _isSaving
-                              ? () {}
-                              : () {
-                                  Navigator.pop(context);
-                                  _saveChanges();
-                                },
-                        ),
-                        const SizedBox(height: 60),
-                      ],
                       _buildMenuAction(
                         "목표물 변경",
                         isLocked: item.isBroken,
@@ -1566,17 +1553,23 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                               if (_hasChanges)
                                 Padding(
                                   padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(
-                                    '저장하려면 상단 체크 버튼을 눌러주세요',
-                                    style: TextStyle(
-                                      color: isPureFinance
-                                          ? colors.textSub
-                                          : const Color(
-                                              0xFFD4FF00,
-                                            ).withAlpha(179),
-                                      fontSize: 13,
-                                    ),
-                                  ),
+                                  child:
+                                      Text(
+                                            '수정 사항이 있습니다. 하단의 SAVE 버튼을 눌러 확정하세요.',
+                                            style: TextStyle(
+                                              color: isPureFinance
+                                                  ? colors.accent
+                                                  : const Color(0xFFD4FF00),
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                          .animate(
+                                            onPlay: (controller) => controller
+                                                .repeat(reverse: true),
+                                          )
+                                          .fadeIn(duration: 1000.ms)
+                                          .fadeOut(duration: 1000.ms),
                                 ),
                             ],
                           ),
@@ -1619,6 +1612,45 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
             ),
           ],
         ),
+        floatingActionButton: (_hasChanges && !_isSaving)
+            ? BouncyButton(
+                    onTap: _saveChanges,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.accent,
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colors.accent.withOpacity(0.5),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        "SAVE CHANGES",
+                        style: GoogleFonts.robotoMono(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
+                  )
+                  .animate()
+                  .slideY(
+                    begin: 1.0,
+                    end: 0.0,
+                    curve: Curves.bounceOut,
+                    duration: 600.ms,
+                  )
+                  .fadeIn(duration: 400.ms)
+            : null,
       ),
     );
   }

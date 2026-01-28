@@ -396,7 +396,10 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                               SnackBar(
                                 content: const Text(
                                   '🎉 생존 성공! 성공 확률 1% 상승 + 안개 제거 완료!',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
                                 ),
                                 duration: const Duration(seconds: 2),
                                 behavior: SnackBarBehavior.floating,
