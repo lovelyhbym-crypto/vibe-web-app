@@ -1,3 +1,4 @@
+import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
@@ -20,6 +21,7 @@ import 'package:vive_app/features/auth/providers/user_profile_provider.dart';
 import '../../../core/services/sound_service.dart';
 import 'widgets/countdown_timer_widget.dart';
 import 'package:vive_app/core/ui/floating_input_field.dart';
+import '../../../core/ui/bouncy_button.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {
   final WishlistModel item;
@@ -793,7 +795,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                       ),
                       if (item.isBroken) ...[
                         const SizedBox(height: 80),
-                        const SizedBox(
+                        SizedBox(
                           width: 250,
                           child: Text(
                             "부서진 꿈을 방치한 채 도망갈 수 없습니다.\n[긴급 복구 퀘스트]를 먼저 완료하십시오.",
@@ -827,37 +829,48 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     bool isDanger = false,
     bool isLocked = false,
   }) {
-    return InkWell(
+    return BouncyButton(
       onTap: isLocked
           ? () {
               HapticFeedback.vibrate();
             }
           : onTap,
-      child: Opacity(
-        opacity: isLocked ? 0.3 : 1.0,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isLocked) ...[
-              const Icon(Icons.lock, color: Colors.white54, size: 24),
-              const SizedBox(width: 8),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Courier', // Tech feel
-                fontSize: 32,
-                fontWeight: FontWeight
-                    .bold, // Thin but readable? User asked "Thin and sophisticated".
-                // Courier Bold is techy. Or use standard thin?
-                // User: "아주 얇고 세련된 폰트".
-                // Let's use fontWeight: FontWeight.w100 if possible, or w300.
-                // And color.
-                color: isDanger ? const Color(0xFFFF0000) : Colors.white,
-                letterSpacing: 4.0,
-              ).copyWith(fontWeight: FontWeight.w200),
-            ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          // Subtle neon glow for menu actions
+          boxShadow: [
+            if (!isLocked)
+              BoxShadow(
+                color: (isDanger ? const Color(0xFFFF0000) : Colors.white)
+                    .withOpacity(0.1),
+                blurRadius: 15,
+                spreadRadius: 1,
+              ),
           ],
+        ),
+        child: Opacity(
+          opacity: isLocked ? 0.3 : 1.0,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLocked) ...[
+                const Icon(Icons.lock, color: Colors.white54, size: 24),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Courier',
+                  fontSize: 32,
+                  color: isDanger ? const Color(0xFFFF0000) : Colors.white,
+                  letterSpacing: 4.0,
+                  fontWeight: FontWeight.w200,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1358,22 +1371,75 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                               duration: const Duration(milliseconds: 1000),
                               curve: Curves.easeOutCubic,
                               builder: (context, value, child) {
-                                return LinearProgressIndicator(
-                                  value: value.clamp(
-                                    0.0,
-                                    1.0,
-                                  ), // Ensure valid range for indicator
+                                final progressValue = value.clamp(0.0, 1.0);
+                                final isLow = value <= 0;
+                                final isHigh = value >= 0.8;
+
+                                Widget indicator = LinearProgressIndicator(
+                                  value: progressValue,
                                   backgroundColor: isPureFinance
                                       ? colors.border
-                                      : Colors.grey[800],
+                                      : const Color(0xFF1C1C1E),
                                   color: isPureFinance
                                       ? colors.textMain
                                       : (value < 0
                                             ? colors.danger
                                             : colors.accent),
-                                  minHeight: 4.0, // 약간 두껍게 수정
-                                  borderRadius: BorderRadius.circular(2.0),
+                                  minHeight: 6.0,
+                                  borderRadius: BorderRadius.circular(3.0),
                                 );
+
+                                if (isPureFinance) return indicator;
+
+                                if (isLow) {
+                                  // Stage 3: Visual pressure shimmer for 0%
+                                  return indicator
+                                      .animate(
+                                        onPlay: (controller) =>
+                                            controller.repeat(reverse: true),
+                                      )
+                                      .shimmer(
+                                        duration: 2.seconds,
+                                        color: Colors.white24,
+                                        stops: [0.0, 0.5, 1.0],
+                                      )
+                                      .tint(color: Colors.white10);
+                                }
+
+                                // Stage 1: Pulse animation
+                                Widget animatedGauge = indicator
+                                    .animate(
+                                      onPlay: (controller) =>
+                                          controller.repeat(reverse: true),
+                                    )
+                                    .custom(
+                                      duration: 1500.ms,
+                                      builder: (context, animValue, child) {
+                                        return Opacity(
+                                          opacity: 0.7 + (animValue * 0.3),
+                                          child: child,
+                                        );
+                                      },
+                                    );
+
+                                if (isHigh) {
+                                  // Stage 2: Neon Glow for 80%+
+                                  return Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(3.0),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: colors.accent.withOpacity(0.6),
+                                          blurRadius: 12,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                    child: animatedGauge,
+                                  );
+                                }
+
+                                return animatedGauge;
                               },
                             ),
                           ],
@@ -1397,13 +1463,13 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                             ),
                             if (!(item.isAchieved ||
                                 progress >= 1.0)) // Only show if editable
-                              GestureDetector(
+                              BouncyButton(
                                 onTap: _spinPenaltySlotMachine,
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 6,
+                                    horizontal: 14,
+                                    vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
                                     color: _isSpinning
@@ -1413,12 +1479,24 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                         : (isPureFinance
                                               ? colors.surface
                                               : Colors.black26),
-                                    borderRadius: BorderRadius.circular(12),
+                                    borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
                                       color: isPureFinance
                                           ? colors.border
                                           : const Color(0xFFD4FF00),
                                     ),
+                                    // PRD: Outer Glow & Deep visual effect
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color:
+                                            (isPureFinance
+                                                    ? colors.accent
+                                                    : const Color(0xFFD4FF00))
+                                                .withOpacity(0.3),
+                                        blurRadius: 10,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
                                   ),
                                   child: Row(
                                     children: [
@@ -1431,11 +1509,11 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                                   ? colors.textMain
                                                   : const Color(0xFFD4FF00)),
                                       ),
-                                      const SizedBox(width: 4),
+                                      const SizedBox(width: 6),
                                       Text(
                                         "운명의 뽑기",
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: 14,
                                           color: _isSpinning
                                               ? Colors.black
                                               : (isPureFinance
