@@ -824,25 +824,22 @@ class WishlistNotifier extends _$WishlistNotifier {
       }
     }
 
-    // 보상 금액 (1%)
+    // 보상 (1%)
+    // [FIX] savedAmount 대신 penaltyAmount에서 차감하여 성공 확률만 높이고 '남은 금액'은 유지함
     final bonusAmount = original.totalGoal * 0.01;
-    final newSavedAmount = original.savedAmount + bonusAmount;
-    final isNowAchieved =
-        newSavedAmount >= original.totalGoal && !original.isAchieved;
+    final newPenaltyAmount = (original.penaltyAmount - bonusAmount).clamp(
+      0.0,
+      double.infinity,
+    );
 
     // Optimistic Update
     // [Fog Cleaning] 2.0 감소 (직접 감소)
     final newBlurLevel = (original.blurLevel - 2.0).clamp(0.0, 10.0);
 
-    // Optimistic Update
     final updatedItem = original.copyWith(
       lastSurvivalCheckAt: now,
-      savedAmount: newSavedAmount,
-      isAchieved: isNowAchieved ? true : original.isAchieved,
-      achievedAt: isNowAchieved ? DateTime.now() : original.achievedAt,
-      blurLevel: newBlurLevel, // 반영
-      // lastSavedAt update is optional for logic but good for record.
-      // User said "currentBlurPoints를 2.0 감소".
+      penaltyAmount: newPenaltyAmount,
+      blurLevel: newBlurLevel,
     );
     final updatedList = List<WishlistModel>.from(wishlist);
     updatedList[index] = updatedItem;
@@ -858,14 +855,9 @@ class WishlistNotifier extends _$WishlistNotifier {
     try {
       final updates = <String, dynamic>{
         'last_survival_check_at': now.toIso8601String(),
-        'saved_amount': newSavedAmount.toInt(),
-        'blur_level': newBlurLevel, // DB 반영
+        'penalty_amount': newPenaltyAmount.toInt(),
+        'blur_level': newBlurLevel,
       };
-
-      if (isNowAchieved) {
-        updates['is_achieved'] = true;
-        updates['achieved_at'] = updatedItem.achievedAt?.toIso8601String();
-      }
 
       await ref
           .read(supabaseProvider)
