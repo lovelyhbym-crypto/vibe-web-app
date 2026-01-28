@@ -1063,6 +1063,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const SizedBox(height: 32),
                         // Title and D-Day Badge
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1218,114 +1219,120 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                             ),
                           ),
 
-                        // Price Info
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '총 가격',
-                                    style: TextStyle(
-                                      color: isPureFinance
-                                          ? colors.textSub
-                                          : Colors.white38,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.normal,
+                        const SizedBox(
+                          height: 36,
+                        ), // Increased spacing to separate from Daily Goal
+                        // Price Info Block (Grouping Price & Remaining)
+                        Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '총 가격',
+                                      style: TextStyle(
+                                        color: isPureFinance
+                                            ? colors.textSub
+                                            : Colors.white38,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.normal,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  _isEditing
-                                      ? TextField(
-                                          controller: _priceController,
-                                          keyboardType: TextInputType.number,
-                                          style: GoogleFonts.robotoMono(
-                                            color: isPureFinance
-                                                ? colors.accent
-                                                : Colors.blueAccent,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: -0.5,
-                                          ),
-                                          decoration: InputDecoration(
-                                            filled: true,
-                                            fillColor: colors.surface,
-                                            border: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              borderSide: BorderSide.none,
-                                            ),
-                                            enabledBorder: OutlineInputBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              borderSide: isPureFinance
-                                                  ? BorderSide.none
-                                                  : BorderSide(
-                                                      color: colors.accent
-                                                          .withOpacity(0.5),
-                                                    ),
-                                            ),
-                                            contentPadding:
-                                                const EdgeInsets.symmetric(
-                                                  horizontal: 12,
-                                                  vertical: 8,
-                                                ),
-                                            suffixText: '원',
-                                            helperText: '수정할 목표 금액을 입력하세요',
-                                            helperStyle: TextStyle(
+                                    const SizedBox(height: 4),
+                                    _isEditing
+                                        ? TextField(
+                                            controller: _priceController,
+                                            keyboardType: TextInputType.number,
+                                            style: GoogleFonts.robotoMono(
                                               color: isPureFinance
-                                                  ? colors.textSub
-                                                  : Colors.white60,
+                                                  ? colors.accent
+                                                  : Colors.blueAccent,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: -0.5,
+                                            ),
+                                            decoration: InputDecoration(
+                                              filled: true,
+                                              fillColor: colors.surface,
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                borderSide: isPureFinance
+                                                    ? BorderSide.none
+                                                    : BorderSide(
+                                                        color: colors.accent
+                                                            .withOpacity(0.5),
+                                                      ),
+                                              ),
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 8,
+                                                  ),
+                                              suffixText: '원',
+                                              helperText: '수정할 목표 금액을 입력하세요',
+                                              helperStyle: TextStyle(
+                                                color: isPureFinance
+                                                    ? colors.textSub
+                                                    : Colors.white60,
+                                              ),
+                                            ),
+                                          )
+                                        : Text(
+                                            i18n.formatCurrency(item.totalGoal),
+                                            style: GoogleFonts.robotoMono(
+                                              color: isPureFinance
+                                                  ? colors.textMain
+                                                  : Colors.white,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: -0.5,
                                             ),
                                           ),
-                                        )
-                                      : Text(
-                                          i18n.formatCurrency(item.totalGoal),
-                                          style: GoogleFonts.robotoMono(
-                                            color: isPureFinance
-                                                ? colors.textMain
-                                                : Colors.white,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: -0.5,
-                                          ),
-                                        ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    '남은 금액',
-                                    style: TextStyle(
-                                      color: isPureFinance
-                                          ? colors.textSub
-                                          : Colors.white38,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.normal,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      '남은 금액',
+                                      style: TextStyle(
+                                        color: isPureFinance
+                                            ? colors.textSub
+                                            : Colors.white38,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.normal,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    i18n.formatCurrency(remaining),
-                                    style: GoogleFonts.robotoMono(
-                                      color: isPureFinance
-                                          ? colors.textMain
-                                          : Colors.white,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: -0.5,
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      i18n.formatCurrency(remaining),
+                                      style: GoogleFonts.robotoMono(
+                                        color: isPureFinance
+                                            ? colors.textMain
+                                            : Colors.white,
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: -0.5,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
 
                         const SizedBox(height: 24),
@@ -1445,7 +1452,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                           ],
                         ),
 
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 64),
 
                         // Penalty Section (Editable)
                         Row(
@@ -1575,7 +1582,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                           ),
                         ),
 
-                        const SizedBox(height: 100), // Bottom padding
+                        const SizedBox(height: 160), // Bottom padding
                       ],
                     ),
                   ),
