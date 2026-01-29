@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
 import 'package:vive_app/core/ui/bouncy_button.dart';
+import 'widgets/engine_core_widget.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -165,7 +166,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         children: [
           // Layer 1: Minimal Grid
           Positioned.fill(
-            child: CustomPaint(painter: _GridBackgroundPainter(opacity: 0.01)),
+            child: CustomPaint(painter: _GridBackgroundPainter(opacity: 0.02)),
           ),
 
           // Layer 2: Blurry Street Lights
@@ -196,6 +197,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
 
+          // Core Background Sync (Environment Glow)
+          Center(
+            child:
+                Container(
+                      width: 400,
+                      height: 400,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            accentColor.withOpacity(0.12),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    )
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .scale(
+                      begin: const Offset(0.8, 0.8),
+                      end: const Offset(1.1, 1.1),
+                      duration: 2.seconds,
+                      curve: Curves.easeInOut,
+                    )
+                    .fadeOut(
+                      begin: 0.3,
+                      duration: 2.seconds,
+                      curve: Curves.easeInOut,
+                    ),
+          ),
           // Content
           SafeArea(
             child: Padding(
@@ -253,7 +283,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       .fadeIn(duration: 1200.ms)
                       .slideY(begin: 0.1, end: 0),
 
-                  const Spacer(), // Empty center for showroom vibe
+                  const Spacer(flex: 2),
+
+                  // Center: Engine Core
+                  const EngineCoreWidget(),
+
+                  const Spacer(flex: 3),
                   // Bottom: Actions
                   Column(
                     children: [
