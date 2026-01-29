@@ -18,6 +18,7 @@ import 'package:vive_app/core/theme/theme_provider.dart';
 import 'package:vive_app/features/home/providers/navigation_provider.dart';
 import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
 import 'package:vive_app/features/saving/presentation/widgets/custom_keypad.dart';
+import 'package:vive_app/core/ui/bouncy_button.dart';
 
 class SavingRecordScreen extends ConsumerStatefulWidget {
   const SavingRecordScreen({super.key});
@@ -696,10 +697,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                       final isSelected = _selectedCategoryId == category.id;
                       final iconData = _getIconData(category.iconPath);
 
-                      return GestureDetector(
+                      return BouncyButton(
                         onTap: () {
-                          // [Added] Sensory Feedback
-                          HapticFeedback.lightImpact();
                           setState(() {
                             if (isSelected) {
                               _selectedCategoryId = null;
@@ -858,8 +857,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                           : _amountController.text;
 
                       if (isPureFinance) {
-                        return GestureDetector(
-                          onTap: _isLoading ? null : _submit,
+                        return BouncyButton(
+                          onTap: _isLoading ? () {} : _submit,
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
@@ -869,11 +868,12 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                             decoration: BoxDecoration(
                               color: colors.accent,
                               borderRadius: BorderRadius.circular(18),
+                              // PRD-compliant shadow
                               boxShadow: [
                                 BoxShadow(
-                                  color: colors.accent.withOpacity(0.25),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
+                                  color: colors.accent.withOpacity(0.3),
+                                  blurRadius: 15,
+                                  spreadRadius: 2,
                                 ),
                               ],
                             ),
@@ -898,7 +898,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                                           '송금으로 구출하기',
                                           style: const TextStyle(
                                             fontSize: 18,
-                                            fontWeight: FontWeight.bold,
+                                            fontWeight: FontWeight.w900,
                                             color: Colors.white,
                                             letterSpacing: -0.5,
                                           ),
@@ -911,7 +911,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                                             color: Colors.white.withOpacity(
                                               0.9,
                                             ),
-                                            fontWeight: FontWeight.w500,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                       ],
@@ -928,8 +928,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                         );
                       }
 
-                      return GestureDetector(
-                        onTap: _isLoading ? null : _submit,
+                      return BouncyButton(
+                        onTap: _isLoading ? () {} : _submit,
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
@@ -939,11 +939,12 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                           decoration: BoxDecoration(
                             color: colors.accent,
                             borderRadius: BorderRadius.circular(20),
+                            // PRD: Neon Glow Optimization
                             boxShadow: [
                               BoxShadow(
                                 color: colors.accent.withOpacity(0.4),
-                                blurRadius: 15,
-                                spreadRadius: 2,
+                                blurRadius: 20,
+                                spreadRadius: 3,
                               ),
                             ],
                           ),
@@ -981,7 +982,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                                             color: Colors.black.withOpacity(
                                               0.7,
                                             ),
-                                            fontWeight: FontWeight.bold,
+                                            fontWeight: FontWeight.w900,
                                           ),
                                         ),
                                       ],

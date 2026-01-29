@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class BouncyButton extends StatefulWidget {
   final Widget child;
@@ -22,6 +23,7 @@ class _BouncyButtonState extends State<BouncyButton> {
   double _scale = 1.0;
 
   void _onTapDown(TapDownDetails details) {
+    HapticFeedback.lightImpact(); // 촉각 피드백 추가
     setState(() {
       _scale = widget.scaleFactor;
     });
@@ -31,10 +33,6 @@ class _BouncyButtonState extends State<BouncyButton> {
     setState(() {
       _scale = 1.0;
     });
-    // The onTap call happens in GestureDetector's onTap,
-    // but strictly separating animation from logic:
-    // Actually standard GestureDetector behavior is fine.
-    // We'll let onTap handle the logic.
   }
 
   void _onTapCancel() {
@@ -53,7 +51,7 @@ class _BouncyButtonState extends State<BouncyButton> {
       child: AnimatedScale(
         scale: _scale,
         duration: widget.duration,
-        curve: Curves.easeInOut,
+        curve: Curves.easeOutBack, // 더 쫀득한 탄성 효과 적용
         child: widget.child,
       ),
     );

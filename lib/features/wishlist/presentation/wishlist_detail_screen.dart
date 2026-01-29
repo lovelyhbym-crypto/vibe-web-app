@@ -1473,13 +1473,14 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                         : (isPureFinance
                                               ? colors.surface
                                               : Colors.black26),
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(
+                                      8,
+                                    ), // sharper corners
                                     border: Border.all(
                                       color: isPureFinance
                                           ? colors.border
                                           : const Color(0xFFD4FF00),
                                     ),
-                                    // PRD: Outer Glow & Deep visual effect
                                     boxShadow: [
                                       BoxShadow(
                                         color:
@@ -1487,7 +1488,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                                     ? colors.accent
                                                     : const Color(0xFFD4FF00))
                                                 .withOpacity(0.3),
-                                        blurRadius: 10,
+                                        blurRadius: 12,
                                         spreadRadius: 2,
                                       ),
                                     ],
@@ -1513,7 +1514,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                               : (isPureFinance
                                                     ? colors.textMain
                                                     : const Color(0xFFD4FF00)),
-                                          fontWeight: FontWeight.bold,
+                                          fontWeight:
+                                              FontWeight.w900, // weight w900
                                         ),
                                       ),
                                     ],
@@ -1623,11 +1625,17 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                       decoration: BoxDecoration(
                         color: colors.accent,
                         borderRadius: BorderRadius.circular(30),
+                        // PRD: 시선을 강탈하는 초강력 네온 광광 효과 (Multi-layered Glow)
                         boxShadow: [
                           BoxShadow(
-                            color: colors.accent.withOpacity(0.5),
-                            blurRadius: 20,
-                            spreadRadius: 2,
+                            color: colors.accent.withOpacity(0.6),
+                            blurRadius: 25,
+                            spreadRadius: 4,
+                          ),
+                          BoxShadow(
+                            color: colors.accent.withOpacity(0.4),
+                            blurRadius: 40,
+                            spreadRadius: 8,
                           ),
                         ],
                       ),

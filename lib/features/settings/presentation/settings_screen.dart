@@ -213,7 +213,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ),
                       child: const Text(
                         "저장",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black, // 글자색을 검정색으로 변경
+                        ),
                       ),
                     ),
                   ),

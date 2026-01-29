@@ -270,7 +270,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                   .length;
 
               Widget buildBanner() {
-                return GestureDetector(
+                return BouncyButton(
                   onTap: () => context.push('/achieved-goals'),
                   child: Container(
                     padding: const EdgeInsets.all(20),
@@ -367,7 +367,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                   );
                 }
 
-                return GestureDetector(
+                return BouncyButton(
                   onTap: (isAfter8PM || _isNightMode || _testFogDays > 0)
                       ? () async {
                           // Trigger Logic
@@ -387,7 +387,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                             _confettiController.play();
 
                             // [Haptic Feedback]
-                            HapticFeedback.lightImpact();
+                            // HapticFeedback.lightImpact(); // [Stage 3] BouncyButton already handles this
 
                             // [Show Overlay]
                             _showBonusOverlay();
@@ -411,7 +411,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                             );
                           }
                         }
-                      : null,
+                      : () {}, // Empty callback to allow animation even if disabled (visual feedback)
                   child: Container(
                     key: _buttonKey, // Attach Key
                     padding: const EdgeInsets.all(16),

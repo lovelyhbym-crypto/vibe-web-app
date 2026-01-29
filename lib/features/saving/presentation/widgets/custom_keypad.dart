@@ -78,8 +78,9 @@ class _KeypadButtonState extends State<_KeypadButton> {
   bool _isPressed = false;
 
   void _handleTapDown(TapDownDetails details) {
+    _triggerFeedback();
     setState(() {
-      _scale = 0.9;
+      _scale = 0.95; // 0.9 -> 0.95 (PRD standard)
       _isPressed = true;
     });
   }
@@ -89,7 +90,6 @@ class _KeypadButtonState extends State<_KeypadButton> {
       _scale = 1.0;
       _isPressed = false;
     });
-    _triggerFeedback();
     widget.onTap();
   }
 
@@ -111,8 +111,7 @@ class _KeypadButtonState extends State<_KeypadButton> {
     final neonLime = const Color(0xFFCCFF00);
 
     return GestureDetector(
-      behavior:
-          HitTestBehavior.translucent, // Fix hit testing on transparent areas
+      behavior: HitTestBehavior.translucent,
       onTapDown: _handleTapDown,
       onTapUp: _handleTapUp,
       onTapCancel: _handleTapCancel,
@@ -120,24 +119,22 @@ class _KeypadButtonState extends State<_KeypadButton> {
           ? () {
               _triggerFeedback();
               widget.onTap();
-              // Note: Assuming logic handles text modification appropriately
             }
           : null,
       child: AnimatedScale(
         scale: _scale,
         duration: const Duration(milliseconds: 100),
-        curve: Curves.easeInOut,
+        curve: Curves.easeOutBack, // 쫀득한 탄성 커브 적용
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 100),
-          // Height removed, using stretch from parent
           decoration: BoxDecoration(
-            color: _isPressed ? neonLime.withOpacity(0.1) : Colors.transparent,
+            color: _isPressed ? neonLime.withOpacity(0.15) : Colors.transparent,
             borderRadius: BorderRadius.circular(16),
             boxShadow: _isPressed
                 ? [
                     BoxShadow(
                       color: neonLime.withOpacity(0.4),
-                      blurRadius: 12,
+                      blurRadius: 15,
                       spreadRadius: 2,
                     ),
                   ]
@@ -155,7 +152,7 @@ class _KeypadButtonState extends State<_KeypadButton> {
                   style: TextStyle(
                     color: _isPressed ? neonLime : Colors.white,
                     fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w900, // 더 무거운 폰트 적용
                     fontFamily: 'Courier',
                   ),
                 ),
