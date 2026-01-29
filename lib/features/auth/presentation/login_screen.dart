@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
+import 'package:vive_app/core/ui/bouncy_button.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -24,6 +26,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    HapticFeedback.mediumImpact();
     setState(() => _isLoading = true);
     try {
       if (_isLogin) {
@@ -59,281 +62,474 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF121212), // Dark background
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 400),
+  void _showEmailLoginSheet({required bool initialIsLogin}) {
+    setState(() => _isLogin = initialIsLogin);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF121212),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              left: 32,
+              right: 32,
+              top: 32,
+            ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.waves,
-                  size: 64,
-                  color: Colors.white,
-                ), // White Icon
-                const SizedBox(height: 32),
-                Text(
-                  _isLogin ? '로그인' : '회원가입',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: -0.5,
-                    color: Colors.white, // White text
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '이메일로 간편하게 시작하세요',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[400], // Light grey text
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 40),
-                TextField(
-                  controller: _emailController,
-                  style: const TextStyle(
-                    color: Colors.white, // White input text
-                    fontWeight: FontWeight.bold,
-                  ),
-                  cursorColor: const Color(0xFFD4FF00), // Lime cursor
-                  decoration: InputDecoration(
-                    labelText: '이메일',
-                    labelStyle: TextStyle(color: Colors.grey[400]),
-                    hintText: '이메일 주소 입력',
-                    hintStyle: const TextStyle(
-                      color: Colors.white60,
-                    ), // Lighter hint
-                    filled: true,
-                    fillColor: const Color(0xFF2A2A2A), // Dark input background
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Color(0xFFD4FF00), // Lime focus border
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-                _PasswordTextField(controller: _passwordController),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFD4FF00), // Lime button
-                    foregroundColor: Colors.black, // Black text on Lime
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.black,
-                            ),
-                          ),
-                        )
-                      : Text(
-                          _isLogin ? '로그인하기' : '이메일로 시작하기',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 24),
-
-                // Divider
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: Divider(color: Colors.white24)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        '또는',
-                        style: TextStyle(color: Colors.white60, fontSize: 13),
+                    Text(
+                      _isLogin ? '이메일 로그인' : '이메일 회원가입',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    Expanded(child: Divider(color: Colors.white24)),
                   ],
                 ),
+                const SizedBox(height: 32),
+                _TerminalInputField(
+                  controller: _emailController,
+                  label: '이메일',
+                  hint: 'example@vibe.com',
+                  keyboardType: TextInputType.emailAddress,
+                ),
                 const SizedBox(height: 24),
-
-                // Google Login Button
-                OutlinedButton.icon(
-                  onPressed: () {
-                    ref.read(authProvider.notifier).signInWithGoogle();
-                  },
-                  icon: const Icon(
-                    Icons.g_mobiledata,
-                    size: 28,
-                  ), // Placeholder icon
-                  label: const Text('Google로 계속하기'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white24),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+                _TerminalInputField(
+                  controller: _passwordController,
+                  label: '비밀번호',
+                  hint: '비밀번호를 입력하세요',
+                  isPassword: true,
                 ),
-                const SizedBox(height: 12),
-
-                // Kakao Login Button
-                ElevatedButton.icon(
-                  onPressed: () {
-                    ref.read(authProvider.notifier).signInWithKakao();
+                const SizedBox(height: 48),
+                _TerminalPrimaryButton(
+                  label: _isLogin ? '로그인' : '가입하기',
+                  isLoading: _isLoading,
+                  onTap: () async {
+                    setSheetState(() => _isLoading = true);
+                    await _submit();
+                    setSheetState(() => _isLoading = false);
+                    if (mounted &&
+                        ref.read(authProvider).asData?.value != null) {
+                      Navigator.pop(context);
+                    }
                   },
-                  icon: const Icon(
-                    Icons.chat_bubble,
-                    size: 20,
-                    color: Color(0xFF3C1E1E),
-                  ), // Placeholder icon
-                  label: const Text('카카오로 3초만에 시작하기'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFEE500), // Kakao Yellow
-                    foregroundColor: const Color(0xFF3C1E1E), // Kakao Brown
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
+                  isFilled: true,
                 ),
-
-                const SizedBox(height: 20),
-                GestureDetector(
-                  onTap: () {
-                    setState(() => _isLogin = !_isLogin);
-                  },
-                  child: RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      style: TextStyle(fontSize: 15, color: Colors.grey[400]),
-                      children: [
-                        TextSpan(
-                          text: _isLogin ? '계정이 없으신가요? ' : '이미 계정이 있으신가요? ',
-                        ),
-                        TextSpan(
-                          text: _isLogin ? '회원가입' : '로그인하기',
-                          style: const TextStyle(
-                            color: Colors.white, // White link text
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                            decorationColor: Colors.white,
-                          ),
-                        ),
-                      ],
+                const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () {
+                      setSheetState(() {
+                        _isLogin = !_isLogin;
+                      });
+                    },
+                    child: Text(
+                      _isLogin ? "회원가입" : "로그인하기",
+                      style: const TextStyle(
+                        color: Color(0xFFCCFF00),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 48),
-                TextButton(
-                  onPressed: () {
-                    ref.read(authProvider.notifier).loginAsGuest();
-                  },
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    foregroundColor: Colors.grey[600],
-                  ),
-                  child: const Text(
-                    '로그인 없이 둘러보기',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                  ),
-                ),
               ],
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
-}
-
-class _PasswordTextField extends StatefulWidget {
-  final TextEditingController controller;
-
-  const _PasswordTextField({required this.controller});
-
-  @override
-  State<_PasswordTextField> createState() => _PasswordTextFieldState();
-}
-
-class _PasswordTextFieldState extends State<_PasswordTextField> {
-  bool _obscureText = true;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: widget.controller,
-      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-      cursorColor: const Color(0xFFD4FF00),
-      decoration: InputDecoration(
-        labelText: '비밀번호',
-        labelStyle: TextStyle(color: Colors.grey[400]),
-        hintText: '비밀번호 입력',
-        hintStyle: const TextStyle(color: Colors.white60),
-        filled: true,
-        fillColor: const Color(0xFF2A2A2A),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFD4FF00), width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 16,
-        ),
-        suffixIcon: IconButton(
-          icon: Icon(
-            _obscureText ? Icons.visibility_off : Icons.visibility,
-            color: Colors.grey[400],
+    const accentColor = Color(0xFFCCFF00); // Electric Lime
+    const deepNavyBlack = Color(0xFF0A0A0E);
+
+    return Scaffold(
+      backgroundColor: deepNavyBlack,
+      body: Stack(
+        children: [
+          // Layer 1: Minimal Grid
+          Positioned.fill(
+            child: CustomPaint(painter: _GridBackgroundPainter(opacity: 0.01)),
           ),
-          onPressed: () {
-            setState(() {
-              _obscureText = !_obscureText;
-            });
-          },
-        ),
+
+          // Layer 2: Blurry Street Lights
+          Positioned(
+            top: -100,
+            left: -100,
+            child: Container(
+              width: 500,
+              height: 500,
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [accentColor.withOpacity(0.08), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -150,
+            right: -100,
+            child: Container(
+              width: 600,
+              height: 600,
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [accentColor.withOpacity(0.06), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+
+          // Content
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 32.0,
+                vertical: 24.0,
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 48),
+                  // Top: Branding
+                  Column(
+                        children: [
+                          Text(
+                            'VIBE',
+                            style: TextStyle(
+                              fontSize: 64,
+                              fontWeight: FontWeight.w900,
+                              fontStyle: FontStyle.italic,
+                              color: accentColor,
+                              letterSpacing: -3.0,
+                              height: 1.0,
+                              shadows: [
+                                Shadow(
+                                  color: accentColor.withOpacity(0.5),
+                                  offset: const Offset(4, 4),
+                                  blurRadius: 2,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Visionary Incentive & Behavioral Engine',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white.withOpacity(0.9),
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '당신의 목표를 실현하는 저축 엔진',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w300,
+                              color: Colors.white.withOpacity(0.6),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      )
+                      .animate()
+                      .fadeIn(duration: 1200.ms)
+                      .slideY(begin: 0.1, end: 0),
+
+                  const Spacer(), // Empty center for showroom vibe
+                  // Bottom: Actions
+                  Column(
+                    children: [
+                      _TerminalPrimaryButton(
+                        label: '이메일로 시작하기',
+                        isLoading: false,
+                        onTap: () => _showEmailLoginSheet(initialIsLogin: true),
+                        isFilled: false,
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _SocialButton(
+                              icon: Icons.g_mobiledata,
+                              label: '구글로 시작',
+                              onTap: () {
+                                HapticFeedback.mediumImpact();
+                                ref
+                                    .read(authProvider.notifier)
+                                    .signInWithGoogle();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _SocialButton(
+                              icon: Icons.chat_bubble,
+                              label: '카카오로 시작',
+                              onTap: () {
+                                HapticFeedback.mediumImpact();
+                                ref
+                                    .read(authProvider.notifier)
+                                    .signInWithKakao();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 48),
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          _showEmailLoginSheet(initialIsLogin: false);
+                        },
+                        child: Text(
+                          _isLogin ? "아직 회원이 아니신가요? 회원가입" : "이미 회원이신가요? 로그인하기",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ).animate().fadeIn(delay: 600.ms),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
-      obscureText: _obscureText,
     );
   }
+}
+
+class _TerminalInputField extends StatefulWidget {
+  final TextEditingController controller;
+  final String label;
+  final String hint;
+  final bool isPassword;
+  final TextInputType? keyboardType;
+
+  const _TerminalInputField({
+    required this.controller,
+    required this.label,
+    required this.hint,
+    this.isPassword = false,
+    this.keyboardType,
+  });
+
+  @override
+  State<_TerminalInputField> createState() => _TerminalInputFieldState();
+}
+
+class _TerminalInputFieldState extends State<_TerminalInputField> {
+  bool _isFocused = false;
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(() {
+      setState(() => _isFocused = _focusNode.hasFocus);
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const accentColor = Color(0xFFCCFF00);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.label,
+          style: TextStyle(
+            color: _isFocused ? accentColor : Colors.white60,
+            fontSize: 12,
+            fontWeight: _isFocused ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+        TextField(
+          controller: widget.controller,
+          focusNode: _focusNode,
+          obscureText: widget.isPassword,
+          style: const TextStyle(color: Colors.white, fontSize: 16),
+          cursorColor: accentColor,
+          decoration: InputDecoration(
+            hintText: widget.hint,
+            hintStyle: TextStyle(color: Colors.white.withOpacity(0.2)),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+            ),
+            focusedBorder: const UnderlineInputBorder(
+              borderSide: BorderSide(color: accentColor, width: 2),
+            ),
+          ),
+          keyboardType: widget.keyboardType,
+        ),
+      ],
+    );
+  }
+}
+
+class _TerminalPrimaryButton extends StatefulWidget {
+  final String label;
+  final bool isLoading;
+  final VoidCallback onTap;
+  final bool isFilled;
+
+  const _TerminalPrimaryButton({
+    required this.label,
+    required this.isLoading,
+    required this.onTap,
+    this.isFilled = false,
+  });
+
+  @override
+  State<_TerminalPrimaryButton> createState() => _TerminalPrimaryButtonState();
+}
+
+class _TerminalPrimaryButtonState extends State<_TerminalPrimaryButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    const accentColor = Color(0xFFCCFF00);
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        widget.onTap();
+      },
+      child: AnimatedScale(
+        scale: _isPressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          width: double.infinity,
+          height: 60,
+          decoration: BoxDecoration(
+            color: widget.isFilled
+                ? (_isPressed ? accentColor.withOpacity(0.8) : accentColor)
+                : (_isPressed ? accentColor : Colors.transparent),
+            border: Border.all(color: accentColor, width: 2),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          alignment: Alignment.center,
+          child: widget.isLoading
+              ? const SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                  ),
+                )
+              : Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: widget.isFilled
+                        ? Colors.black
+                        : (_isPressed ? Colors.black : accentColor),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SocialButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _SocialButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncyButton(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white.withOpacity(0.8), size: 20),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GridBackgroundPainter extends CustomPainter {
+  final double opacity;
+  _GridBackgroundPainter({this.opacity = 0.02});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = Colors.white.withOpacity(opacity)
+      ..strokeWidth = 1;
+    const double gridSize = 40;
+    for (double x = 0; x < size.width; x += gridSize) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += gridSize) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
