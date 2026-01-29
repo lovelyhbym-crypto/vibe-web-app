@@ -10,7 +10,7 @@ class EngineCoreWidget extends StatelessWidget {
     const accentColor = Color(0xFFCCFF00);
 
     return Container(
-      height: 380, // 한 화면에 모든 UI가 보일 수 있도록 높이 최적화
+      height: 300, // 380 -> 300px로 추가 압축 (하단 문구 잘림 방지)
       width: double.infinity,
       color: Colors.transparent,
       child: LayoutBuilder(
@@ -37,18 +37,16 @@ class EngineCoreWidget extends StatelessWidget {
                   top: centerY + startY,
                   child:
                       Container(
-                            width: 3, // 입자 크기 살짝 축소
-                            height: 3,
+                            width: 2.5, // 시네마틱 질량감 복원
+                            height: 2.5,
                             decoration: BoxDecoration(
-                              color: accentColor.withOpacity(
-                                0.8,
-                              ), // 입자 자체도 은은하게
+                              color: accentColor.withOpacity(0.9),
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: accentColor.withOpacity(0.3), // 발광 약화
-                                  blurRadius: 8,
-                                  spreadRadius: 1,
+                                  color: accentColor.withOpacity(0.5),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
                                 ),
                               ],
                             ),
@@ -65,30 +63,31 @@ class EngineCoreWidget extends StatelessWidget {
                 );
               }),
 
-              // Vortex Rings (Cosmic Scale - Minimalist Layering)
+              // Vortex Rings (Cinematic Terminal - 1.2px Stroke)
               _VortexRing(
                 diameter: 250,
-                color: accentColor.withOpacity(0.06), // 투명도 하향
+                color: accentColor.withOpacity(0.35), // 묵직한 존재감 복원
                 duration: 40.seconds,
                 clockwise: true,
               ),
               _VortexRing(
                 diameter: 180,
-                color: accentColor.withOpacity(0.12),
+                color: accentColor.withOpacity(0.35),
                 duration: 25.seconds,
                 clockwise: false,
               ),
               _VortexRing(
                 diameter: 120,
-                color: accentColor.withOpacity(0.18),
+                color: accentColor.withOpacity(0.35),
                 duration: 15.seconds,
                 clockwise: true,
               ),
 
               // The Kernel (Vortex Singularity - Living Pulse)
+              // The Kernel (Vortex Singularity - Massive Pulse)
               Container(
-                    width: 32,
-                    height: 32,
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
                       color: accentColor,
                       shape: BoxShape.circle,
@@ -96,12 +95,12 @@ class EngineCoreWidget extends StatelessWidget {
                         BoxShadow(
                           color: accentColor.withOpacity(0.8),
                           spreadRadius: 6,
-                          blurRadius: 20,
+                          blurRadius: 30, // 에너지 발광 강화
                         ),
                         BoxShadow(
                           color: accentColor.withOpacity(0.5),
-                          spreadRadius: 12,
-                          blurRadius: 40,
+                          spreadRadius: 15,
+                          blurRadius: 50,
                         ),
                       ],
                     ),
@@ -109,7 +108,7 @@ class EngineCoreWidget extends StatelessWidget {
                   .animate(onPlay: (c) => c.repeat(reverse: true))
                   .scale(
                     begin: const Offset(1.0, 1.0),
-                    end: const Offset(1.3, 1.3),
+                    end: const Offset(1.2, 1.2),
                     duration: 1.seconds,
                     curve: Curves.easeInOutSine,
                   ),
@@ -189,7 +188,7 @@ class _DashedCirclePainter extends CustomPainter {
     final Paint paint = Paint()
       ..color = color
       ..strokeWidth =
-          0.8 // 1.5 -> 0.8로 얇게 조정 (가독성 확보)
+          1.2 // 정밀 튜닝 마스터 두께
       ..style = PaintingStyle.stroke;
 
     final double radius = size.width / 2;

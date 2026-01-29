@@ -256,38 +256,76 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           // Top: Branding
                           Column(
                                 children: [
-                                  const SizedBox(height: 24),
+                                  const SizedBox(height: 12), // 24 -> 12px 압축
                                   Text(
-                                    'VIBE',
-                                    style: TextStyle(
-                                      fontSize: 64,
-                                      fontWeight: FontWeight.w900,
-                                      fontStyle: FontStyle.italic,
-                                      color: accentColor,
-                                      letterSpacing: -3.0,
-                                      height: 1.0,
-                                      shadows: [
-                                        Shadow(
-                                          color: accentColor.withOpacity(0.5),
-                                          offset: const Offset(4, 4),
-                                          blurRadius: 2,
+                                        'VIBE',
+                                        style: TextStyle(
+                                          fontSize: 64,
+                                          fontWeight: FontWeight.w900,
+                                          fontStyle: FontStyle.italic,
+                                          color: accentColor,
+                                          letterSpacing: -3.0,
+                                          height: 1.0,
+                                          shadows: [
+                                            Shadow(
+                                              color: accentColor.withOpacity(
+                                                0.5,
+                                              ),
+                                              offset: const Offset(4, 4),
+                                              blurRadius: 2,
+                                            ),
+                                          ],
                                         ),
-                                      ],
-                                    ),
-                                  ),
+                                      )
+                                      .animate(
+                                        onPlay: (c) => c.repeat(reverse: true),
+                                      )
+                                      .custom(
+                                        duration: 1.seconds,
+                                        curve: Curves.easeInOutSine,
+                                        builder: (context, value, child) {
+                                          return Text(
+                                            'VIBE',
+                                            style: TextStyle(
+                                              fontSize: 64,
+                                              fontWeight: FontWeight.w900,
+                                              fontStyle: FontStyle.italic,
+                                              color: accentColor,
+                                              letterSpacing: -3.0,
+                                              height: 1.0,
+                                              shadows: [
+                                                Shadow(
+                                                  color: accentColor
+                                                      .withOpacity(0.3 * value),
+                                                  offset: Offset.zero,
+                                                  blurRadius: 15 * value,
+                                                ),
+                                                Shadow(
+                                                  color: accentColor
+                                                      .withOpacity(0.5),
+                                                  offset: const Offset(4, 4),
+                                                  blurRadius: 2,
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
                                   const SizedBox(height: 16),
                                   Text(
-                                    'Visionary Incentive & Behavioral Engine',
+                                    'Visionary Incentive & Behavioral Engine'
+                                        .toUpperCase(),
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600,
-                                      color: Colors.white.withOpacity(0.9),
-                                      letterSpacing: 1.5,
+                                      color: Colors.white70,
+                                      letterSpacing: 2.0, // 자간 확장으로 터미널 느낌
+                                      fontFamily: 'Courier', // 시스템 폰트 스타일
                                     ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    '당신의 목표를 실현하는 저축 엔진',
+                                    '> 당신의 목표를 실현하는 저축 엔진',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w300,
@@ -301,87 +339,126 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               .fadeIn(duration: 1200.ms)
                               .slideY(begin: 0.1, end: 0),
 
-                          const SizedBox(height: 12),
-
+                          const SizedBox(height: 8), // 12 -> 8px 압축 (정밀 튜닝 마스터)
                           // Center: Engine Core
                           const EngineCoreWidget(),
 
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16), // 24 -> 16px 압축
+                          // Bottom: Actions (Premium Glass Console Refined)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: 32.0,
+                            ), // 60 -> 32px로 조정 (공간 확보)
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: 20,
+                                  sigmaY: 20,
+                                ), // 블러 강도 강화
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24.0,
+                                    vertical: 24.0, // 32 -> 24px 압축
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: Colors.white24, // 선명한 경계선
+                                      width: 0.5,
+                                    ),
+                                    boxShadow: [
+                                      // 은은한 네온 라임색 안개 효과
+                                      BoxShadow(
+                                        color: accentColor.withOpacity(0.05),
+                                        blurRadius: 40,
+                                        spreadRadius: -10,
+                                        offset: const Offset(0, 0),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Spacer(flex: 2),
+                                          Flexible(
+                                            flex: 10,
+                                            child: _SocialButton(
+                                              icon: Icons.g_mobiledata,
+                                              label: '구글',
+                                              onTap: () {
+                                                HapticFeedback.mediumImpact();
+                                                ref
+                                                    .read(authProvider.notifier)
+                                                    .signInWithGoogle();
+                                              },
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Flexible(
+                                            flex: 10,
+                                            child: _SocialButton(
+                                              icon: Icons.chat_bubble,
+                                              label: '카카오',
+                                              onTap: () {
+                                                HapticFeedback.mediumImpact();
+                                                ref
+                                                    .read(authProvider.notifier)
+                                                    .signInWithKakao();
+                                              },
+                                            ),
+                                          ),
+                                          const Spacer(flex: 2),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 20),
+                                      GestureDetector(
+                                        onTap: () => _showEmailLoginSheet(
+                                          initialIsLogin: true,
+                                        ),
+                                        child: const Text(
+                                          '이메일로 시작하기',
+                                          style: TextStyle(
+                                            color: Colors.white70, // 시인성 추가 상향
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w400,
+                                            letterSpacing: 0.5,
+                                            decoration:
+                                                TextDecoration.underline,
+                                            decorationColor: Colors.white24,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ).animate().fadeIn(duration: 800.ms),
 
-                          // Bottom: Actions
-                          Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Spacer(flex: 2),
-                                  Flexible(
-                                    flex: 10,
-                                    child: _SocialButton(
-                                      icon: Icons.g_mobiledata,
-                                      label: '구글',
-                                      onTap: () {
-                                        HapticFeedback.mediumImpact();
-                                        ref
-                                            .read(authProvider.notifier)
-                                            .signInWithGoogle();
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    flex: 10,
-                                    child: _SocialButton(
-                                      icon: Icons.chat_bubble,
-                                      label: '카카오',
-                                      onTap: () {
-                                        HapticFeedback.mediumImpact();
-                                        ref
-                                            .read(authProvider.notifier)
-                                            .signInWithKakao();
-                                      },
-                                    ),
-                                  ),
-                                  const Spacer(flex: 2),
-                                ],
+                          GestureDetector(
+                            onTap: () {
+                              HapticFeedback.selectionClick();
+                              _showEmailLoginSheet(initialIsLogin: false);
+                            },
+                            child: Text(
+                              _isLogin
+                                  ? "아직 회원이 아니신가요? 회원가입"
+                                  : "이미 회원이신가요? 로그인하기",
+                              style: const TextStyle(
+                                color: Colors.white, // 완전 불투명 흰색 (가독성 극대화)
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: -0.2,
                               ),
-                              const SizedBox(height: 16),
-                              GestureDetector(
-                                onTap: () =>
-                                    _showEmailLoginSheet(initialIsLogin: true),
-                                child: const Text(
-                                  '이메일로 시작하기',
-                                  style: TextStyle(
-                                    color: Colors.white38,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w400,
-                                    letterSpacing: 0.5,
-                                    decoration: TextDecoration.underline,
-                                    decorationColor: Colors.white24,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 32),
-                              GestureDetector(
-                                onTap: () {
-                                  HapticFeedback.selectionClick();
-                                  _showEmailLoginSheet(initialIsLogin: false);
-                                },
-                                child: Text(
-                                  _isLogin
-                                      ? "아직 회원이 아니신가요? 회원가입"
-                                      : "이미 회원이신가요? 로그인하기",
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: -0.2,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                            ],
-                          ).animate().fadeIn(delay: 600.ms),
+                            ),
+                          ),
+                          const SizedBox(height: 32),
                         ],
                       ),
                     ),
