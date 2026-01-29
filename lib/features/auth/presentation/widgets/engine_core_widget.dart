@@ -26,11 +26,11 @@ class EngineCoreWidget extends StatelessWidget {
               ...List.generate(15, (index) {
                 final random = math.Random();
                 final angle = random.nextDouble() * 2 * math.pi;
-                // 우주적 스케일: 화면 완전히 바깥(500~800px)에서 유입
-                final distance = 500.0 + random.nextDouble() * 300.0;
+                // 로그인 버튼 구역(200~270px)에서부터 에너지가 맺히는 느낌
+                final distance = 200.0 + random.nextDouble() * 70.0;
                 final startX = math.cos(angle) * distance;
                 final startY = math.sin(angle) * distance;
-                final duration = (3.0 + random.nextDouble() * 2).seconds;
+                final duration = (2.0 + random.nextDouble() * 1.5).seconds;
 
                 return Positioned(
                   left: centerX + startX,
@@ -143,7 +143,7 @@ class _VortexRing extends StatelessWidget {
         .animate(onPlay: (c) => c.repeat())
         .fadeIn(duration: 800.ms)
         .scale(
-          begin: const Offset(3.5, 3.5), // 5.0 -> 3.5로 최적화
+          begin: const Offset(1.8, 1.8), // 3.5 -> 1.8로 축소 (버튼 구역에서 시작)
           end: const Offset(0.4, 0.4),
           duration: 6.seconds,
           curve: Curves.easeInSine,
