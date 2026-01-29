@@ -180,7 +180,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: CustomPaint(painter: _GridBackgroundPainter(opacity: 0.02)),
           ),
 
-          // Layer 2: Blurry Street Lights
+          // Layer 2: Engine Core Background (The true base layer for rings)
+          // 점선 원들이 모든 글로우와 패널 뒤에 위치하도록 함
+          const Center(child: EngineCoreWidget()),
+
+          // Layer 3: Blurry Environment Lights (Translucent Overlays)
           Positioned(
             top: -100,
             left: -100,
@@ -208,7 +212,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
 
-          // Core Background Sync (Environment Glow)
+          // Layer 4: Core Sync Glow
           Center(
             child:
                 Container(
@@ -237,7 +241,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       curve: Curves.easeInOut,
                     ),
           ),
-          // Content
+
+          // Content Layer (Top-most)
           SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -349,8 +354,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               .slideY(begin: 0.1, end: 0),
 
                           const SizedBox(height: 32), // 슬로건-엔진 간격 확장하여 답답함 해소
-                          // Center: Engine Core
-                          const EngineCoreWidget(),
+                          // Center: Engine Core Slot (Layout Placeholder)
+                          // 실제 엔진은 배경 Stack으로 이동하여 레이어 깊이감 확보
+                          const SizedBox(height: 300),
 
                           const SizedBox(height: 16), // 24 -> 16px 압축
                           // Bottom: Actions (Premium Glass Console Refined)
@@ -362,27 +368,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               borderRadius: BorderRadius.circular(24),
                               child: BackdropFilter(
                                 filter: ImageFilter.blur(
-                                  sigmaX: 20,
-                                  sigmaY: 20,
-                                ), // 블러 강도 강화
+                                  sigmaX: 4,
+                                  sigmaY: 4,
+                                ), // 10 -> 8로 추가 조정 (가독성+투시 균형)
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 24.0,
                                     vertical: 24.0, // 32 -> 24px 압축
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.05),
+                                    color: Colors.white.withOpacity(
+                                      0.01,
+                                    ), // 0.02 -> 0.01로 극도의 투명화
                                     borderRadius: BorderRadius.circular(24),
                                     border: Border.all(
                                       color: Colors.white24, // 선명한 경계선
                                       width: 0.5,
                                     ),
                                     boxShadow: [
-                                      // 은은한 네온 라임색 안개 효과
+                                      // 은은한 네온 라임색 안개 효과 (뒤쪽 점선을 위해 더 연하게)
                                       BoxShadow(
-                                        color: accentColor.withOpacity(0.05),
-                                        blurRadius: 40,
-                                        spreadRadius: -10,
+                                        color: accentColor.withOpacity(
+                                          0.03,
+                                        ), // 0.05 -> 0.03
+                                        blurRadius: 30,
+                                        spreadRadius: -15,
                                         offset: const Offset(0, 0),
                                       ),
                                     ],
@@ -651,25 +661,33 @@ class _SocialButton extends StatelessWidget {
       child: Container(
         height: 48,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.04),
+          // 1단계: 차폐(Occlusion) - Scaffold 배경색과 동일한 불투명 색상으로 배경 엔진을 완전히 가림
+          color: const Color(0xFF0A0A0E),
           border: Border.all(color: accentColor.withOpacity(0.5), width: 1),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: accentColor, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.2,
+        child: Container(
+          // 2단계: 미학(Aesthetics) - 그 위에 은은한 화이트 틴트를 주어 기존 글래스모피즘 톤 유지
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: accentColor, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.2,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
