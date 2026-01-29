@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -68,25 +69,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF121212),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      backgroundColor:
+          Colors.transparent, // Required for BackdropFilter to show through
       builder: (context) => StatefulBuilder(
         builder: (context, setSheetState) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              left: 32,
-              right: 32,
-              top: 32,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          return ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xAA121212),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.1),
+                    width: 0.5,
+                  ),
+                ),
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                  left: 32,
+                  right: 32,
+                  top: 32,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       _isLogin ? '이메일 로그인' : '이메일 회원가입',
@@ -96,58 +106,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                _TerminalInputField(
-                  controller: _emailController,
-                  label: '이메일',
-                  hint: 'example@vibe.com',
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 24),
-                _TerminalInputField(
-                  controller: _passwordController,
-                  label: '비밀번호',
-                  hint: '비밀번호를 입력하세요',
-                  isPassword: true,
-                ),
-                const SizedBox(height: 48),
-                _TerminalPrimaryButton(
-                  label: _isLogin ? '로그인' : '가입하기',
-                  isLoading: _isLoading,
-                  onTap: () async {
-                    setSheetState(() => _isLoading = true);
-                    await _submit();
-                    setSheetState(() => _isLoading = false);
-                    if (mounted &&
-                        ref.read(authProvider).asData?.value != null) {
-                      Navigator.pop(context);
-                    }
-                  },
-                  isFilled: true,
-                ),
-                const SizedBox(height: 24),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: GestureDetector(
-                    onTap: () {
-                      setSheetState(() {
-                        _isLogin = !_isLogin;
-                      });
-                    },
-                    child: Text(
-                      _isLogin ? "회원가입" : "로그인하기",
-                      style: const TextStyle(
-                        color: Color(0xFFCCFF00),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(height: 32),
+                    _TerminalInputField(
+                      controller: _emailController,
+                      label: '이메일',
+                      hint: 'example@vibe.com',
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 24),
+                    _TerminalInputField(
+                      controller: _passwordController,
+                      label: '비밀번호',
+                      hint: '비밀번호를 입력하세요',
+                      isPassword: true,
+                    ),
+                    const SizedBox(height: 48),
+                    _TerminalPrimaryButton(
+                      label: _isLogin ? '로그인' : '가입하기',
+                      isLoading: _isLoading,
+                      onTap: () async {
+                        setSheetState(() => _isLoading = true);
+                        await _submit();
+                        setSheetState(() => _isLoading = false);
+                        if (mounted &&
+                            ref.read(authProvider).asData?.value != null) {
+                          Navigator.pop(context);
+                        }
+                      },
+                      isFilled: true,
+                    ),
+                    const SizedBox(height: 24),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: () {
+                          setSheetState(() {
+                            _isLogin = !_isLogin;
+                          });
+                        },
+                        child: Text(
+                          _isLogin ? "회원가입" : "로그인하기",
+                          style: const TextStyle(
+                            color: Color(0xFFCCFF00),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 48),
+                  ],
                 ),
-                const SizedBox(height: 48),
-              ],
+              ),
             ),
           );
         },
@@ -228,127 +238,156 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           // Content
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 32.0,
-                vertical: 24.0,
-              ),
-              child: Column(
-                children: [
-                  const SizedBox(height: 48),
-                  // Top: Branding
-                  Column(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32.0,
+                        vertical: 24.0,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'VIBE',
-                            style: TextStyle(
-                              fontSize: 64,
-                              fontWeight: FontWeight.w900,
-                              fontStyle: FontStyle.italic,
-                              color: accentColor,
-                              letterSpacing: -3.0,
-                              height: 1.0,
-                              shadows: [
-                                Shadow(
-                                  color: accentColor.withOpacity(0.5),
-                                  offset: const Offset(4, 4),
-                                  blurRadius: 2,
+                          // Top: Branding
+                          Column(
+                                children: [
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'VIBE',
+                                    style: TextStyle(
+                                      fontSize: 64,
+                                      fontWeight: FontWeight.w900,
+                                      fontStyle: FontStyle.italic,
+                                      color: accentColor,
+                                      letterSpacing: -3.0,
+                                      height: 1.0,
+                                      shadows: [
+                                        Shadow(
+                                          color: accentColor.withOpacity(0.5),
+                                          offset: const Offset(4, 4),
+                                          blurRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Visionary Incentive & Behavioral Engine',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white.withOpacity(0.9),
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '당신의 목표를 실현하는 저축 엔진',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w300,
+                                      color: Colors.white.withOpacity(0.6),
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ],
+                              )
+                              .animate()
+                              .fadeIn(duration: 1200.ms)
+                              .slideY(begin: 0.1, end: 0),
+
+                          const SizedBox(height: 40),
+
+                          // Center: Engine Core
+                          const EngineCoreWidget(),
+
+                          const SizedBox(height: 48),
+
+                          // Bottom: Actions
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Spacer(flex: 2),
+                                  Flexible(
+                                    flex: 10,
+                                    child: _SocialButton(
+                                      icon: Icons.g_mobiledata,
+                                      label: '구글',
+                                      onTap: () {
+                                        HapticFeedback.mediumImpact();
+                                        ref
+                                            .read(authProvider.notifier)
+                                            .signInWithGoogle();
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Flexible(
+                                    flex: 10,
+                                    child: _SocialButton(
+                                      icon: Icons.chat_bubble,
+                                      label: '카카오',
+                                      onTap: () {
+                                        HapticFeedback.mediumImpact();
+                                        ref
+                                            .read(authProvider.notifier)
+                                            .signInWithKakao();
+                                      },
+                                    ),
+                                  ),
+                                  const Spacer(flex: 2),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              GestureDetector(
+                                onTap: () =>
+                                    _showEmailLoginSheet(initialIsLogin: true),
+                                child: const Text(
+                                  '이메일로 시작하기',
+                                  style: TextStyle(
+                                    color: Colors.white38,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
+                                    letterSpacing: 0.5,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: Colors.white24,
+                                  ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Visionary Incentive & Behavioral Engine',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white.withOpacity(0.9),
-                              letterSpacing: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '당신의 목표를 실현하는 저축 엔진',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w300,
-                              color: Colors.white.withOpacity(0.6),
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      )
-                      .animate()
-                      .fadeIn(duration: 1200.ms)
-                      .slideY(begin: 0.1, end: 0),
-
-                  const Spacer(flex: 2),
-
-                  // Center: Engine Core
-                  const EngineCoreWidget(),
-
-                  const Spacer(flex: 3),
-                  // Bottom: Actions
-                  Column(
-                    children: [
-                      _TerminalPrimaryButton(
-                        label: '이메일로 시작하기',
-                        isLoading: false,
-                        onTap: () => _showEmailLoginSheet(initialIsLogin: true),
-                        isFilled: false,
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _SocialButton(
-                              icon: Icons.g_mobiledata,
-                              label: '구글로 시작',
-                              onTap: () {
-                                HapticFeedback.mediumImpact();
-                                ref
-                                    .read(authProvider.notifier)
-                                    .signInWithGoogle();
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _SocialButton(
-                              icon: Icons.chat_bubble,
-                              label: '카카오로 시작',
-                              onTap: () {
-                                HapticFeedback.mediumImpact();
-                                ref
-                                    .read(authProvider.notifier)
-                                    .signInWithKakao();
-                              },
-                            ),
-                          ),
+                              ),
+                              const SizedBox(height: 48),
+                              GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.selectionClick();
+                                  _showEmailLoginSheet(initialIsLogin: false);
+                                },
+                                child: Text(
+                                  _isLogin
+                                      ? "아직 회원이 아니신가요? 회원가입"
+                                      : "이미 회원이신가요? 로그인하기",
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                          ).animate().fadeIn(delay: 600.ms),
                         ],
                       ),
-                      const SizedBox(height: 48),
-                      GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          _showEmailLoginSheet(initialIsLogin: false);
-                        },
-                        child: Text(
-                          _isLogin ? "아직 회원이 아니신가요? 회원가입" : "이미 회원이신가요? 로그인하기",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.2,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ).animate().fadeIn(delay: 600.ms),
-                ],
-              ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -405,9 +444,9 @@ class _TerminalInputFieldState extends State<_TerminalInputField> {
         Text(
           widget.label,
           style: TextStyle(
-            color: _isFocused ? accentColor : Colors.white60,
+            color: _isFocused ? accentColor : Colors.white.withOpacity(0.8),
             fontSize: 12,
-            fontWeight: _isFocused ? FontWeight.w600 : FontWeight.w400,
+            fontWeight: _isFocused ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
         TextField(
@@ -519,25 +558,29 @@ class _SocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const accentColor = Color(0xFFCCFF00);
+
     return BouncyButton(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        height: 48,
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
-          borderRadius: BorderRadius.circular(4),
+          color: Colors.white.withOpacity(0.04),
+          border: Border.all(color: accentColor.withOpacity(0.5), width: 1),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Colors.white.withOpacity(0.8), size: 20),
+            Icon(icon, color: accentColor, size: 18),
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.2,
               ),
             ),
           ],
