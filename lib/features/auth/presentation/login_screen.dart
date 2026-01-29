@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -256,7 +257,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           // Top: Branding
                           Column(
                                 children: [
-                                  const SizedBox(height: 12), // 24 -> 12px 압축
+                                  const SizedBox(height: 12),
+                                  // VIBE Logo with Shimmer and Synced Halo
                                   Text(
                                         'VIBE',
                                         style: TextStyle(
@@ -281,7 +283,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         onPlay: (c) => c.repeat(reverse: true),
                                       )
                                       .custom(
-                                        duration: 1.seconds,
+                                        duration: 1.seconds, // 엔진 코어와 동기화
                                         curve: Curves.easeInOutSine,
                                         builder: (context, value, child) {
                                           return Text(
@@ -294,11 +296,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                               letterSpacing: -3.0,
                                               height: 1.0,
                                               shadows: [
+                                                // Halo (후광) 효과: 엔진과 동기화
                                                 Shadow(
                                                   color: accentColor
-                                                      .withOpacity(0.3 * value),
+                                                      .withOpacity(0.4 * value),
                                                   offset: Offset.zero,
-                                                  blurRadius: 15 * value,
+                                                  blurRadius: 10 + (20 * value),
                                                 ),
                                                 Shadow(
                                                   color: accentColor
@@ -310,26 +313,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             ),
                                           );
                                         },
+                                      )
+                                      .animate(onPlay: (c) => c.repeat())
+                                      .shimmer(
+                                        duration: 3.seconds, // 3초 주기의 고급스러운 빛줄기
+                                        color: Colors.white24,
+                                        angle: math.pi / 4,
                                       ),
-                                  const SizedBox(height: 16),
+                                  const SizedBox(height: 8), // 간격 좁힘
                                   Text(
                                     'Visionary Incentive & Behavioral Engine'
                                         .toUpperCase(),
                                     style: TextStyle(
                                       fontSize: 10,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w100, // 더 얇게 처리
                                       color: Colors.white70,
-                                      letterSpacing: 2.0, // 자간 확장으로 터미널 느낌
-                                      fontFamily: 'Courier', // 시스템 폰트 스타일
+                                      letterSpacing: 2.0,
+                                      fontFamily: 'Courier',
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 4),
                                   Text(
                                     '> 당신의 목표를 실현하는 저축 엔진',
                                     style: TextStyle(
-                                      fontSize: 14,
+                                      fontSize: 12, // 크기 축소
                                       fontWeight: FontWeight.w300,
-                                      color: Colors.white.withOpacity(0.6),
+                                      color: Colors.white38, // 투명도 하향
                                       letterSpacing: 0.5,
                                     ),
                                   ),
@@ -339,7 +348,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               .fadeIn(duration: 1200.ms)
                               .slideY(begin: 0.1, end: 0),
 
-                          const SizedBox(height: 8), // 12 -> 8px 압축 (정밀 튜닝 마스터)
+                          const SizedBox(height: 32), // 슬로건-엔진 간격 확장하여 답답함 해소
                           // Center: Engine Core
                           const EngineCoreWidget(),
 
