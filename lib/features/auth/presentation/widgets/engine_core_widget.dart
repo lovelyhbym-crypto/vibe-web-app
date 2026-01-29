@@ -26,8 +26,8 @@ class EngineCoreWidget extends StatelessWidget {
               ...List.generate(15, (index) {
                 final random = math.Random();
                 final angle = random.nextDouble() * 2 * math.pi;
-                // 로그인 버튼 구역(200~270px)에서부터 에너지가 맺히는 느낌
-                final distance = 200.0 + random.nextDouble() * 70.0;
+                // 로그인 버튼 바로 위(180~210px)에서부터 에너지가 맺히는 느낌
+                final distance = 180.0 + random.nextDouble() * 30.0;
                 final startX = math.cos(angle) * distance;
                 final startY = math.sin(angle) * distance;
                 final duration = (2.0 + random.nextDouble() * 1.5).seconds;
@@ -37,16 +37,18 @@ class EngineCoreWidget extends StatelessWidget {
                   top: centerY + startY,
                   child:
                       Container(
-                            width: 4,
-                            height: 4,
+                            width: 3, // 입자 크기 살짝 축소
+                            height: 3,
                             decoration: BoxDecoration(
-                              color: accentColor,
+                              color: accentColor.withOpacity(
+                                0.8,
+                              ), // 입자 자체도 은은하게
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: accentColor.withOpacity(0.6),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
+                                  color: accentColor.withOpacity(0.3), // 발광 약화
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
                                 ),
                               ],
                             ),
@@ -63,22 +65,22 @@ class EngineCoreWidget extends StatelessWidget {
                 );
               }),
 
-              // Vortex Rings (Cosmic Scale - 5x)
+              // Vortex Rings (Cosmic Scale - Minimalist Layering)
               _VortexRing(
                 diameter: 250,
-                color: accentColor.withOpacity(0.12),
+                color: accentColor.withOpacity(0.06), // 투명도 하향
                 duration: 40.seconds,
                 clockwise: true,
               ),
               _VortexRing(
                 diameter: 180,
-                color: accentColor.withOpacity(0.25),
+                color: accentColor.withOpacity(0.12),
                 duration: 25.seconds,
                 clockwise: false,
               ),
               _VortexRing(
                 diameter: 120,
-                color: accentColor.withOpacity(0.45),
+                color: accentColor.withOpacity(0.18),
                 duration: 15.seconds,
                 clockwise: true,
               ),
@@ -143,7 +145,7 @@ class _VortexRing extends StatelessWidget {
         .animate(onPlay: (c) => c.repeat())
         .fadeIn(duration: 800.ms)
         .scale(
-          begin: const Offset(1.8, 1.8), // 3.5 -> 1.8로 축소 (버튼 구역에서 시작)
+          begin: const Offset(1.6, 1.6), // 1.8 -> 1.6으로 미세 조정 (버튼 바로 위)
           end: const Offset(0.4, 0.4),
           duration: 6.seconds,
           curve: Curves.easeInSine,
@@ -186,7 +188,8 @@ class _DashedCirclePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
       ..color = color
-      ..strokeWidth = 1.5
+      ..strokeWidth =
+          0.8 // 1.5 -> 0.8로 얇게 조정 (가독성 확보)
       ..style = PaintingStyle.stroke;
 
     final double radius = size.width / 2;
