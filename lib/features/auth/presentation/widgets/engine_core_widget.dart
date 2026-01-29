@@ -9,88 +9,111 @@ class EngineCoreWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     const accentColor = Color(0xFFCCFF00);
 
-    return Center(
-      child: SizedBox(
-        width: 300,
-        height: 300,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            // Vortex Particles (Absorption Loop)
-            ...List.generate(12, (index) {
-              final random = math.Random();
-              final angle = random.nextDouble() * 2 * math.pi;
-              final distance = 180.0 + random.nextDouble() * 100.0;
-              final startX = math.cos(angle) * distance;
-              final startY = math.sin(angle) * distance;
+    return Container(
+      height: 380, // 한 화면에 모든 UI가 보일 수 있도록 높이 최적화
+      width: double.infinity,
+      color: Colors.transparent,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final centerX = constraints.maxWidth / 2;
+          final centerY = constraints.maxHeight / 2;
 
-              return Positioned(
-                left: 150 + startX, // Center of 300
-                top: 150 + startY,
-                child:
-                    Container(
-                          width: 2,
-                          height: 2,
-                          decoration: BoxDecoration(
-                            color: accentColor.withOpacity(0.9),
-                            shape: BoxShape.circle,
-                          ),
-                        )
-                        .animate(onPlay: (c) => c.repeat())
-                        .move(
-                          begin: Offset.zero,
-                          end: Offset(-startX, -startY),
-                          duration: (1.0 + random.nextDouble() * 2).seconds,
-                          curve: Curves.easeInQuad,
-                        )
-                        .fadeIn(duration: 400.ms)
-                        .fadeOut(duration: 200.ms, delay: 1.5.seconds),
-              );
-            }),
+          return Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              // Vortex Particles (Absorption Loop - Cosmic Scale)
+              ...List.generate(15, (index) {
+                final random = math.Random();
+                final angle = random.nextDouble() * 2 * math.pi;
+                // 우주적 스케일: 화면 완전히 바깥(500~800px)에서 유입
+                final distance = 500.0 + random.nextDouble() * 300.0;
+                final startX = math.cos(angle) * distance;
+                final startY = math.sin(angle) * distance;
+                final duration = (3.0 + random.nextDouble() * 2).seconds;
 
-            // Vortex Rings (Imploding toward center)
-            _VortexRing(
-              diameter: 250,
-              color: accentColor.withOpacity(0.1),
-              duration: 40.seconds,
-              clockwise: true,
-            ),
-            _VortexRing(
-              diameter: 180,
-              color: accentColor.withOpacity(0.2),
-              duration: 25.seconds,
-              clockwise: false,
-            ),
-            _VortexRing(
-              diameter: 120,
-              color: accentColor.withOpacity(0.4),
-              duration: 15.seconds,
-              clockwise: true,
-            ),
+                return Positioned(
+                  left: centerX + startX,
+                  top: centerY + startY,
+                  child:
+                      Container(
+                            width: 4,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: accentColor,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: accentColor.withOpacity(0.6),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                          )
+                          .animate(onPlay: (c) => c.repeat())
+                          .move(
+                            begin: Offset.zero,
+                            end: Offset(-startX, -startY),
+                            duration: duration,
+                            curve: Curves.easeInQuad,
+                          )
+                          .fadeIn(duration: 600.ms)
+                          .fadeOut(duration: 400.ms, delay: duration * 0.8),
+                );
+              }),
 
-            // The Kernel (Vortex Singularity)
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: accentColor,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: accentColor.withOpacity(0.6),
-                    spreadRadius: 4,
-                    blurRadius: 15,
-                  ),
-                  BoxShadow(
-                    color: accentColor.withOpacity(0.4),
-                    spreadRadius: 8,
-                    blurRadius: 30,
-                  ),
-                ],
+              // Vortex Rings (Cosmic Scale - 5x)
+              _VortexRing(
+                diameter: 250,
+                color: accentColor.withOpacity(0.12),
+                duration: 40.seconds,
+                clockwise: true,
               ),
-            ),
-          ],
-        ),
+              _VortexRing(
+                diameter: 180,
+                color: accentColor.withOpacity(0.25),
+                duration: 25.seconds,
+                clockwise: false,
+              ),
+              _VortexRing(
+                diameter: 120,
+                color: accentColor.withOpacity(0.45),
+                duration: 15.seconds,
+                clockwise: true,
+              ),
+
+              // The Kernel (Vortex Singularity - Living Pulse)
+              Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: accentColor,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: accentColor.withOpacity(0.8),
+                          spreadRadius: 6,
+                          blurRadius: 20,
+                        ),
+                        BoxShadow(
+                          color: accentColor.withOpacity(0.5),
+                          spreadRadius: 12,
+                          blurRadius: 40,
+                        ),
+                      ],
+                    ),
+                  )
+                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                  .scale(
+                    begin: const Offset(1.0, 1.0),
+                    end: const Offset(1.3, 1.3),
+                    duration: 1.seconds,
+                    curve: Curves.easeInOutSine,
+                  ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -118,13 +141,14 @@ class _VortexRing extends StatelessWidget {
           clockwise: clockwise,
         )
         .animate(onPlay: (c) => c.repeat())
+        .fadeIn(duration: 800.ms)
         .scale(
-          begin: const Offset(1.6, 1.6),
+          begin: const Offset(3.5, 3.5), // 5.0 -> 3.5로 최적화
           end: const Offset(0.4, 0.4),
-          duration: 3.seconds,
+          duration: 6.seconds,
           curve: Curves.easeInSine,
         )
-        .fadeOut(duration: 3.seconds, curve: Curves.easeInSine);
+        .fadeOut(duration: 6.seconds, curve: Curves.easeInSine);
   }
 }
 

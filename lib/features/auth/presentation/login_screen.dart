@@ -301,12 +301,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               .fadeIn(duration: 1200.ms)
                               .slideY(begin: 0.1, end: 0),
 
-                          const SizedBox(height: 40),
+                          const SizedBox(height: 12),
 
                           // Center: Engine Core
                           const EngineCoreWidget(),
 
-                          const SizedBox(height: 48),
+                          const SizedBox(height: 24),
 
                           // Bottom: Actions
                           Column(
@@ -345,7 +345,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   const Spacer(flex: 2),
                                 ],
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 16),
                               GestureDetector(
                                 onTap: () =>
                                     _showEmailLoginSheet(initialIsLogin: true),
@@ -361,7 +361,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 48),
+                              const SizedBox(height: 32),
                               GestureDetector(
                                 onTap: () {
                                   HapticFeedback.selectionClick();
