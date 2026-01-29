@@ -478,6 +478,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 32),
+                          // The Master's Signature: Stealth Luxury Inscription
+                          Opacity(
+                            opacity: 0.8,
+                            child: Text(
+                              'CHIEF ENGINEER H.B. YOUNGMAN',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(
+                                  0.1,
+                                ), // Colors.white10
+                                fontSize: 9.0,
+                                fontWeight: FontWeight.w200,
+                                letterSpacing: 2.5, // 하이테크 감각 극대화
+                              ),
+                            ),
+                          ).animate().fadeIn(
+                            delay: 2.seconds,
+                            duration: 1.seconds,
+                          ),
+                          const SizedBox(height: 12), // 하단 여백 최적화
                         ],
                       ),
                     ),
