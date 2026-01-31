@@ -46,12 +46,12 @@ class WishlistStatusWidget extends ConsumerWidget {
   }
 
   Widget _buildEmptyState() {
-    return Column(
+    return const Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.add, size: 32, color: Colors.white54),
-        const SizedBox(height: 8),
-        const Text(
+        Icon(Icons.add, size: 32, color: Colors.white54),
+        SizedBox(height: 8),
+        Text(
           "Add Goal",
           style: TextStyle(color: Colors.white54, fontWeight: FontWeight.w600),
         ),

@@ -72,7 +72,7 @@ class VibeImageEffect extends StatelessWidget {
                         radius: 0.8,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.8),
+                          Colors.black.withValues(alpha: 0.8),
                         ],
                         stops: const [0.2, 1.0],
                       ),

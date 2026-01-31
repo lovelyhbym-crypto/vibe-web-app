@@ -1,0 +1,5 @@
+[info] Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check (/Users/hwangboyeongman/flutter-test/vibe_app/lib/features/settings/presentation/widgets/pin_auth_dialog.dart:84:42)
+[info] Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check (/Users/hwangboyeongman/flutter-test/vibe_app/lib/features/settings/presentation/widgets/pin_auth_dialog.dart:92:44)
+[info] Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check (/Users/hwangboyeongman/flutter-test/vibe_app/lib/features/auth/presentation/login_screen.dart:135:43)
+[info] Don't use 'BuildContext's across async gaps (/Users/hwangboyeongman/flutter-test/vibe_app/lib/features/wishlist/presentation/add_wishlist_dialog.dart:228:9)
+[info] Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check (/Users/hwangboyeongman/flutter-test/vibe_app/lib/features/wishlist/presentation/wishlist_screen.dart:396:52)

@@ -176,12 +176,13 @@ class WishlistCard extends ConsumerWidget {
       );
       final days = target.difference(today).inDays;
 
-      if (days == 0)
+      if (days == 0) {
         dDayText = 'D-Day';
-      else if (days > 0)
+      } else if (days > 0) {
         dDayText = 'D-$days';
-      else
+      } else {
         dDayText = 'D+${days.abs()}';
+      }
     }
 
     return Row(
@@ -214,7 +215,7 @@ class WishlistCard extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: isPureFinance
                         ? Colors.grey[200]
-                        : colors.accent.withOpacity(0.2),
+                        : colors.accent.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(4),
                     border: Border.all(
                       color: isPureFinance ? Colors.transparent : colors.accent,

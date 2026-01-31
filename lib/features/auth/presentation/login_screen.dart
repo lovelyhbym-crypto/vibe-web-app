@@ -85,7 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     top: Radius.circular(24),
                   ),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Colors.white.withValues(alpha: 0.1),
                     width: 0.5,
                   ),
                 ),
@@ -131,7 +131,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         setSheetState(() => _isLoading = false);
                         if (mounted &&
                             ref.read(authProvider).asData?.value != null) {
-                          Navigator.pop(context);
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
                         }
                       },
                       isFilled: true,
@@ -193,7 +195,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               height: 500,
               decoration: BoxDecoration(
                 gradient: RadialGradient(
-                  colors: [accentColor.withOpacity(0.08), Colors.transparent],
+                  colors: [
+                    accentColor.withValues(alpha: 0.08),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
@@ -206,7 +211,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               height: 600,
               decoration: BoxDecoration(
                 gradient: RadialGradient(
-                  colors: [accentColor.withOpacity(0.06), Colors.transparent],
+                  colors: [
+                    accentColor.withValues(alpha: 0.06),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
@@ -222,7 +230,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         shape: BoxShape.circle,
                         gradient: RadialGradient(
                           colors: [
-                            accentColor.withOpacity(0.12),
+                            accentColor.withValues(alpha: 0.12),
                             Colors.transparent,
                           ],
                         ),
@@ -275,8 +283,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           height: 1.0,
                                           shadows: [
                                             Shadow(
-                                              color: accentColor.withOpacity(
-                                                0.5,
+                                              color: accentColor.withValues(
+                                                alpha: 0.5,
                                               ),
                                               offset: const Offset(4, 4),
                                               blurRadius: 2,
@@ -303,14 +311,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                               shadows: [
                                                 // Halo (후광) 효과: 엔진과 동기화
                                                 Shadow(
-                                                  color: accentColor
-                                                      .withOpacity(0.4 * value),
+                                                  color: accentColor.withValues(
+                                                    alpha: 0.4 * value,
+                                                  ),
                                                   offset: Offset.zero,
                                                   blurRadius: 10 + (20 * value),
                                                 ),
                                                 Shadow(
-                                                  color: accentColor
-                                                      .withOpacity(0.5),
+                                                  color: accentColor.withValues(
+                                                    alpha: 0.5,
+                                                  ),
                                                   offset: const Offset(4, 4),
                                                   blurRadius: 2,
                                                 ),
@@ -329,7 +339,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   Text(
                                     'Visionary Incentive & Behavioral Engine'
                                         .toUpperCase(),
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w100, // 더 얇게 처리
                                       color: Colors.white70,
@@ -338,7 +348,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
+                                  const Text(
                                     '> 당신의 목표를 실현하는 저축 엔진',
                                     style: TextStyle(
                                       fontSize: 12, // 크기 축소
@@ -377,9 +387,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     vertical: 24.0, // 32 -> 24px 압축
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(
-                                      0.01,
-                                    ), // 0.02 -> 0.01로 극도의 투명화
+                                    color: Colors.white.withValues(alpha: 0.01),
                                     borderRadius: BorderRadius.circular(24),
                                     border: Border.all(
                                       color: Colors.white24, // 선명한 경계선
@@ -388,9 +396,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     boxShadow: [
                                       // 은은한 네온 라임색 안개 효과 (뒤쪽 점선을 위해 더 연하게)
                                       BoxShadow(
-                                        color: accentColor.withOpacity(
-                                          0.03,
-                                        ), // 0.05 -> 0.03
+                                        color: accentColor.withValues(
+                                          alpha: 0.03,
+                                        ),
                                         blurRadius: 30,
                                         spreadRadius: -15,
                                         offset: const Offset(0, 0),
@@ -484,9 +492,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             child: Text(
                               'CHIEF ENGINEER H.B. YOUNGMAN',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(
-                                  0.1,
-                                ), // Colors.white10
+                                color: Colors.white.withValues(alpha: 0.1),
                                 fontSize: 9.0,
                                 fontWeight: FontWeight.w200,
                                 letterSpacing: 2.5, // 하이테크 감각 극대화
@@ -559,7 +565,9 @@ class _TerminalInputFieldState extends State<_TerminalInputField> {
         Text(
           widget.label,
           style: TextStyle(
-            color: _isFocused ? accentColor : Colors.white.withOpacity(0.8),
+            color: _isFocused
+                ? accentColor
+                : Colors.white.withValues(alpha: 0.8),
             fontSize: 12,
             fontWeight: _isFocused ? FontWeight.w600 : FontWeight.w500,
           ),
@@ -572,9 +580,11 @@ class _TerminalInputFieldState extends State<_TerminalInputField> {
           cursorColor: accentColor,
           decoration: InputDecoration(
             hintText: widget.hint,
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.2)),
+            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
             enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+              borderSide: BorderSide(
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
             ),
             focusedBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: accentColor, width: 2),
@@ -629,7 +639,9 @@ class _TerminalPrimaryButtonState extends State<_TerminalPrimaryButton> {
           height: 60,
           decoration: BoxDecoration(
             color: widget.isFilled
-                ? (_isPressed ? accentColor.withOpacity(0.8) : accentColor)
+                ? (_isPressed
+                      ? accentColor.withValues(alpha: 0.8)
+                      : accentColor)
                 : (_isPressed ? accentColor : Colors.transparent),
             border: Border.all(color: accentColor, width: 2),
             borderRadius: BorderRadius.circular(4),
@@ -682,13 +694,16 @@ class _SocialButton extends StatelessWidget {
         decoration: BoxDecoration(
           // 1단계: 차폐(Occlusion) - Scaffold 배경색과 동일한 불투명 색상으로 배경 엔진을 완전히 가림
           color: const Color(0xFF0A0A0E),
-          border: Border.all(color: accentColor.withOpacity(0.5), width: 1),
+          border: Border.all(
+            color: accentColor.withValues(alpha: 0.5),
+            width: 1,
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Container(
           // 2단계: 미학(Aesthetics) - 그 위에 은은한 화이트 틴트를 주어 기존 글래스모피즘 톤 유지
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.04),
+            color: Colors.white.withValues(alpha: 0.04),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -720,7 +735,7 @@ class _GridBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final Paint paint = Paint()
-      ..color = Colors.white.withOpacity(opacity)
+      ..color = Colors.white.withValues(alpha: opacity)
       ..strokeWidth = 1;
     const double gridSize = 40;
     for (double x = 0; x < size.width; x += gridSize) {

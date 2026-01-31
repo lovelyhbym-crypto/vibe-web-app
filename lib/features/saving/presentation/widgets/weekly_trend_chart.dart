@@ -92,7 +92,7 @@ class WeeklyTrendChart extends StatelessWidget {
             show: true,
             checkToShowHorizontalLine: (value) => value % (maxY / 4) == 0,
             getDrawingHorizontalLine: (value) =>
-                FlLine(color: Colors.white10, strokeWidth: 1),
+                const FlLine(color: Colors.white10, strokeWidth: 1),
             drawVerticalLine: false,
           ),
           borderData: FlBorderData(show: false),

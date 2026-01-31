@@ -57,12 +57,12 @@ class QuestStatusCard extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.75),
+          color: Colors.black.withValues(alpha: 0.75),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: themeColor.withOpacity(0.6), width: 1.5),
+          border: Border.all(color: themeColor.withValues(alpha: 0.6), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: themeColor.withOpacity(0.2),
+              color: themeColor.withValues(alpha: 0.2),
               blurRadius: 15,
               spreadRadius: 2,
             ),
@@ -94,7 +94,7 @@ class QuestStatusCard extends ConsumerWidget {
             Text(
               descText,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontSize: 11,
               ),
             ),
@@ -163,7 +163,7 @@ class QuestStatusCard extends ConsumerWidget {
               height: 4,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),

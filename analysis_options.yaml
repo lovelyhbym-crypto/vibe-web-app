@@ -9,6 +9,10 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  errors:
+    invalid_annotation_target: ignore
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`
@@ -21,8 +25,9 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
-    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
-
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+    avoid_print: false # 개발 중 로그 확인을 위해 print 문을 허용함.
+    prefer_const_constructors: true # 성능 최적화를 위해 const 생성을 강력히 권장함.
+    constant_identifier_names: false # 네온/사이버펑크 테마 관련 변수명에 대문자 사용을 허용함.
+    prefer_final_fields: true
+    prefer_final_locals: true
+    curly_braces_in_flow_control_structures: true

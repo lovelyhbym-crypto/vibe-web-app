@@ -98,7 +98,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: colors.surface,
         elevation: mode == VibeThemeMode.pureFinance ? 2 : 0, // 퓨어 모드만 그림자
-        shadowColor: Colors.black.withOpacity(0.05),
+        shadowColor: Colors.black.withValues(alpha: 0.05),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20), // 둥근 모서리 공통 적용
           side: mode == VibeThemeMode.cyberpunk

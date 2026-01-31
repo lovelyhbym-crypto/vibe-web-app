@@ -51,10 +51,10 @@ class _FailedDreamsScreenState extends ConsumerState<FailedDreamsScreen> {
       backgroundColor: backgroundColor,
       body: CustomScrollView(
         slivers: [
-          SliverAppBar(
+          const SliverAppBar(
             backgroundColor: backgroundColor,
-            iconTheme: const IconThemeData(color: textColor),
-            title: const Text(
+            iconTheme: IconThemeData(color: textColor),
+            title: Text(
               '망각의 묘지',
               style: TextStyle(color: textColor, fontWeight: FontWeight.bold),
             ),
@@ -69,7 +69,7 @@ class _FailedDreamsScreenState extends ConsumerState<FailedDreamsScreen> {
                 child: Text(
                   "당신이 포기한 꿈들이 이곳에 잠들어 있습니다.",
                   style: TextStyle(
-                    color: textColor.withOpacity(0.4),
+                    color: textColor.withValues(alpha: 0.4),
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
                   ),
@@ -105,7 +105,7 @@ class _FailedDreamsScreenState extends ConsumerState<FailedDreamsScreen> {
                         Text(
                           '아직 포기한 꿈이 없습니다.',
                           style: TextStyle(
-                            color: textColor.withOpacity(0.5),
+                            color: textColor.withValues(alpha: 0.5),
                             fontSize: 16,
                           ),
                         ),
@@ -152,7 +152,7 @@ class _FailedDreamsScreenState extends ConsumerState<FailedDreamsScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.broken_image_outlined,
                               color: Colors.white24,
                               size: 24,
@@ -172,7 +172,7 @@ class _FailedDreamsScreenState extends ConsumerState<FailedDreamsScreen> {
                             ),
                             Text(
                               '${(progress * 100).toInt()}%',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white24,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -203,7 +203,7 @@ class _FailedDreamsScreenState extends ConsumerState<FailedDreamsScreen> {
                         if (estimatedCoffee > 0)
                           _buildDetailRow(
                             Icons.coffee,
-                            '참았던 기록: 커피 ${estimatedCoffee}잔 분량',
+                            '참았던 기록: 커피 $estimatedCoffee잔 분량',
                           ),
                         _buildDetailRow(
                           Icons.savings,

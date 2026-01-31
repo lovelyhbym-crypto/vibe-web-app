@@ -129,7 +129,7 @@ class Mission extends _$Mission {
 
       // Simple shake detection logic
       // Calculate magnitude of acceleration
-      double acceleration = sqrt(
+      final double acceleration = sqrt(
         event.x * event.x + event.y * event.y + event.z * event.z,
       );
 

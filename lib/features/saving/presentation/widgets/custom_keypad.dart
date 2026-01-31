@@ -21,7 +21,7 @@ class CustomKeypad extends StatelessWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 40), // Safe zone
             child: Column(
               children: [
@@ -31,7 +31,7 @@ class CustomKeypad extends StatelessWidget {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -128,12 +128,12 @@ class _KeypadButtonState extends State<_KeypadButton> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 100),
           decoration: BoxDecoration(
-            color: _isPressed ? neonLime.withOpacity(0.15) : Colors.transparent,
+            color: _isPressed ? neonLime.withValues(alpha: 0.15) : Colors.transparent,
             borderRadius: BorderRadius.circular(16),
             boxShadow: _isPressed
                 ? [
                     BoxShadow(
-                      color: neonLime.withOpacity(0.4),
+                      color: neonLime.withValues(alpha: 0.4),
                       blurRadius: 15,
                       spreadRadius: 2,
                     ),

@@ -111,7 +111,7 @@ class WishlistItem {
     final difference = now.difference(lastSavedAt!);
     final days = difference.inDays;
 
-    double calculatedBlur = days * 2.0;
+    final double calculatedBlur = days * 2.0;
     return calculatedBlur.clamp(0.0, 10.0);
   }
 }

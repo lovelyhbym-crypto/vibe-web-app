@@ -127,15 +127,15 @@ class _MissionScreenState extends ConsumerState<MissionScreen>
     const double h = 480;
 
     if (isHorizontal) {
-      double startY = _random.nextDouble() * h;
-      double endY = _random.nextDouble() * h;
+      final double startY = _random.nextDouble() * h;
+      final double endY = _random.nextDouble() * h;
       path.moveTo(0, startY);
       path.lineTo(w * 0.3, startY + (_random.nextDouble() - 0.5) * 50);
       path.lineTo(w * 0.6, endY + (_random.nextDouble() - 0.5) * 50);
       path.lineTo(w, endY);
     } else {
-      double startX = _random.nextDouble() * w;
-      double endX = _random.nextDouble() * w;
+      final double startX = _random.nextDouble() * w;
+      final double endX = _random.nextDouble() * w;
       path.moveTo(startX, 0);
       path.lineTo(startX + (_random.nextDouble() - 0.5) * 50, h * 0.3);
       path.lineTo(endX + (_random.nextDouble() - 0.5) * 50, h * 0.6);

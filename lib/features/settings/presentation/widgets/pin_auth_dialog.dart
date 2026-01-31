@@ -37,7 +37,7 @@ class _PinAuthDialogState extends ConsumerState<PinAuthDialog> {
                 ? "데이터 삭제 시 사용할 숫자 4자리를 입력하세요."
                 : "비밀번호 4자리를 입력하면 모든 데이터가 삭제됩니다.",
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
+              color: Colors.white.withValues(alpha: 0.7),
               fontSize: 13,
             ),
           ),
@@ -57,7 +57,9 @@ class _PinAuthDialogState extends ConsumerState<PinAuthDialog> {
             decoration: InputDecoration(
               counterText: "",
               enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.red.withOpacity(0.5)),
+                borderSide: BorderSide(
+                  color: Colors.red.withValues(alpha: 0.5),
+                ),
               ),
               focusedBorder: const UnderlineInputBorder(
                 borderSide: BorderSide(color: Colors.red),
@@ -81,7 +83,7 @@ class _PinAuthDialogState extends ConsumerState<PinAuthDialog> {
             if (widget.isRegistration) {
               await ref.read(pinProvider.notifier).registerPin(input);
               HapticService.success();
-              if (mounted) Navigator.pop(context);
+              if (context.mounted) Navigator.pop(context);
               widget.onSuccess();
             } else {
               final isValid = await ref
@@ -89,7 +91,7 @@ class _PinAuthDialogState extends ConsumerState<PinAuthDialog> {
                   .verifyPin(input);
               if (isValid) {
                 HapticService.success();
-                if (mounted) Navigator.pop(context);
+                if (context.mounted) Navigator.pop(context);
                 widget.onSuccess();
               } else {
                 HapticService.error();

@@ -32,19 +32,19 @@ class AchievedGoalsScreen extends ConsumerWidget {
               .toList();
 
           if (achievedList.isEmpty) {
-            return Center(
+            return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.emoji_events_outlined,
                     size: 64,
                     color: Colors.white24,
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     'No achievements yet.',
-                    style: const TextStyle(fontSize: 18, color: Colors.white60),
+                    style: TextStyle(fontSize: 18, color: Colors.white60),
                   ),
                 ],
               ),

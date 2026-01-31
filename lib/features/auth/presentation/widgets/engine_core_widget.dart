@@ -40,11 +40,11 @@ class EngineCoreWidget extends StatelessWidget {
                             width: 2.5, // 시네마틱 질량감 복원
                             height: 2.5,
                             decoration: BoxDecoration(
-                              color: accentColor.withOpacity(0.9),
+                              color: accentColor.withValues(alpha: 0.9),
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: accentColor.withOpacity(0.5),
+                                  color: accentColor.withValues(alpha: 0.5),
                                   blurRadius: 10,
                                   spreadRadius: 2,
                                 ),
@@ -66,19 +66,19 @@ class EngineCoreWidget extends StatelessWidget {
               // Vortex Rings (Cinematic Terminal - 1.2px Stroke)
               _VortexRing(
                 diameter: 250,
-                color: accentColor.withOpacity(0.35), // 묵직한 존재감 복원
+                color: accentColor.withValues(alpha: 0.35), // 묵직한 존재감 복원
                 duration: 40.seconds,
                 clockwise: true,
               ),
               _VortexRing(
                 diameter: 180,
-                color: accentColor.withOpacity(0.35),
+                color: accentColor.withValues(alpha: 0.35),
                 duration: 25.seconds,
                 clockwise: false,
               ),
               _VortexRing(
                 diameter: 120,
-                color: accentColor.withOpacity(0.35),
+                color: accentColor.withValues(alpha: 0.35),
                 duration: 15.seconds,
                 clockwise: true,
               ),
@@ -93,12 +93,12 @@ class EngineCoreWidget extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: accentColor.withOpacity(0.8),
+                          color: accentColor.withValues(alpha: 0.8),
                           spreadRadius: 6,
                           blurRadius: 30, // 에너지 발광 강화
                         ),
                         BoxShadow(
-                          color: accentColor.withOpacity(0.5),
+                          color: accentColor.withValues(alpha: 0.5),
                           spreadRadius: 15,
                           blurRadius: 50,
                         ),

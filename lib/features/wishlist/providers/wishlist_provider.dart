@@ -449,8 +449,9 @@ class WishlistNotifier extends _$WishlistNotifier {
         updates['price'] = price.toInt();
         updates['total_goal'] = price.toInt();
       }
-      if (targetDate != null)
+      if (targetDate != null) {
         updates['target_date'] = targetDate.toIso8601String();
+      }
       if (imageUrl != null) updates['image_url'] = imageUrl;
       if (penaltyText != null) updates['penalty_text'] = penaltyText;
 
@@ -533,7 +534,7 @@ class WishlistNotifier extends _$WishlistNotifier {
           newConsecutive = 1;
         }
 
-        bool isConsecutiveTwo = newConsecutive == 2;
+        final bool isConsecutiveTwo = newConsecutive == 2;
 
         double newBlurLevel = item.blurLevel;
 
@@ -663,7 +664,7 @@ class WishlistNotifier extends _$WishlistNotifier {
 
     if (authNotifier.isGuest || user == null) {
       _guestWishlist.clear();
-      state = AsyncValue.data([]);
+      state = const AsyncValue.data([]);
       return;
     }
 

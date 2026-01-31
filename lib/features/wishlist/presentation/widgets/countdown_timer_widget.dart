@@ -24,7 +24,7 @@ class CountdownTimerWidget extends ConsumerWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.2),
+          color: Colors.green.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.green),
         ),
@@ -47,7 +47,7 @@ class CountdownTimerWidget extends ConsumerWidget {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.2),
+          color: Colors.red.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.red),
         ),
@@ -75,20 +75,20 @@ class CountdownTimerWidget extends ConsumerWidget {
     // 긴급 상태일 때 깜빡임 효과 (초 단위 짝/홀 이용)
     final isBlinking = isUrgent && (seconds % 2 != 0);
     final urgentColor = isBlinking
-        ? colors.danger.withOpacity(0.5)
+        ? colors.danger.withValues(alpha: 0.5)
         : colors.danger;
 
     // 폰트 스타일 정의
     final baseStyle = GoogleFonts.robotoMono(
       color: isUrgent
           ? urgentColor
-          : colors.textMain.withOpacity(0.7), // Semi-transparent white
+          : colors.textMain.withValues(alpha: 0.7), // Semi-transparent white
       fontSize: 16,
       fontWeight: FontWeight.bold,
       letterSpacing: -0.5,
       shadows: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.3), // Softer shadow
+          color: Colors.black.withValues(alpha: 0.3), // Softer shadow
           blurRadius: 4,
           offset: const Offset(0, 2),
         ),
@@ -102,14 +102,14 @@ class CountdownTimerWidget extends ConsumerWidget {
       letterSpacing: -0.5,
       shadows: [
         BoxShadow(
-          color: colors.danger.withOpacity(0.4), // Softer glow
+          color: colors.danger.withValues(alpha: 0.4), // Softer glow
           blurRadius: 8,
           spreadRadius: 2,
         ),
       ],
     );
 
-    final unitStyle = TextStyle(
+    final unitStyle = const TextStyle(
       color: Colors.white38,
       fontSize: 12,
       fontWeight: FontWeight.normal,
@@ -124,10 +124,10 @@ class CountdownTimerWidget extends ConsumerWidget {
               .infinity, // Full width as requested "positioned left:0 right:0"
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withValues(alpha: 0.4),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             border: Border.all(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
               width: 0.5,
             ),
           ),

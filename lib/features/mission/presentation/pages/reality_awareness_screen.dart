@@ -155,8 +155,8 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen> {
                     height: 60,
                     backgroundColor: Colors.cyanAccent.withAlpha(51),
                     border: Border.all(color: Colors.cyanAccent.withAlpha(128)),
-                    child: Center(
-                      child: const Text(
+                    child: const Center(
+                      child: Text(
                         '미션 완료',
                         style: TextStyle(
                           color: Colors.white,

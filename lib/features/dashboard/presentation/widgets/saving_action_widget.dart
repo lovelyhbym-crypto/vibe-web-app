@@ -256,8 +256,8 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
       debugPrint('LUCKY! No breakage.');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('운이 좋았습니다! 이번에는 꿈이 깨지지 않았습니다.'),
+          const SnackBar(
+            content: Text('운이 좋았습니다! 이번에는 꿈이 깨지지 않았습니다.'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -286,7 +286,7 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
                   border: Border.all(color: limeColor, width: 3),
                   boxShadow: [
                     BoxShadow(
-                      color: limeColor.withOpacity(0.3),
+                      color: limeColor.withValues(alpha: 0.3),
                       blurRadius: 20,
                       spreadRadius: 2,
                     ),
@@ -311,7 +311,7 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
                       "토스뱅크로 10,000원 송금",
                       style: TextStyle(
                         fontSize: 12,
-                        color: limeColor.withOpacity(0.8),
+                        color: limeColor.withValues(alpha: 0.8),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -327,7 +327,7 @@ class _SavingActionWidgetState extends ConsumerState<SavingActionWidget>
           child: ElevatedButton.icon(
             onPressed: _showDefeatDialog,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.withOpacity(0.1),
+              backgroundColor: Colors.red.withValues(alpha: 0.1),
               foregroundColor: Colors.redAccent,
               side: const BorderSide(color: Colors.redAccent, width: 1.5),
               shape: RoundedRectangleBorder(

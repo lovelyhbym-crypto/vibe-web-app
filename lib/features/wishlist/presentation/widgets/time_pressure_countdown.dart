@@ -66,7 +66,7 @@ class _TimePressureCountdownState extends State<TimePressureCountdown> {
     final seconds = _remaining.inSeconds % 60;
 
     return Text(
-      'D-${days}일 ${hours}시간 ${minutes}분 ${seconds}초',
+      'D-$days일 $hours시간 $minutes분 $seconds초',
       style: TextStyle(
         color: widget.textColor ?? Colors.white,
         fontWeight: FontWeight.bold,

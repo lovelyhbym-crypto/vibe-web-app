@@ -162,14 +162,14 @@ class DashboardScreen extends ConsumerWidget {
                             Icon(
                               Icons.circle,
                               size: 4,
-                              color: colors.textSub.withOpacity(0.25),
+                              color: colors.textSub.withValues(alpha: 0.25),
                             ),
                             const SizedBox(width: 6),
                             Text(
                               '포기한 꿈: $failedCount개',
                               textAlign: TextAlign.left,
                               style: TextStyle(
-                                color: colors.textSub.withOpacity(0.25),
+                                color: colors.textSub.withValues(alpha: 0.25),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w300,
                               ),
@@ -390,7 +390,7 @@ class _SummaryCard extends ConsumerWidget {
         boxShadow: isPureFinance
             ? [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -601,7 +601,12 @@ class _WishlistProgressCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colors.border),
         boxShadow: isPureFinance
-            ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                ),
+              ]
             : null,
       ),
       child: Column(
@@ -650,7 +655,7 @@ class _WishlistProgressCard extends StatelessWidget {
             builder: (context, value, child) {
               return LinearProgressIndicator(
                 value: value,
-                backgroundColor: colors.textSub.withOpacity(0.1),
+                backgroundColor: colors.textSub.withValues(alpha: 0.1),
                 color: isPureFinance
                     ? colors.accent
                     : const Color(0xFFD4FF00), // 토스는 밝은 블루, 사이버펑크는 네온 노랑
@@ -664,7 +669,7 @@ class _WishlistProgressCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: progressColor.withOpacity(0.1),
+                color: progressColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -708,7 +713,12 @@ class _WeeklyTrendChart extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colors.border),
         boxShadow: isPureFinance
-            ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                ),
+              ]
             : null,
       ),
       child: Column(
@@ -728,15 +738,15 @@ class _WeeklyTrendChart extends StatelessWidget {
               duration: const Duration(milliseconds: 1000),
               curve: Curves.easeInOut,
               LineChartData(
-                gridData: FlGridData(show: false),
+                gridData: const FlGridData(show: false),
                 titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
+                  leftTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
-                  topTitles: AxisTitles(
+                  topTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
-                  rightTitles: AxisTitles(
+                  rightTitles: const AxisTitles(
                     sideTitles: SideTitles(showTitles: false),
                   ),
                   bottomTitles: AxisTitles(
@@ -786,12 +796,12 @@ class _WeeklyTrendChart extends StatelessWidget {
                     color: isPureFinance ? colors.accent : colors.accent,
                     barWidth: 3,
                     isStrokeCapRound: true,
-                    dotData: FlDotData(show: false),
+                    dotData: const FlDotData(show: false),
                     belowBarData: BarAreaData(
                       show: true,
                       color: isPureFinance
-                          ? colors.accent.withOpacity(0.05)
-                          : colors.accent.withOpacity(0.05),
+                          ? colors.accent.withValues(alpha: 0.05)
+                          : colors.accent.withValues(alpha: 0.05),
                     ),
                   ),
                 ],
@@ -848,7 +858,12 @@ class _CategoryPieChart extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colors.border),
         boxShadow: isPureFinance
-            ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)]
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                ),
+              ]
             : null,
       ),
       child: Column(
@@ -922,7 +937,7 @@ class _MilestoneDialogState extends State<_MilestoneDialog> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          backgroundColor: colors?.surface ?? theme.dialogBackgroundColor,
+          backgroundColor: colors?.surface ?? theme.colorScheme.surface,
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(

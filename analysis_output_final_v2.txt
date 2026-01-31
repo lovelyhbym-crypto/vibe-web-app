@@ -1,0 +1,1 @@
+[info] Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check (/Users/hwangboyeongman/flutter-test/vibe_app/lib/features/wishlist/presentation/add_wishlist_dialog.dart:231:9)

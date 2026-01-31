@@ -155,7 +155,7 @@ class SavingNotifier extends _$SavingNotifier {
 
     if (authNotifier.isGuest || user == null) {
       _guestSavings.clear();
-      state = AsyncValue.data([]);
+      state = const AsyncValue.data([]);
       return;
     }
 

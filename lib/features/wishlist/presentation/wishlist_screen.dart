@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/services.dart'; // HapticFeedback
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +14,6 @@ import 'package:vive_app/core/ui/bouncy_button.dart';
 import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:vive_app/core/theme/theme_provider.dart';
 import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
-import 'package:vive_app/core/ui/vibe_image_effect.dart';
 import 'package:vive_app/features/home/providers/navigation_provider.dart';
 import 'package:vive_app/features/wishlist/presentation/widgets/quest_status_card.dart';
 import 'package:vive_app/features/wishlist/presentation/widgets/wishlist_card.dart';
@@ -143,8 +141,8 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                       _testFogDays > 0 ? Icons.cloud : Icons.cloud_queue,
                     ),
                     color: _testFogDays > 0
-                        ? Colors.blue.withOpacity(
-                            (0.2 * _testFogDays + 0.2).clamp(0.0, 1.0),
+                        ? Colors.blue.withValues(
+                            alpha: (0.2 * _testFogDays + 0.2).clamp(0.0, 1.0),
                           )
                         : colors.textSub,
                     onPressed: () {
@@ -346,9 +344,11 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                     padding: const EdgeInsets.all(16),
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
-                      color: colors.surface.withOpacity(0.5),
+                      color: colors.surface.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                      border: Border.all(
+                        color: Colors.green.withValues(alpha: 0.3),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -392,23 +392,25 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                             // [Show Overlay]
                             _showBonusOverlay();
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                  '🎉 생존 성공! 성공 확률 1% 상승 + 안개 제거 완료!',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                    '🎉 생존 성공! 성공 확률 1% 상승 + 안개 제거 완료!',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                  backgroundColor: colors.accent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                                duration: const Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: colors.accent,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            );
+                              );
+                            }
                           }
                         }
                       : () {}, // Empty callback to allow animation even if disabled (visual feedback)
@@ -418,13 +420,13 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
                       color: (isAfter8PM || _isNightMode || _testFogDays > 0)
-                          ? colors.accent.withOpacity(0.1)
-                          : Colors.grey.withOpacity(0.1),
+                          ? colors.accent.withValues(alpha: 0.1)
+                          : Colors.grey.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: (isAfter8PM || _isNightMode || _testFogDays > 0)
                             ? colors.accent
-                            : colors.textSub.withOpacity(0.3),
+                            : colors.textSub.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Column(
@@ -550,8 +552,9 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                               .where((item) => !item.isAchieved)
                               .toList();
 
-                          if (activeItems.isEmpty)
+                          if (activeItems.isEmpty) {
                             return const SizedBox.shrink();
+                          }
 
                           // 우선순위 정렬 (Enum 순서: broken, highBlur, lowBlur, none)
                           activeItems.sort(
@@ -605,7 +608,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: colors.accent.withOpacity(0.5),
+                              color: colors.accent.withValues(alpha: 0.5),
                               blurRadius: 15,
                               spreadRadius: 2,
                             ),
@@ -758,7 +761,10 @@ class _BonusOverlayWidgetState extends State<_BonusOverlayWidget>
               fontSize: 20,
               fontWeight: FontWeight.bold,
               shadows: [
-                Shadow(color: Colors.green.withOpacity(0.8), blurRadius: 10),
+                Shadow(
+                  color: Colors.green.withValues(alpha: 0.8),
+                  blurRadius: 10,
+                ),
               ],
             ),
           ),

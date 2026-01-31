@@ -1,0 +1,22 @@
+Analyzing vibe_app...                                           
+
+warning • 'unused_local_variable' is not a recognized lint rule • analysis_options.yaml:31:5 • undefined_lint
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/auth/presentation/login_screen.dart:134:41 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/auth/presentation/login_screen.dart:278:66 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/auth/presentation/login_screen.dart:380:57 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/auth/presentation/login_screen.dart:391:60 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/auth/presentation/login_screen.dart:487:53 • deprecated_member_use
+   info • 'dialogBackgroundColor' is deprecated and shouldn't be used. Use DialogThemeData.backgroundColor instead. This feature was deprecated after v3.27.0-0.1.pre • lib/features/dashboard/presentation/dashboard_screen.dart:925:53 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/saving/presentation/saving_record_screen.dart:102:21 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/saving/presentation/saving_record_screen.dart:172:29 • use_build_context_synchronously
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/saving/presentation/saving_record_screen.dart:911:65 • deprecated_member_use
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/saving/presentation/saving_record_screen.dart:982:65 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/settings/presentation/widgets/pin_auth_dialog.dart:84:42 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/settings/presentation/widgets/pin_auth_dialog.dart:92:44 • use_build_context_synchronously
+   info • Don't use 'BuildContext's across async gaps • lib/features/wishlist/presentation/add_wishlist_dialog.dart:228:9 • use_build_context_synchronously
+   info • Statements in an if should be enclosed in a block • lib/features/wishlist/presentation/widgets/wishlist_card.dart:182:9 • curly_braces_in_flow_control_structures
+   info • Statements in an if should be enclosed in a block • lib/features/wishlist/presentation/widgets/wishlist_card.dart:184:9 • curly_braces_in_flow_control_structures
+   info • 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss • lib/features/wishlist/presentation/wishlist_screen.dart:144:39 • deprecated_member_use
+   info • Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check • lib/features/wishlist/presentation/wishlist_screen.dart:393:50 • use_build_context_synchronously
+
+18 issues found. (ran in 2.5s)

@@ -58,7 +58,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
     // Slot Machine Animation Effect
     for (int i = 0; i < 10; i++) {
       await Future.delayed(const Duration(milliseconds: 100));
-      if (!mounted) return;
+      if (!context.mounted) return;
       setState(() {
         _penaltyController.text = penalties[i % penalties.length];
       });
@@ -121,7 +121,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
               surface: colors.surface,
               onSurface: colors.textMain,
             ),
-            dialogBackgroundColor: colors.background,
+            dialogTheme: DialogThemeData(backgroundColor: colors.background),
           ),
           child: child!,
         );
@@ -211,6 +211,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
 
     // 1. Safety Zone (< 10%)
     if (progress < 0.1 || original.savedAmount <= 0) {
+      if (!context.mounted) return;
       await _executeEdit(
         title,
         price,
@@ -223,8 +224,10 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
 
     final userProfile = await ref.read(userProfileNotifierProvider.future);
 
+    if (!mounted) return;
     // 2. Free Pass
     if (userProfile.hasFreePass) {
+      if (!mounted) return;
       final confirm = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -265,6 +268,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
       );
 
       if (confirm == true) {
+        if (!mounted) return;
         await _executeEdit(
           title,
           price,
@@ -286,6 +290,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
     );
 
     if (confirmPenalty == true) {
+      if (!mounted) return;
       await _executeEdit(
         title,
         price,
@@ -405,7 +410,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
                                           (isNegative
                                                   ? const Color(0xFFFF0000)
                                                   : Colors.red)
-                                              .withOpacity(0.8),
+                                              .withValues(alpha: 0.8),
                                       blurRadius: 15,
                                       spreadRadius: 3,
                                     ),
@@ -728,7 +733,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
                   decoration: InputDecoration(
                     hintText: "예: 배달 앱 하루 삭제",
                     hintStyle: TextStyle(
-                      color: colors.textSub.withOpacity(0.5),
+                      color: colors.textSub.withValues(alpha: 0.5),
                     ),
                     filled: true,
                     fillColor: isPureFinance
@@ -763,7 +768,7 @@ class _AddWishlistDialogState extends ConsumerState<AddWishlistDialog> {
               foregroundColor: isPureFinance ? colors.textMain : Colors.black,
               surfaceTintColor: Colors.transparent, // 방지: M3의 흰색 배경 위 보라색 색조
               elevation: isPureFinance ? 2 : 0, // 하얀 배경에서 구분되도록 약간의 그림자 추가
-              shadowColor: Colors.black.withOpacity(0.1),
+              shadowColor: Colors.black.withValues(alpha: 0.1),
               side: isPureFinance
                   ? BorderSide(color: colors.border)
                   : BorderSide.none,

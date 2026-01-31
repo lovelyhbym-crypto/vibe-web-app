@@ -87,7 +87,7 @@ class _CompactTrendChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (data.every((v) => v == 0)) {
-      return Center(
+      return const Center(
         child: Text("No data yet", style: TextStyle(color: Colors.white24)),
       );
     }
@@ -96,8 +96,8 @@ class _CompactTrendChart extends StatelessWidget {
       padding: const EdgeInsets.all(16.0),
       child: LineChart(
         LineChartData(
-          gridData: FlGridData(show: false),
-          titlesData: FlTitlesData(show: false),
+          gridData: const FlGridData(show: false),
+          titlesData: const FlTitlesData(show: false),
           borderData: FlBorderData(show: false),
           lineBarsData: [
             LineChartBarData(
@@ -109,7 +109,7 @@ class _CompactTrendChart extends StatelessWidget {
               isCurved: true,
               color: const Color(0xFFD4FF00),
               barWidth: 3,
-              dotData: FlDotData(show: false),
+              dotData: const FlDotData(show: false),
               belowBarData: BarAreaData(
                 show: true,
                 color: const Color(0xFFD4FF00).withAlpha(26),
@@ -130,7 +130,7 @@ class _CompactPieChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (data.isEmpty) {
-      return Center(
+      return const Center(
         child: Text("No data yet", style: TextStyle(color: Colors.white24)),
       );
     }

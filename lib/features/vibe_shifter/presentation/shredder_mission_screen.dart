@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:math' as math;
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../mission/providers/mission_provider.dart';
@@ -146,8 +145,8 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
 
     if (isHorizontal) {
       // Left to Right crack
-      double startY = _random.nextDouble() * h;
-      double endY = _random.nextDouble() * h;
+      final double startY = _random.nextDouble() * h;
+      final double endY = _random.nextDouble() * h;
       path.moveTo(0, startY);
 
       // Simple 3-step zigzag
@@ -156,8 +155,8 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
       path.lineTo(w, endY);
     } else {
       // Top to Bottom crack
-      double startX = _random.nextDouble() * w;
-      double endX = _random.nextDouble() * w;
+      final double startX = _random.nextDouble() * w;
+      final double endX = _random.nextDouble() * w;
       path.moveTo(startX, 0);
 
       // Simple 3-step zigzag
@@ -341,9 +340,9 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
         width: 100,
         height: 100,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.5)),
+          border: Border.all(color: color.withValues(alpha: 0.5)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -528,7 +527,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
                 child: IgnorePointer(
                   child: Text(
                     'HP: $_hp',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.redAccent,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

@@ -1,7 +1,6 @@
 import 'package:flutter_animate/flutter_animate.dart';
 import 'dart:ui' as ui;
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -388,7 +387,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
       }
     } catch (e) {
       debugPrint('Save error: $e');
-      throw e; // Rethrow to be caught by _saveChanges
+      rethrow; // Rethrow to be caught by _saveChanges
     }
   }
 
@@ -467,7 +466,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            backgroundColor: Color(0xFF2A0000), // Dark Red
+            backgroundColor: const Color(0xFF2A0000), // Dark Red
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(color: colors.danger),
@@ -475,7 +474,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
             title: Row(
               children: [
                 Icon(Icons.warning_amber_rounded, color: colors.danger),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
                   '[위험] 페널티 발생',
                   style: TextStyle(
@@ -489,7 +488,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   '이미 무료 기회를 사용하셨습니다.\n성공 확률이 -20% 감소합니다.',
                   style: TextStyle(color: Colors.white, height: 1.5),
                 ),
@@ -513,7 +512,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                 ),
                 const SizedBox(height: 20),
                 // Preview Visualization
-                Text(
+                const Text(
                   '성공 확률 변화',
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
@@ -572,7 +571,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                   borderRadius: BorderRadius.circular(6),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.red.withOpacity(0.8),
+                                      color: Colors.red.withValues(alpha: 0.8),
                                       blurRadius: 10,
                                       spreadRadius: 2,
                                     ),
@@ -582,7 +581,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                             ),
                             // If negative, show label explicitly
                             if (isNegative)
-                              Positioned(
+                              const Positioned(
                                 left: 0,
                                 top: 16,
                                 child: Text(
@@ -675,7 +674,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
               TextSpan(
                 text: "'실패 기록'",
                 style: TextStyle(
-                  color: colors.danger.withOpacity(0.8),
+                  color: colors.danger.withValues(alpha: 0.8),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -725,10 +724,11 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
             .deleteWishlist(widget.item.id!);
         if (mounted) context.pop();
       } catch (e) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('삭제 중 오류가 발생했습니다: $e')));
+        }
       }
     }
   }
@@ -749,7 +749,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                 onTap: () => Navigator.pop(context), // 화면 다른 곳 누르면 닫기
                 child: BackdropFilter(
                   filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(color: Colors.black.withOpacity(0.2)),
+                  child: Container(color: Colors.black.withValues(alpha: 0.2)),
                 ),
               ),
             ),
@@ -832,7 +832,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
             if (!isLocked)
               BoxShadow(
                 color: (isDanger ? const Color(0xFFFF0000) : Colors.white)
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
                 blurRadius: 15,
                 spreadRadius: 1,
               ),
@@ -961,7 +961,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                             begin: Alignment.bottomCenter,
                                             end: Alignment.topCenter,
                                             colors: [
-                                              Colors.black.withOpacity(0.8),
+                                              Colors.black.withValues(alpha: 0.8),
                                               Colors.transparent,
                                             ],
                                             stops: const [0.0, 0.4],
@@ -983,7 +983,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                             boxShadow: [
                                               BoxShadow(
                                                 color: colors.accent
-                                                    .withOpacity(0.8),
+                                                    .withValues(alpha: 0.8),
                                                 blurRadius: 8,
                                                 spreadRadius: 2,
                                               ),
@@ -1083,7 +1083,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                               ? BorderSide.none
                                               : BorderSide(
                                                   color: colors.accent
-                                                      .withOpacity(0.5),
+                                                      .withValues(alpha: 0.5),
                                                 ),
                                         ),
                                         contentPadding:
@@ -1161,7 +1161,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                   decoration: BoxDecoration(
                                     color: isPureFinance
                                         ? colors.background
-                                        : colors.accent.withOpacity(0.15),
+                                        : colors.accent.withValues(alpha: 0.15),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(
@@ -1259,7 +1259,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                                     ? BorderSide.none
                                                     : BorderSide(
                                                         color: colors.accent
-                                                            .withOpacity(0.5),
+                                                            .withValues(alpha: 0.5),
                                                       ),
                                               ),
                                               contentPadding:
@@ -1370,7 +1370,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                 final isLow = value <= 0;
                                 final isHigh = value >= 0.8;
 
-                                Widget indicator = LinearProgressIndicator(
+                                final Widget indicator = LinearProgressIndicator(
                                   value: progressValue,
                                   backgroundColor: isPureFinance
                                       ? colors.border
@@ -1402,7 +1402,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                 }
 
                                 // Stage 1: Pulse animation
-                                Widget animatedGauge = indicator
+                                final Widget animatedGauge = indicator
                                     .animate(
                                       onPlay: (controller) =>
                                           controller.repeat(reverse: true),
@@ -1424,7 +1424,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                       borderRadius: BorderRadius.circular(3.0),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: colors.accent.withOpacity(0.6),
+                                          color: colors.accent.withValues(alpha: 0.6),
                                           blurRadius: 12,
                                           spreadRadius: 2,
                                         ),
@@ -1488,7 +1488,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                             (isPureFinance
                                                     ? colors.accent
                                                     : const Color(0xFFD4FF00))
-                                                .withOpacity(0.3),
+                                                .withValues(alpha: 0.3),
                                         blurRadius: 12,
                                         spreadRadius: 2,
                                       ),
@@ -1600,11 +1600,11 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                     width: 4,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(2),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           blurRadius: 4,
                         ),
                       ],
@@ -1629,12 +1629,12 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                         // PRD: 시선을 강탈하는 초강력 네온 광광 효과 (Multi-layered Glow)
                         boxShadow: [
                           BoxShadow(
-                            color: colors.accent.withOpacity(0.6),
+                            color: colors.accent.withValues(alpha: 0.6),
                             blurRadius: 25,
                             spreadRadius: 4,
                           ),
                           BoxShadow(
-                            color: colors.accent.withOpacity(0.4),
+                            color: colors.accent.withValues(alpha: 0.4),
                             blurRadius: 40,
                             spreadRadius: 8,
                           ),

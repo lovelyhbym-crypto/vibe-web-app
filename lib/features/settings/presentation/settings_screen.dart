@@ -150,14 +150,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       isPureFinance ? Icons.light_mode : Icons.nightlight_round,
                       color: isPureFinance ? Colors.orange : colors.accent,
                     ),
-                    activeColor: Colors.white,
+                    activeThumbColor: Colors.white,
                     activeTrackColor: colors.accent,
                     value: isPureFinance,
                     onChanged: (value) {
                       ref.read(themeNotifierProvider.notifier).toggleTheme();
                     },
                   ),
-                  Divider(color: colors.textSub.withOpacity(0.1), height: 1),
+                  Divider(color: colors.textSub.withValues(alpha: 0.1), height: 1),
                   ListTile(
                     leading: Icon(Icons.language, color: colors.textSub),
                     title: Text(
@@ -323,7 +323,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     width: 60,
                     height: 60,
                     decoration: BoxDecoration(
-                      color: colors.accent.withOpacity(0.1),
+                      color: colors.accent.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                       border: Border.all(color: colors.accent, width: 2),
                     ),
@@ -348,7 +348,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             Expanded(
                               child: Text(
                                 nickname,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -359,7 +359,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             IconButton(
                               icon: Icon(
                                 Icons.edit,
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.white.withValues(alpha: 0.5),
                                 size: 18,
                               ),
                               onPressed: () => _showEditNicknameDialog(
@@ -424,7 +424,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.accent.withOpacity(0.1)),
+        border: Border.all(color: colors.accent.withValues(alpha: 0.1)),
       ),
       child: ListTile(
         leading: Icon(Icons.lock_outline, color: colors.accent),
@@ -620,7 +620,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: Text(
           title,
           style: TextStyle(
-            color: isDanger ? colors.danger.withOpacity(0.8) : colors.textSub,
+            color: isDanger ? colors.danger.withValues(alpha: 0.8) : colors.textSub,
             fontWeight: FontWeight.bold,
             fontSize: 12,
             letterSpacing: isDanger ? 1.2 : null,
@@ -674,7 +674,7 @@ class _LanguageToggle extends StatelessWidget {
                 boxShadow: isPureMode
                     ? [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
