@@ -182,9 +182,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: CustomPaint(painter: _GridBackgroundPainter(opacity: 0.02)),
           ),
 
-          // Layer 2: Engine Core Background (The true base layer for rings)
-          // 점선 원들이 모든 글로우와 패널 뒤에 위치하도록 함
-          const Center(child: EngineCoreWidget()),
+          // Layer 2: Engine Core Background
+          // 위치를 약 20px 위로 조정 (Alignment.center에서 약간 위로)
+          const Align(alignment: Alignment(0, -0.1), child: EngineCoreWidget()),
 
           // Layer 3: Blurry Environment Lights (Translucent Overlays)
           Positioned(
@@ -221,34 +221,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
 
           // Layer 4: Core Sync Glow
-          Center(
-            child:
-                Container(
-                      width: 400,
-                      height: 400,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            accentColor.withValues(alpha: 0.12),
-                            Colors.transparent,
-                          ],
-                        ),
+          Align(
+                alignment: const Alignment(0, -0.1),
+                child: SizedBox(
+                  width: 400,
+                  height: 400,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          accentColor.withValues(alpha: 0.12),
+                          Colors.transparent,
+                        ],
                       ),
-                    )
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .scale(
-                      begin: const Offset(0.8, 0.8),
-                      end: const Offset(1.1, 1.1),
-                      duration: 800.ms,
-                      curve: Curves.easeInOut,
-                    )
-                    .fadeOut(
-                      begin: 0.3,
-                      duration: 800.ms,
-                      curve: Curves.easeInOut,
                     ),
-          ),
+                  ),
+                ),
+              )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scale(
+                begin: const Offset(0.8, 0.8),
+                end: const Offset(1.1, 1.1),
+                duration: 800.ms,
+                curve: Curves.easeInOut,
+              )
+              .fadeOut(begin: 0.3, duration: 800.ms, curve: Curves.easeInOut),
 
           // Content Layer (Top-most)
           SafeArea(
@@ -329,42 +327,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           );
                                         },
                                       )
-                                      .animate(onPlay: (c) => c.repeat())
                                       .shimmer(
                                         duration: 3.seconds, // 3초 주기의 고급스러운 빛줄기
                                         color: Colors.white24,
                                         angle: math.pi / 4,
                                       ),
-                                  const SizedBox(height: 8), // 간격 좁힘
+                                  const SizedBox(height: 2), // 간격 줄임 (8 -> 2)
                                   Text(
                                     'Neural Efficiency & Reward Verification Engine'
                                         .toUpperCase(),
                                     style: const TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w100, // 더 얇게 처리
+                                      fontSize: 7, // 10 -> 7 (70% 수준)
+                                      fontWeight: FontWeight.w100,
                                       color: Colors.white70,
-                                      letterSpacing: 2.0,
+                                      letterSpacing: 4.0, // 자간 넓힘 (2.0 -> 4.0)
                                       fontFamily: 'Courier',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  const Text(
-                                    '> 신경 효율성 및 보상 검증 엔진',
-                                    style: TextStyle(
-                                      fontSize: 12, // 크기 축소
-                                      fontWeight: FontWeight.w300,
-                                      color: Colors.white38, // 투명도 하향
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'NERVE SYSTEM v1.0.42',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w200,
-                                      color: accentColor.withValues(alpha: 0.4),
-                                      letterSpacing: 1.2,
                                     ),
                                   ),
                                 ],
@@ -519,6 +496,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 );
               },
+            ),
+          ),
+
+          // Layer 5: Bottom Corner Stealth Version Info
+          Positioned(
+            bottom: 12,
+            right: 12,
+            child: Text(
+              'v1.0.42',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.1),
+                fontSize: 9,
+                fontWeight: FontWeight.w200,
+                letterSpacing: 1.5,
+              ),
             ),
           ),
         ],
