@@ -338,12 +338,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     textAlign: TextAlign.center,
                                     maxLines: 1,
                                     overflow: TextOverflow.visible,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                    style: TextStyle(
+                                      fontSize: 10, // 11 -> 10px로 더 콤팩트하게
+                                      fontWeight: FontWeight
+                                          .w400, // Bold에서 Regular로 변경하여 세련미 추가
+                                      color: Colors.white.withOpacity(
+                                        0.7,
+                                      ), // 완벽한 화이트보다 살짝 투명하게
                                       letterSpacing: 4.0,
-                                      fontFamily: 'Courier',
                                     ),
                                   ),
                                   const SizedBox(height: 8), // 영문-한글 간격
@@ -353,10 +355,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     maxLines: 1,
                                     overflow: TextOverflow.visible,
                                     style: TextStyle(
-                                      fontSize: 14.0,
+                                      fontSize:
+                                          11.5, // 자간 폭이 넓어지므로 전체 폭을 맞추기 위해 12.5 -> 11.5
                                       fontWeight: FontWeight.w300,
-                                      color: Colors.white.withOpacity(0.6),
-                                      letterSpacing: -0.2,
+                                      color: Colors.white.withOpacity(0.35),
+                                      letterSpacing:
+                                          2.5, // 자간을 넓게 조정 (사진의 느낌 반영)
                                     ),
                                   ),
                                 ],
