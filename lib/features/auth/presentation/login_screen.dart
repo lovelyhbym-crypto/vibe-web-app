@@ -332,16 +332,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         color: Colors.white24,
                                         angle: math.pi / 4,
                                       ),
-                                  const SizedBox(height: 2), // 간격 줄임 (8 -> 2)
+                                  const SizedBox(height: 15), // 로고-슬로건 간격
                                   Text(
-                                    'Neural Efficiency & Reward Verification Engine'
-                                        .toUpperCase(),
+                                    'THE IMPULSE CONTROL ENGINE'.toUpperCase(),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.visible,
                                     style: const TextStyle(
-                                      fontSize: 7, // 10 -> 7 (70% 수준)
-                                      fontWeight: FontWeight.w100,
-                                      color: Colors.white70,
-                                      letterSpacing: 4.0, // 자간 넓힘 (2.0 -> 4.0)
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      letterSpacing: 4.0,
                                       fontFamily: 'Courier',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8), // 영문-한글 간격
+                                  Text(
+                                    '> 당신의 목표를 실현하는 저축 엔진',
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.visible,
+                                    style: TextStyle(
+                                      fontSize: 14.0,
+                                      fontWeight: FontWeight.w300,
+                                      color: Colors.white.withOpacity(0.6),
+                                      letterSpacing: -0.2,
                                     ),
                                   ),
                                 ],
@@ -477,7 +492,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Opacity(
                             opacity: 0.8,
                             child: Text(
-                              'NERVE PROTOCOL OPERATED BY CHIEF ENGINEER H.B. YOUNGMAN',
+                              'CHIEF ENGINEER H.B. YOUNGMAN',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.1),
                                 fontSize: 9.0,
