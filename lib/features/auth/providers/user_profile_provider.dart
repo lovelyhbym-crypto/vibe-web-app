@@ -46,7 +46,12 @@ class UserProfileNotifier extends _$UserProfileNotifier {
 
       if (response == null) {
         // Create if not exists
-        final newProfile = UserProfile(id: user.id, hasFreePass: true);
+        final newProfile = UserProfile(
+          id: user.id,
+          hasFreePass: true,
+          nickname: user.userMetadata?['full_name'] ?? 'ENGINEER',
+          createdAt: DateTime.now(),
+        );
         await ref
             .read(supabaseProvider)
             .from('user_profiles')
@@ -132,6 +137,36 @@ class UserProfileNotifier extends _$UserProfileNotifier {
         } catch (innerE) {
           print('Error updating failed count: $innerE');
         }
+      }
+    }
+  }
+
+  // Update Nickname
+  Future<void> updateNickname(String newNickname) async {
+    final current = state.value;
+    if (current == null) return;
+
+    // Optimistic Update
+    final updated = current.copyWith(nickname: newNickname);
+    state = AsyncValue.data(updated);
+
+    // Persist
+    final user = ref.read(authProvider).asData?.value;
+
+    // 1. Local Persistence (Always)
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_storageKey, jsonEncode(updated.toJson()));
+
+    // 2. Remote Persistence (If Logged In)
+    if (user != null) {
+      try {
+        await ref
+            .read(supabaseProvider)
+            .from('user_profiles')
+            .update({'nickname': newNickname})
+            .eq('id', user.id);
+      } catch (e) {
+        print('Error updating nickname: $e');
       }
     }
   }

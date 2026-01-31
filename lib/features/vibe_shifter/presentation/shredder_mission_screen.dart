@@ -9,6 +9,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../mission/providers/mission_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:vibration/vibration.dart';
 import '../../../core/ui/glass_card.dart';
 import '../../../core/ui/bouncy_button.dart';
 import '../../../core/ui/background_gradient.dart';
@@ -52,7 +54,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
   bool _isNavigating = false;
 
   late AnimationController _shakeController;
-  // Note: Float controller removed for ultra-stability (reducing animation overhead)
+  late AudioPlayer _audioPlayer;
 
   final TextEditingController _textController = TextEditingController();
 
@@ -67,6 +69,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
+    _audioPlayer = AudioPlayer();
 
     // [NEW] Listen to Mission Provider's Damage Stream to Sync Visuals
     // Delay slightly to ensure provider is ready
@@ -82,6 +85,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
   @override
   void dispose() {
     _shakeController.dispose();
+    _audioPlayer.dispose();
     _textController.dispose();
     super.dispose();
   }
@@ -175,7 +179,18 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
 
     // Safety: Try-Catch to prevent app crash on animation error
     try {
-      HapticFeedback.mediumImpact();
+      // 1. Audio Impact
+      _audioPlayer.play(
+        AssetSource('audio/chip.mp3'),
+        mode: PlayerMode.lowLatency,
+      );
+
+      // 2. Physical Vibration
+      Vibration.hasVibrator().then((hasVibrator) {
+        if (hasVibrator == true) {
+          Vibration.vibrate(duration: 50, amplitude: 128);
+        }
+      });
 
       _shakeController.forward(from: 0).then((_) {
         if (mounted) _shakeController.reset();
@@ -243,7 +258,13 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
       _damageNumbers.clear();
     });
 
-    HapticFeedback.heavyImpact();
+    // Final Destruction Sound & Vibration
+    _audioPlayer.play(AssetSource('audio/shatter.mp3'));
+    Vibration.hasVibrator().then((hasVibrator) {
+      if (hasVibrator == true) {
+        Vibration.vibrate(duration: 800);
+      }
+    });
 
     await Future.delayed(const Duration(milliseconds: 2000));
 

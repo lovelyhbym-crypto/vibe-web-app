@@ -25,6 +25,9 @@ mixin _$UserProfile {
   bool get hasFreePass => throw _privateConstructorUsedError;
   @JsonKey(name: 'failed_count')
   int get failedCount => throw _privateConstructorUsedError;
+  String get nickname => throw _privateConstructorUsedError;
+  @JsonKey(name: 'created_at')
+  DateTime? get createdAt => throw _privateConstructorUsedError;
 
   /// Serializes this UserProfile to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -47,6 +50,8 @@ abstract class $UserProfileCopyWith<$Res> {
     String id,
     bool hasFreePass,
     @JsonKey(name: 'failed_count') int failedCount,
+    String nickname,
+    @JsonKey(name: 'created_at') DateTime? createdAt,
   });
 }
 
@@ -68,6 +73,8 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
     Object? id = null,
     Object? hasFreePass = null,
     Object? failedCount = null,
+    Object? nickname = null,
+    Object? createdAt = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -83,6 +90,14 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
                 ? _value.failedCount
                 : failedCount // ignore: cast_nullable_to_non_nullable
                       as int,
+            nickname: null == nickname
+                ? _value.nickname
+                : nickname // ignore: cast_nullable_to_non_nullable
+                      as String,
+            createdAt: freezed == createdAt
+                ? _value.createdAt
+                : createdAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
           )
           as $Val,
     );
@@ -102,6 +117,8 @@ abstract class _$$UserProfileImplCopyWith<$Res>
     String id,
     bool hasFreePass,
     @JsonKey(name: 'failed_count') int failedCount,
+    String nickname,
+    @JsonKey(name: 'created_at') DateTime? createdAt,
   });
 }
 
@@ -122,6 +139,8 @@ class __$$UserProfileImplCopyWithImpl<$Res>
     Object? id = null,
     Object? hasFreePass = null,
     Object? failedCount = null,
+    Object? nickname = null,
+    Object? createdAt = freezed,
   }) {
     return _then(
       _$UserProfileImpl(
@@ -137,6 +156,14 @@ class __$$UserProfileImplCopyWithImpl<$Res>
             ? _value.failedCount
             : failedCount // ignore: cast_nullable_to_non_nullable
                   as int,
+        nickname: null == nickname
+            ? _value.nickname
+            : nickname // ignore: cast_nullable_to_non_nullable
+                  as String,
+        createdAt: freezed == createdAt
+            ? _value.createdAt
+            : createdAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
       ),
     );
   }
@@ -149,6 +176,8 @@ class _$UserProfileImpl implements _UserProfile {
     required this.id,
     this.hasFreePass = true,
     @JsonKey(name: 'failed_count') this.failedCount = 0,
+    this.nickname = '',
+    @JsonKey(name: 'created_at') this.createdAt,
   });
 
   factory _$UserProfileImpl.fromJson(Map<String, dynamic> json) =>
@@ -162,10 +191,16 @@ class _$UserProfileImpl implements _UserProfile {
   @override
   @JsonKey(name: 'failed_count')
   final int failedCount;
+  @override
+  @JsonKey()
+  final String nickname;
+  @override
+  @JsonKey(name: 'created_at')
+  final DateTime? createdAt;
 
   @override
   String toString() {
-    return 'UserProfile(id: $id, hasFreePass: $hasFreePass, failedCount: $failedCount)';
+    return 'UserProfile(id: $id, hasFreePass: $hasFreePass, failedCount: $failedCount, nickname: $nickname, createdAt: $createdAt)';
   }
 
   @override
@@ -177,12 +212,23 @@ class _$UserProfileImpl implements _UserProfile {
             (identical(other.hasFreePass, hasFreePass) ||
                 other.hasFreePass == hasFreePass) &&
             (identical(other.failedCount, failedCount) ||
-                other.failedCount == failedCount));
+                other.failedCount == failedCount) &&
+            (identical(other.nickname, nickname) ||
+                other.nickname == nickname) &&
+            (identical(other.createdAt, createdAt) ||
+                other.createdAt == createdAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, hasFreePass, failedCount);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    hasFreePass,
+    failedCount,
+    nickname,
+    createdAt,
+  );
 
   /// Create a copy of UserProfile
   /// with the given fields replaced by the non-null parameter values.
@@ -203,6 +249,8 @@ abstract class _UserProfile implements UserProfile {
     required final String id,
     final bool hasFreePass,
     @JsonKey(name: 'failed_count') final int failedCount,
+    final String nickname,
+    @JsonKey(name: 'created_at') final DateTime? createdAt,
   }) = _$UserProfileImpl;
 
   factory _UserProfile.fromJson(Map<String, dynamic> json) =
@@ -215,6 +263,11 @@ abstract class _UserProfile implements UserProfile {
   @override
   @JsonKey(name: 'failed_count')
   int get failedCount;
+  @override
+  String get nickname;
+  @override
+  @JsonKey(name: 'created_at')
+  DateTime? get createdAt;
 
   /// Create a copy of UserProfile
   /// with the given fields replaced by the non-null parameter values.

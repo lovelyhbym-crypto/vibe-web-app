@@ -9,6 +9,8 @@ class UserProfile with _$UserProfile {
     required String id,
     @Default(true) bool hasFreePass,
     @JsonKey(name: 'failed_count') @Default(0) int failedCount,
+    @Default('') String nickname,
+    @JsonKey(name: 'created_at') DateTime? createdAt,
   }) = _UserProfile;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) =>

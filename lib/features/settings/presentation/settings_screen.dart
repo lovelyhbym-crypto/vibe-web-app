@@ -11,6 +11,9 @@ import 'providers/pin_notifier.dart';
 import 'widgets/pin_auth_dialog.dart';
 import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:vive_app/core/theme/theme_provider.dart';
+import '../../auth/providers/user_profile_provider.dart';
+import '../../../core/ui/glass_card.dart';
+import 'package:intl/intl.dart';
 
 import 'package:vive_app/core/services/bank_account_service.dart';
 import 'package:vive_app/core/ui/floating_input_field.dart';
@@ -119,105 +122,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Theme Settings
-            _buildSectionHeader("Visual Identity", colors),
+            _buildChiefEngineerCard(context, colors),
+            const SizedBox(height: 16),
+            // System Configuration Section
+            _buildSectionHeader("System Configuration", colors),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: colors.surface,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: isPureFinance
-                    ? [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                        ),
-                      ]
-                    : null,
-              ),
-              child: SwitchListTile(
-                title: Text(
-                  "Pure Finance 모드",
-                  style: TextStyle(
-                    color: colors.textMain,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Text(
-                  isPureFinance ? "단순함과 신뢰의 토스 스타일" : "몰입감을 주는 사이버펑크 스타일",
-                  style: TextStyle(color: colors.textSub, fontSize: 12),
-                ),
-                secondary: Icon(
-                  isPureFinance ? Icons.light_mode : Icons.nightlight_round,
-                  color: isPureFinance ? Colors.orange : colors.accent,
-                ),
-                activeColor: Colors.white,
-                activeTrackColor: colors.accent,
-                value: isPureFinance,
-                onChanged: (value) {
-                  ref.read(themeNotifierProvider.notifier).toggleTheme();
-                },
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Account Settings Section
-            _buildSectionHeader("송금 계좌 설정", colors),
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: colors.surface,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 children: [
-                  FloatingInputField(
-                    controller: _bankCodeController,
-                    label: "토스 뱅크 코드 (예: 190)",
-                    style: TextStyle(color: colors.textMain),
-                    readOnly: true, // Use custom keypad
-                    onTap: () => _showKeypad(context, _bankCodeController),
+                  SwitchListTile(
+                    title: Text(
+                      "Pure Finance 모드",
+                      style: TextStyle(
+                        color: colors.textMain,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Text(
+                      isPureFinance ? "단순함과 신뢰의 스타일" : "사이버펑크 스타일",
+                      style: TextStyle(color: colors.textSub, fontSize: 11),
+                    ),
+                    secondary: Icon(
+                      isPureFinance ? Icons.light_mode : Icons.nightlight_round,
+                      color: isPureFinance ? Colors.orange : colors.accent,
+                    ),
+                    activeColor: Colors.white,
+                    activeTrackColor: colors.accent,
+                    value: isPureFinance,
+                    onChanged: (value) {
+                      ref.read(themeNotifierProvider.notifier).toggleTheme();
+                    },
                   ),
-                  const SizedBox(height: 16),
-                  FloatingInputField(
-                    controller: _accountNumberController,
-                    label: "계좌번호",
-                    style: TextStyle(color: colors.textMain),
-                    readOnly: true, // Use custom keypad
-                    onTap: () => _showKeypad(context, _accountNumberController),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        await _bankAccountService.saveAccountInfo(
-                          _bankCodeController.text,
-                          _accountNumberController.text,
-                        );
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("계좌 정보가 저장되었습니다.")),
-                          );
-                        }
+                  Divider(color: colors.textSub.withOpacity(0.1), height: 1),
+                  ListTile(
+                    leading: Icon(Icons.language, color: colors.textSub),
+                    title: Text(
+                      i18n.languageSetting,
+                      style: TextStyle(color: colors.textMain, fontSize: 14),
+                    ),
+                    trailing: _LanguageToggle(
+                      isKorean: i18n.isKorean,
+                      onChanged: (isKorean) {
+                        final locale = isKorean
+                            ? const Locale('ko')
+                            : const Locale('en');
+                        ref.read(localeProvider.notifier).setLocale(locale);
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colors.accent,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "저장",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black, // 글자색을 검정색으로 변경
-                        ),
-                      ),
+                      isPureMode: isPureFinance,
+                      colors: colors,
                     ),
                   ),
                 ],
@@ -226,116 +182,428 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
             const SizedBox(height: 24),
 
-            ListTile(
-              title: Text(
-                i18n.languageSetting,
-                style: TextStyle(color: colors.textMain),
-              ),
-              trailing: _LanguageToggle(
-                isKorean: i18n.isKorean,
-                onChanged: (isKorean) {
-                  final locale = isKorean
-                      ? const Locale('ko')
-                      : const Locale('en');
-                  ref.read(localeProvider.notifier).setLocale(locale);
-                },
-                isPureMode: isPureFinance,
-                colors: colors,
-              ),
-            ),
-            Divider(color: colors.textSub.withOpacity(0.1)),
-            ListTile(
-              leading: Icon(Icons.logout, color: colors.textSub),
-              title: Text(
-                'Logout',
-                style: TextStyle(
-                  color: colors.textSub,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              onTap: () {
-                ref.read(authProvider.notifier).signOut();
-              },
-            ),
+            // My Vault Section
+            _buildSectionHeader("Financial Security", colors),
+            _buildVaultTile(context, colors, isPureFinance),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 24),
 
-            _buildSectionHeader('Danger Zone', colors, isDanger: true),
+            // Account Access Section
+            _buildSectionHeader("Account Access", colors),
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                border: Border.all(color: colors.danger.withOpacity(0.5)),
-                borderRadius: BorderRadius.circular(8),
-                color: colors.danger.withOpacity(0.05),
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(16),
               ),
               child: ListTile(
-                leading: Icon(Icons.delete_forever, color: colors.danger),
+                leading: Icon(Icons.logout, color: colors.textSub),
                 title: Text(
-                  '데이터 전체 초기화',
+                  'Logout',
                   style: TextStyle(
-                    color: colors.danger,
+                    color: colors.textSub,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                subtitle: Text(
-                  '모든 절약 기록과 위시리스트가 영구 삭제됩니다.',
-                  style: TextStyle(
-                    color: colors.danger.withOpacity(0.7),
-                    fontSize: 12,
-                  ),
-                ),
                 onTap: () {
-                  pinState.when(
-                    data: (storedPin) {
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (context) => PinAuthDialog(
-                          isRegistration: storedPin == null,
-                          onSuccess: () async {
-                            try {
-                              await ref
-                                  .read(savingProvider.notifier)
-                                  .deleteAllSavings();
-                              await ref
-                                  .read(wishlistProvider.notifier)
-                                  .deleteAllWishlists();
-                              ref
-                                  .read(gloryReportProvider.notifier)
-                                  .resetReport();
-
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text("모든 데이터가 성공적으로 초기화되었습니다."),
-                                    backgroundColor: colors.danger,
-                                  ),
-                                );
-                                context.go('/');
-                              }
-                            } catch (e) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('초기화 실패: $e')),
-                                );
-                              }
-                              debugPrint("초기화 실패: $e");
-                            }
-                          },
-                        ),
-                      );
-                    },
-                    loading: () {},
-                    error: (e, _) => ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('오류 발생: $e'))),
-                  );
+                  ref.read(authProvider.notifier).signOut();
                 },
+              ),
+            ),
+
+            const SizedBox(height: 48),
+
+            // Danger Zone Section
+            Center(
+              child: Opacity(
+                opacity: 0.3,
+                child: Column(
+                  children: [
+                    Text(
+                      "DANGER ZONE",
+                      style: TextStyle(
+                        color: colors.danger,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () =>
+                          _handleResetData(context, colors, pinState),
+                      child: Text(
+                        '데이터 전체 초기화',
+                        style: TextStyle(
+                          color: colors.danger,
+                          fontSize: 12,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 32),
           ],
         ),
+      ),
+    );
+  }
+
+  void _handleResetData(
+    BuildContext context,
+    VibeColors colors,
+    AsyncValue<String?> pinState,
+  ) {
+    pinState.when(
+      data: (storedPin) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => PinAuthDialog(
+            isRegistration: storedPin == null,
+            onSuccess: () async {
+              try {
+                await ref.read(savingProvider.notifier).deleteAllSavings();
+                await ref.read(wishlistProvider.notifier).deleteAllWishlists();
+                ref.read(gloryReportProvider.notifier).resetReport();
+
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text("모든 데이터가 성공적으로 초기화되었습니다."),
+                      backgroundColor: colors.danger,
+                    ),
+                  );
+                  context.go('/');
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('초기화 실패: $e')));
+                }
+                debugPrint("초기화 실패: $e");
+              }
+            },
+          ),
+        );
+      },
+      loading: () {},
+      error: (e, _) => ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('오류 발생: $e'))),
+    );
+  }
+
+  Widget _buildChiefEngineerCard(BuildContext context, VibeColors colors) {
+    final profileAsync = ref.watch(userProfileNotifierProvider);
+
+    return profileAsync.when(
+      data: (profile) {
+        final registrationDate = profile.createdAt != null
+            ? DateFormat('yyyy.MM.dd').format(profile.createdAt!)
+            : '2026.01.29';
+        final nickname = profile.nickname.isEmpty
+            ? 'ENGINEER'
+            : profile.nickname;
+
+        return GlassCard(
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: colors.accent.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: colors.accent, width: 2),
+                    ),
+                    child: Icon(Icons.person, color: colors.accent, size: 32),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'CHIEF ENGINEER',
+                          style: TextStyle(
+                            color: colors.accent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                nickname,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                Icons.edit,
+                                color: Colors.white.withOpacity(0.5),
+                                size: 18,
+                              ),
+                              onPressed: () => _showEditNicknameDialog(
+                                context,
+                                nickname,
+                                colors,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'REGISTRATION_DATE: $registrationDate',
+                    style: TextStyle(
+                      color: Colors.white.withAlpha(26),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                  Text(
+                    'SERIAL_NO: VIBE-${profile.id.substring(0, 4).toUpperCase()}',
+                    style: TextStyle(
+                      color: Colors.white.withAlpha(26),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => const SizedBox(
+        height: 160,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (e, _) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildVaultTile(
+    BuildContext context,
+    VibeColors colors,
+    bool isPureFinance,
+  ) {
+    final accountNumber = _accountNumberController.text;
+    final maskedAccount = accountNumber.length > 4
+        ? 'TOSSBANK ****${accountNumber.substring(accountNumber.length - 4)}'
+        : 'CONNECTED: TOSSBANK';
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.accent.withOpacity(0.1)),
+      ),
+      child: ListTile(
+        leading: Icon(Icons.lock_outline, color: colors.accent),
+        title: Text(
+          "My Vault (계좌 관리)",
+          style: TextStyle(color: colors.textMain, fontWeight: FontWeight.bold),
+        ),
+        subtitle: Text(
+          maskedAccount,
+          style: TextStyle(color: colors.textSub, fontSize: 12),
+        ),
+        trailing: Icon(Icons.chevron_right, color: colors.textSub),
+        onTap: () => _showVaultGate(context, colors),
+      ),
+    );
+  }
+
+  Future<void> _showVaultGate(BuildContext context, VibeColors colors) async {
+    final pinState = ref.read(pinProvider);
+
+    pinState.when(
+      data: (storedPin) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => PinAuthDialog(
+            isRegistration: storedPin == null,
+            onSuccess: () => _showAccountEditBottomSheet(context, colors),
+          ),
+        );
+      },
+      loading: () {},
+      error: (e, _) => ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Security Gate Error: $e'))),
+    );
+  }
+
+  void _showAccountEditBottomSheet(BuildContext context, VibeColors colors) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Vault: 계좌 관리",
+                  style: TextStyle(
+                    color: colors.textMain,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, color: colors.textSub),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            FloatingInputField(
+              controller: _bankCodeController,
+              label: "토스 뱅크 코드 (예: 190)",
+              style: TextStyle(color: colors.textMain),
+              readOnly: true,
+              onTap: () => _showKeypad(context, _bankCodeController),
+            ),
+            const SizedBox(height: 16),
+            FloatingInputField(
+              controller: _accountNumberController,
+              label: "계좌번호",
+              style: TextStyle(color: colors.textMain),
+              readOnly: true,
+              onTap: () => _showKeypad(context, _accountNumberController),
+            ),
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  await _bankAccountService.saveAccountInfo(
+                    _bankCodeController.text,
+                    _accountNumberController.text,
+                  );
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("금융 정보가 금고에 저장되었습니다.")),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colors.accent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  "SECURE SAVE",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showEditNicknameDialog(
+    BuildContext context,
+    String currentNickname,
+    VibeColors colors,
+  ) async {
+    final controller = TextEditingController(text: currentNickname);
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: colors.surface,
+        title: Text(
+          'Modify Code Name',
+          style: TextStyle(color: colors.textMain),
+        ),
+        content: TextField(
+          controller: controller,
+          style: TextStyle(color: colors.textMain),
+          decoration: InputDecoration(
+            hintText: 'Enter new nickname',
+            hintStyle: TextStyle(color: colors.textSub),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: colors.textSub),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: colors.accent),
+            ),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('CANCEL', style: TextStyle(color: colors.textSub)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (controller.text.isNotEmpty) {
+                await ref
+                    .read(userProfileNotifierProvider.notifier)
+                    .updateNickname(controller.text);
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: colors.accent),
+            child: const Text(
+              'UPDATE',
+              style: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
