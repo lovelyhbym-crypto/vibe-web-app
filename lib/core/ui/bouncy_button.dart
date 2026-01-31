@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../services/haptic_service.dart';
 
 class BouncyButton extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
   final Duration duration;
   final double scaleFactor;
+  final bool enableHaptic;
 
   const BouncyButton({
     super.key,
@@ -13,6 +14,7 @@ class BouncyButton extends StatefulWidget {
     required this.onTap,
     this.duration = const Duration(milliseconds: 100),
     this.scaleFactor = 0.95,
+    this.enableHaptic = true,
   });
 
   @override
@@ -23,7 +25,9 @@ class _BouncyButtonState extends State<BouncyButton> {
   double _scale = 1.0;
 
   void _onTapDown(TapDownDetails details) {
-    HapticFeedback.lightImpact(); // 촉각 피드백 추가
+    if (widget.enableHaptic) {
+      HapticService.light();
+    }
     setState(() {
       _scale = widget.scaleFactor;
     });

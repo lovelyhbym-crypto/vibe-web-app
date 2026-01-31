@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/pin_notifier.dart';
+import '../../../../core/services/haptic_service.dart';
 
 class PinAuthDialog extends ConsumerStatefulWidget {
   final bool isRegistration;
@@ -79,23 +80,19 @@ class _PinAuthDialogState extends ConsumerState<PinAuthDialog> {
 
             if (widget.isRegistration) {
               await ref.read(pinProvider.notifier).registerPin(input);
+              HapticService.success();
               if (mounted) Navigator.pop(context);
-              // 등록 직후 바로 삭제 프로세스로 가고 싶다면 onSuccess 호출 가능
-              // 하지만 보통 설정 후 바로 삭제보다는 설정 완료 메시지를 띄우는게 자연스러움.
-              // Instruction says "onSuccess" is for the action.
-              // If registration, we might want to just close or callback.
-              // Let's follow instruction:
-              // "PIN이 없으면 isRegistration: true로 다이얼로그를 띄웁니다."
-              // We will probably handle the success callback in SettingsScreen to show a snackbar.
               widget.onSuccess();
             } else {
               final isValid = await ref
                   .read(pinProvider.notifier)
                   .verifyPin(input);
               if (isValid) {
+                HapticService.success();
                 if (mounted) Navigator.pop(context);
                 widget.onSuccess();
               } else {
+                HapticService.error();
                 setState(() => _errorMessage = "비밀번호가 일치하지 않습니다.");
               }
             }

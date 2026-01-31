@@ -10,7 +10,7 @@ import '../../mission/providers/mission_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:vibration/vibration.dart';
+import '../../../core/services/haptic_service.dart';
 import '../../../core/ui/glass_card.dart';
 import '../../../core/ui/bouncy_button.dart';
 import '../../../core/ui/background_gradient.dart';
@@ -185,12 +185,8 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
         mode: PlayerMode.lowLatency,
       );
 
-      // 2. Physical Vibration
-      Vibration.hasVibrator().then((hasVibrator) {
-        if (hasVibrator == true) {
-          Vibration.vibrate(duration: 50, amplitude: 128);
-        }
-      });
+      // 2. Physical Vibration (Mechanical Shredding Feel)
+      HapticService.light();
 
       _shakeController.forward(from: 0).then((_) {
         if (mounted) _shakeController.reset();
@@ -260,11 +256,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
 
     // Final Destruction Sound & Vibration
     _audioPlayer.play(AssetSource('audio/shatter.mp3'));
-    Vibration.hasVibrator().then((hasVibrator) {
-      if (hasVibrator == true) {
-        Vibration.vibrate(duration: 800);
-      }
-    });
+    HapticService.heavy();
 
     await Future.delayed(const Duration(milliseconds: 2000));
 

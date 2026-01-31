@@ -9,6 +9,7 @@ import 'package:vive_app/core/utils/i18n.dart';
 import 'package:vive_app/core/theme/app_theme.dart';
 import 'package:vive_app/core/services/bank_account_service.dart';
 import 'package:vive_app/core/services/sound_service.dart';
+import 'package:vive_app/core/services/haptic_service.dart';
 
 import 'package:vive_app/features/saving/domain/category_model.dart';
 import 'package:vive_app/features/saving/providers/category_provider.dart';
@@ -63,7 +64,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
   void _addAmount(int amount) {
     // [Added] Sensory Feedback: Chip Sound & Light Vibration
     SoundService().playChip();
-    HapticFeedback.lightImpact();
+    HapticService.light();
 
     final current = int.tryParse(_amountController.text) ?? 0;
     _amountController.text = (current + amount).toString();
@@ -172,8 +173,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
 
     if (mounted) {
-      // Haptic Feedback for impact
-      HapticFeedback.mediumImpact();
+      // System failure impact
+      HapticService.vibrate();
 
       await showGeneralDialog(
         context: context,
@@ -432,8 +433,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
       return;
     }
 
-    // 1. 강한 진동
-    await HapticFeedback.heavyImpact();
+    // 1. 엔진 가동감 (Medium Impact)
+    await HapticService.medium();
 
     // 2. 계좌 정보 확인
     final info = await _bankAccountService.getAccountInfo();
@@ -538,7 +539,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               ref.read(rewardStateProvider.notifier).triggerConfetti();
               // [Added] Sensory Feedback: Firework Sound & Strong Vibration
               SoundService().playFirework();
-              HapticFeedback.vibrate();
+              HapticService.vibrate();
 
               // 3. 저축 데이터 기록
               await _performActualSaving();
@@ -613,7 +614,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
           );
 
       if (mounted) {
-        HapticFeedback.mediumImpact();
+        HapticService.success();
         // [수정] 이동 후 해당 화면에서 폭죽을 터뜨리므로 로컬 폭죽은 제거
         // _confettiController.play();
 

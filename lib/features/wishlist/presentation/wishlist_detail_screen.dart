@@ -19,6 +19,7 @@ import 'package:vive_app/core/ui/vibe_image_effect.dart';
 import 'package:flutter/services.dart';
 import 'package:vive_app/features/auth/providers/user_profile_provider.dart';
 import '../../../core/services/sound_service.dart';
+import '../../../core/services/haptic_service.dart';
 import 'widgets/countdown_timer_widget.dart';
 import 'package:vive_app/core/ui/floating_input_field.dart';
 import '../../../core/ui/bouncy_button.dart';
@@ -544,7 +545,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                       duration: const Duration(milliseconds: 2000),
                       curve: Curves.elasticOut,
                       onEnd: () {
-                        HapticFeedback.heavyImpact();
+                        HapticService.heavy();
                       },
                       builder: (context, value, child) {
                         // Value can be negative
@@ -716,9 +717,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     if (confirmed == true) {
       try {
         SoundService().playShatter();
-        HapticFeedback.heavyImpact();
+        HapticService.heavy();
         await Future.delayed(const Duration(milliseconds: 100));
-        HapticFeedback.heavyImpact();
+        HapticService.heavy();
         await ref
             .read(wishlistProvider.notifier)
             .deleteWishlist(widget.item.id!);
@@ -819,7 +820,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     return BouncyButton(
       onTap: isLocked
           ? () {
-              HapticFeedback.vibrate();
+              HapticService.vibrate();
             }
           : onTap,
       child: Container(

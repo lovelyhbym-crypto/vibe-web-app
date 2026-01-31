@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:vive_app/core/services/sound_service.dart';
+import 'package:vive_app/core/services/haptic_service.dart';
 
 class CustomKeypad extends StatelessWidget {
   final Function(String) onKeyTap;
@@ -102,7 +102,7 @@ class _KeypadButtonState extends State<_KeypadButton> {
 
   void _triggerFeedback() {
     SoundService().playChip();
-    HapticFeedback.lightImpact();
+    HapticService.light();
   }
 
   @override
