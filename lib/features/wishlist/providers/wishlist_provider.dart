@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import 'package:vive_app/core/network/supabase_client.dart';
-import 'package:vive_app/features/auth/providers/auth_provider.dart';
+import 'package:nerve/core/network/supabase_client.dart';
+import 'package:nerve/features/auth/providers/auth_provider.dart';
 import '../../auth/providers/user_profile_provider.dart';
 import '../domain/wishlist_model.dart';
 
@@ -97,8 +97,28 @@ class WishlistNotifier extends _$WishlistNotifier {
     final now = DateTime.now();
     final item = wishlist[index];
 
+    // [New Logic] Calculate Blur Accumulation (1 day = +2.0)
+    double additionalBlur = 0.0;
+    if (item.lastOpenedAt != null) {
+      final lastDate = DateTime(
+        item.lastOpenedAt!.year,
+        item.lastOpenedAt!.month,
+        item.lastOpenedAt!.day,
+      );
+      final todayDate = DateTime(now.year, now.month, now.day);
+      final daysGap = todayDate.difference(lastDate).inDays;
+      if (daysGap > 0) {
+        additionalBlur = daysGap * 2.0;
+      }
+    }
+
+    final newBlurLevel = (item.blurLevel + additionalBlur).clamp(0.0, 10.0);
+
     // Optimistic Update
-    final updatedItem = item.copyWith(lastOpenedAt: now);
+    final updatedItem = item.copyWith(
+      lastOpenedAt: now,
+      blurLevel: newBlurLevel,
+    );
     final updatedList = List<WishlistModel>.from(wishlist);
     updatedList[index] = updatedItem;
     state = AsyncValue.data(updatedList);
@@ -114,7 +134,10 @@ class WishlistNotifier extends _$WishlistNotifier {
       await ref
           .read(supabaseProvider)
           .from('wishlists')
-          .update({'last_opened_at': now.toIso8601String()})
+          .update({
+            'last_opened_at': now.toIso8601String(),
+            'blur_level': newBlurLevel,
+          })
           .eq('id', id);
     } catch (e) {
       debugPrint('Error recording access for $id: $e');

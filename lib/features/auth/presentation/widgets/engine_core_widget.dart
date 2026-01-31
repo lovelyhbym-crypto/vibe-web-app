@@ -109,7 +109,7 @@ class EngineCoreWidget extends StatelessWidget {
                   .scale(
                     begin: const Offset(1.0, 1.0),
                     end: const Offset(1.2, 1.2),
-                    duration: 1.seconds,
+                    duration: 800.ms,
                     curve: Curves.easeInOutSine,
                   ),
             ],

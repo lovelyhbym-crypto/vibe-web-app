@@ -7,7 +7,7 @@ import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
 
-import 'package:vive_app/core/providers/locale_provider.dart';
+import 'package:nerve/core/providers/locale_provider.dart';
 import 'core/utils/i18n.dart';
 import 'core/config/env_config.dart';
 
@@ -59,7 +59,7 @@ class MyApp extends ConsumerWidget {
     final themeMode = ref.watch(themeNotifierProvider);
 
     return MaterialApp.router(
-      title: 'Vive App',
+      title: 'Nerve App',
       locale: locale,
       supportedLocales: const [Locale('ko'), Locale('en')],
       localizationsDelegates: const [

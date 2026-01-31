@@ -9,18 +9,18 @@ import '../../../core/ui/glass_card.dart';
 import '../../../core/utils/i18n.dart';
 import '../../wishlist/domain/wishlist_model.dart';
 import '../providers/wishlist_provider.dart';
-import 'package:vive_app/core/theme/theme_provider.dart';
-import 'package:vive_app/core/theme/app_theme.dart';
+import 'package:nerve/core/theme/theme_provider.dart';
+import 'package:nerve/core/theme/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/services/image_service.dart';
 import 'package:intl/intl.dart';
-import 'package:vive_app/core/ui/vibe_image_effect.dart';
+import 'package:nerve/core/ui/vibe_image_effect.dart';
 import 'package:flutter/services.dart';
-import 'package:vive_app/features/auth/providers/user_profile_provider.dart';
+import 'package:nerve/features/auth/providers/user_profile_provider.dart';
 import '../../../core/services/sound_service.dart';
 import '../../../core/services/haptic_service.dart';
 import 'widgets/countdown_timer_widget.dart';
-import 'package:vive_app/core/ui/floating_input_field.dart';
+import 'package:nerve/core/ui/floating_input_field.dart';
 import '../../../core/ui/bouncy_button.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {

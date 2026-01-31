@@ -3,20 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:confetti/confetti.dart';
-import 'package:vive_app/features/wishlist/domain/wishlist_model.dart';
+import 'package:nerve/features/wishlist/domain/wishlist_model.dart';
 
-import 'package:vive_app/core/utils/i18n.dart';
-import 'package:vive_app/core/services/sound_service.dart';
+import 'package:nerve/core/utils/i18n.dart';
+import 'package:nerve/core/services/sound_service.dart';
 
-import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
-import 'package:vive_app/features/wishlist/presentation/add_wishlist_dialog.dart';
-import 'package:vive_app/core/ui/bouncy_button.dart';
-import 'package:vive_app/core/theme/app_theme.dart';
-import 'package:vive_app/core/theme/theme_provider.dart';
-import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
-import 'package:vive_app/features/home/providers/navigation_provider.dart';
-import 'package:vive_app/features/wishlist/presentation/widgets/quest_status_card.dart';
-import 'package:vive_app/features/wishlist/presentation/widgets/wishlist_card.dart';
+import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
+import 'package:nerve/features/wishlist/presentation/add_wishlist_dialog.dart';
+import 'package:nerve/core/ui/bouncy_button.dart';
+import 'package:nerve/core/theme/app_theme.dart';
+import 'package:nerve/core/theme/theme_provider.dart';
+import 'package:nerve/features/dashboard/providers/reward_state_provider.dart';
+import 'package:nerve/features/home/providers/navigation_provider.dart';
+import 'package:nerve/features/wishlist/presentation/widgets/quest_status_card.dart';
+import 'package:nerve/features/wishlist/presentation/widgets/wishlist_card.dart';
 
 class WishlistScreen extends ConsumerStatefulWidget {
   const WishlistScreen({super.key});
@@ -30,10 +30,6 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
   late ConfettiController _confettiController;
   final GlobalKey _buttonKey = GlobalKey(); // For Overlay Positioning
   int _animationTriggerId = 0;
-  // Test Variables
-  int _testFogDays = 0; // Restored Step-by-Step Fog
-  bool _isNightMode = false; // 8시 이후 상황 시뮬레이션
-  bool _simulateNoAccess = false; // 미접속 상황 시뮬레이션
 
   @override
   void initState() {
@@ -125,127 +121,6 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
             ),
             backgroundColor: colors.background,
             actions: [
-              // [Restored] Cloud Button for Step-by-Step Test
-              Row(
-                children: [
-                  if (_testFogDays > 0)
-                    Text(
-                      '$_testFogDays일',
-                      style: TextStyle(
-                        color: colors.textMain,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  IconButton(
-                    icon: Icon(
-                      _testFogDays > 0 ? Icons.cloud : Icons.cloud_queue,
-                    ),
-                    color: _testFogDays > 0
-                        ? Colors.blue.withValues(
-                            alpha: (0.2 * _testFogDays + 0.2).clamp(0.0, 1.0),
-                          )
-                        : colors.textSub,
-                    onPressed: () {
-                      setState(() {
-                        _testFogDays++;
-                        if (_testFogDays > 5) {
-                          _testFogDays = 0;
-                        }
-                      });
-
-                      // [Test logic] Fog Days 변경 시 생존 체크 리셋 & 실제 Blur 처리 (데이터 주입)
-                      final wishlist = wishlistAsync.valueOrNull ?? [];
-                      final activeItems = wishlist
-                          .where((item) => !item.isAchieved && item.id != null)
-                          .toList();
-
-                      if (activeItems.isNotEmpty) {
-                        final targetId = activeItems.first.id!;
-
-                        // 1. 생존 체크 리셋 (반복 테스트 지원)
-                        ref
-                            .read(wishlistProvider.notifier)
-                            .resetSurvivalCheck(targetId);
-
-                        // 2. 실제 모델 데이터에 Blur Level 주입 (2.0 * days)
-                        // Day 1: 2.0 (Low Blur)
-                        // Day 2: 4.0
-                        // Day 3: 6.0 (High Blur)
-                        // ...
-                        final newBlurLevel = (_testFogDays * 2.0).clamp(
-                          0.0,
-                          10.0,
-                        );
-                        ref
-                            .read(wishlistProvider.notifier)
-                            .setBlurLevel(targetId, newBlurLevel);
-                      }
-                    },
-                  ),
-                ],
-              ),
-              // Test Menu Button
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.science),
-                onSelected: (value) {
-                  setState(() {
-                    if (value == 'night_mode') {
-                      _isNightMode = !_isNightMode;
-                    } else if (value == 'simulate_no_access') {
-                      _simulateNoAccess = !_simulateNoAccess;
-                    }
-                  });
-                  // [Test Enhancement] 모드 변경 시 생존 체크 리셋 (재테스트 가능하도록)
-                  // 활성화된 첫 번째 아이템의 체크 기록을 초기화
-                  final wishlist = wishlistAsync.valueOrNull ?? [];
-                  final activeItems = wishlist
-                      .where((item) => !item.isAchieved && item.id != null)
-                      .toList();
-                  if (activeItems.isNotEmpty) {
-                    ref
-                        .read(wishlistProvider.notifier)
-                        .resetSurvivalCheck(activeItems.first.id!);
-                  }
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'night_mode',
-                    child: Row(
-                      children: [
-                        Icon(
-                          _isNightMode
-                              ? Icons.nightlight_round
-                              : Icons.wb_sunny,
-                          color: colors.textMain,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _isNightMode ? '8시 이후 모드 (ON)' : '8시 이전 모드',
-                          style: TextStyle(color: colors.textMain),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'simulate_no_access',
-                    child: Row(
-                      children: [
-                        Icon(
-                          _simulateNoAccess
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: colors.textMain,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _simulateNoAccess ? '미접속 시뮬레이션 (ON)' : '정상 모드',
-                          style: TextStyle(color: colors.textMain),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
               IconButton(
                 icon: Icon(Icons.settings, color: colors.textMain),
                 onPressed: () => context.push('/settings'),
@@ -368,20 +243,12 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                 }
 
                 return BouncyButton(
-                  onTap: (isAfter8PM || _isNightMode || _testFogDays > 0)
+                  onTap: isAfter8PM
                       ? () async {
                           // Trigger Logic
                           await ref
                               .read(wishlistProvider.notifier)
                               .performSurvivalCheck(targetItem.id!);
-
-                          // [Test Mode Enhancement]
-                          // 테스트 모드(_testFogDays > 0)라면, 버튼 클릭 시 시각적으로 1단계 블러 해제
-                          if (mounted && _testFogDays > 0) {
-                            setState(() {
-                              _testFogDays = (_testFogDays - 1).clamp(0, 10);
-                            });
-                          }
 
                           if (mounted) {
                             _confettiController.play();
@@ -419,12 +286,12 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                     padding: const EdgeInsets.all(16),
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
-                      color: (isAfter8PM || _isNightMode || _testFogDays > 0)
+                      color: isAfter8PM
                           ? colors.accent.withValues(alpha: 0.1)
                           : Colors.grey.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: (isAfter8PM || _isNightMode || _testFogDays > 0)
+                        color: isAfter8PM
                             ? colors.accent
                             : colors.textSub.withValues(alpha: 0.3),
                       ),
@@ -436,23 +303,15 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                           children: [
                             Icon(
                               Icons.verified_user_outlined,
-                              color:
-                                  (isAfter8PM ||
-                                      _isNightMode ||
-                                      _testFogDays > 0)
+                              color: isAfter8PM
                                   ? colors.accent
                                   : colors.textSub,
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              (isAfter8PM || _isNightMode || _testFogDays > 0)
-                                  ? "오늘 지출 0원"
-                                  : "8시 이후에 생존 보고가 가능합니다",
+                              isAfter8PM ? "오늘 지출 0원" : "8시 이후에 생존 보고가 가능합니다",
                               style: TextStyle(
-                                color:
-                                    (isAfter8PM ||
-                                        _isNightMode ||
-                                        _testFogDays > 0)
+                                color: isAfter8PM
                                     ? colors.textMain
                                     : colors.textSub,
                                 fontWeight: FontWeight.bold,
@@ -461,9 +320,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                             ),
                           ],
                         ),
-                        if (!(isAfter8PM ||
-                            _isNightMode ||
-                            _testFogDays > 0)) ...[
+                        if (!isAfter8PM) ...[
                           const SizedBox(height: 4),
                           Text(
                             "현재 시각: ${now.hour}시 (20시부터 활성화)",

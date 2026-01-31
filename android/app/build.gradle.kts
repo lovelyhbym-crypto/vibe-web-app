@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.vive_app"
+    namespace = "com.lovelyhbym.nerve"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         // TODO: Specify ication ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.vive_app"
+        applicationId = "com.lovelyhbym.nerve"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

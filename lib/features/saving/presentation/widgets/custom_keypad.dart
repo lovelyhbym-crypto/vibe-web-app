@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:vive_app/core/services/sound_service.dart';
-import 'package:vive_app/core/services/haptic_service.dart';
+import 'package:nerve/core/services/sound_service.dart';
+import 'package:nerve/core/services/haptic_service.dart';
 
 class CustomKeypad extends StatelessWidget {
   final Function(String) onKeyTap;

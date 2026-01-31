@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:vive_app/core/network/supabase_client.dart';
-import 'package:vive_app/features/auth/providers/auth_provider.dart';
+import 'package:nerve/core/network/supabase_client.dart';
+import 'package:nerve/features/auth/providers/auth_provider.dart';
 import '../models/user_profile.dart';
 
 part 'user_profile_provider.g.dart';

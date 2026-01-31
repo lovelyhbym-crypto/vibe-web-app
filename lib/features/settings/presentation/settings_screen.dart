@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vive_app/core/providers/locale_provider.dart';
+import 'package:nerve/core/providers/locale_provider.dart';
 import '../../../core/utils/i18n.dart';
 import 'package:go_router/go_router.dart';
 import '../../auth/providers/auth_provider.dart';
@@ -9,15 +9,15 @@ import '../../wishlist/providers/wishlist_provider.dart';
 import '../../wishlist/presentation/providers/glory_report_provider.dart';
 import 'providers/pin_notifier.dart';
 import 'widgets/pin_auth_dialog.dart';
-import 'package:vive_app/core/theme/app_theme.dart';
-import 'package:vive_app/core/theme/theme_provider.dart';
+import 'package:nerve/core/theme/app_theme.dart';
+import 'package:nerve/core/theme/theme_provider.dart';
 import '../../auth/providers/user_profile_provider.dart';
 import '../../../core/ui/glass_card.dart';
 import 'package:intl/intl.dart';
 
-import 'package:vive_app/core/services/bank_account_service.dart';
-import 'package:vive_app/core/ui/floating_input_field.dart';
-import 'package:vive_app/features/saving/presentation/widgets/custom_keypad.dart';
+import 'package:nerve/core/services/bank_account_service.dart';
+import 'package:nerve/core/ui/floating_input_field.dart';
+import 'package:nerve/features/saving/presentation/widgets/custom_keypad.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -157,7 +157,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       ref.read(themeNotifierProvider.notifier).toggleTheme();
                     },
                   ),
-                  Divider(color: colors.textSub.withValues(alpha: 0.1), height: 1),
+                  Divider(
+                    color: colors.textSub.withValues(alpha: 0.1),
+                    height: 1,
+                  ),
                   ListTile(
                     leading: Icon(Icons.language, color: colors.textSub),
                     title: Text(
@@ -388,7 +391,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                   ),
                   Text(
-                    'SERIAL_NO: VIBE-${profile.id.substring(0, 4).toUpperCase()}',
+                    'SERIAL_NO: NERVE-${profile.id.substring(0, 4).toUpperCase()}',
                     style: TextStyle(
                       color: Colors.white.withAlpha(26),
                       fontSize: 10,
@@ -620,7 +623,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         child: Text(
           title,
           style: TextStyle(
-            color: isDanger ? colors.danger.withValues(alpha: 0.8) : colors.textSub,
+            color: isDanger
+                ? colors.danger.withValues(alpha: 0.8)
+                : colors.textSub,
             fontWeight: FontWeight.bold,
             fontSize: 12,
             letterSpacing: isDanger ? 1.2 : null,

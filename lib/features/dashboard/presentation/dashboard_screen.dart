@@ -8,21 +8,21 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
-import 'package:vive_app/core/utils/i18n.dart';
+import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
+import 'package:nerve/core/utils/i18n.dart';
 
-import 'package:vive_app/core/theme/app_theme.dart';
+import 'package:nerve/core/theme/app_theme.dart';
 
-import 'package:vive_app/features/dashboard/providers/dashboard_provider.dart';
-import 'package:vive_app/features/dashboard/providers/savings_period_provider.dart';
-import 'package:vive_app/features/wishlist/domain/wishlist_model.dart';
-import 'package:vive_app/features/dashboard/providers/total_saved_provider.dart';
-import 'package:vive_app/features/dashboard/providers/achievement_provider.dart';
-import 'package:vive_app/features/home/providers/navigation_provider.dart';
-import 'package:vive_app/features/vibe_shifter/presentation/vibe_shifter_dialog.dart';
+import 'package:nerve/features/dashboard/providers/dashboard_provider.dart';
+import 'package:nerve/features/dashboard/providers/savings_period_provider.dart';
+import 'package:nerve/features/wishlist/domain/wishlist_model.dart';
+import 'package:nerve/features/dashboard/providers/total_saved_provider.dart';
+import 'package:nerve/features/dashboard/providers/achievement_provider.dart';
+import 'package:nerve/features/home/providers/navigation_provider.dart';
+import 'package:nerve/features/vibe_shifter/presentation/vibe_shifter_dialog.dart';
 
-import 'package:vive_app/core/theme/theme_provider.dart';
-import 'package:vive_app/features/auth/providers/user_profile_provider.dart';
+import 'package:nerve/core/theme/theme_provider.dart';
+import 'package:nerve/features/auth/providers/user_profile_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});

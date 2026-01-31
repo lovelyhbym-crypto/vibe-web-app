@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:vive_app/core/theme/app_theme.dart';
-import 'package:vive_app/core/theme/theme_provider.dart';
-import 'package:vive_app/core/ui/bouncy_button.dart';
-import 'package:vive_app/core/ui/vibe_image_effect.dart';
-import 'package:vive_app/core/utils/i18n.dart';
-import 'package:vive_app/features/wishlist/domain/wishlist_model.dart';
+import 'package:nerve/core/theme/app_theme.dart';
+import 'package:nerve/core/theme/theme_provider.dart';
+import 'package:nerve/core/ui/bouncy_button.dart';
+import 'package:nerve/core/ui/vibe_image_effect.dart';
+import 'package:nerve/core/utils/i18n.dart';
+import 'package:nerve/features/wishlist/domain/wishlist_model.dart';
 
 class WishlistCard extends ConsumerWidget {
   final WishlistModel item;

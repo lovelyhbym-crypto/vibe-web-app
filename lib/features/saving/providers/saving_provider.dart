@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../core/network/supabase_client.dart';
-import 'package:vive_app/features/auth/providers/auth_provider.dart';
+import 'package:nerve/features/auth/providers/auth_provider.dart';
 import '../domain/saving_model.dart';
-import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
+import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
 
 part 'saving_provider.g.dart';
 

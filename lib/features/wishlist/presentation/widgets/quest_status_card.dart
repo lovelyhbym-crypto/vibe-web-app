@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:vive_app/features/wishlist/domain/wishlist_model.dart';
+import 'package:nerve/features/wishlist/domain/wishlist_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class QuestStatusCard extends ConsumerWidget {

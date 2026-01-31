@@ -1,0 +1,4 @@
+[error] Undefined name '_isNightMode' (/Users/hwangboyeongman/flutter-test/vibe_app/lib/features/wishlist/presentation/wishlist_screen.dart:316:41)
+[error] Undefined name '_testFogDays' (/Users/hwangboyeongman/flutter-test/vibe_app/lib/features/wishlist/presentation/wishlist_screen.dart:317:41)
+[error] Undefined name '_isNightMode' (/Users/hwangboyeongman/flutter-test/vibe_app/lib/features/wishlist/presentation/wishlist_screen.dart:327:29)
+[error] Undefined name '_testFogDays' (/Users/hwangboyeongman/flutter-test/vibe_app/lib/features/wishlist/presentation/wishlist_screen.dart:328:29)

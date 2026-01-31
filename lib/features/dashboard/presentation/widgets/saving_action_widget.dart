@@ -4,11 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'package:vive_app/core/services/bank_account_service.dart';
-import 'package:vive_app/features/saving/providers/saving_provider.dart';
-import 'package:vive_app/features/home/providers/navigation_provider.dart';
-import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
-import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
+import 'package:nerve/core/services/bank_account_service.dart';
+import 'package:nerve/features/saving/providers/saving_provider.dart';
+import 'package:nerve/features/home/providers/navigation_provider.dart';
+import 'package:nerve/features/dashboard/providers/reward_state_provider.dart';
+import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
 
 class SavingActionWidget extends ConsumerStatefulWidget {
   const SavingActionWidget({super.key});

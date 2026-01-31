@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:vive_app/core/network/supabase_client.dart';
-import 'package:vive_app/features/auth/providers/auth_provider.dart';
+import 'package:nerve/core/network/supabase_client.dart';
+import 'package:nerve/features/auth/providers/auth_provider.dart';
 import 'package:intl/intl.dart';
 
 class FailedDreamsScreen extends ConsumerStatefulWidget {

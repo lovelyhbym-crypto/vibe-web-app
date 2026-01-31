@@ -9,7 +9,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.viveApp</string>
+	<string>com.lovelyhbym.nerve</string>
 	<key>PROJECT_ID</key>
 	<string>vibe-saver</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:198497109026:ios:3b012e694b3f470e7e767b</string>
+	<string>1:198497109026:ios:754f4affc655ea2f7e767b</string>
 </dict>
 </plist>

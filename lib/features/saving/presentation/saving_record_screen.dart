@@ -4,21 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:vive_app/core/utils/i18n.dart';
-import 'package:vive_app/core/theme/app_theme.dart';
-import 'package:vive_app/core/services/bank_account_service.dart';
-import 'package:vive_app/core/services/sound_service.dart';
-import 'package:vive_app/core/services/haptic_service.dart';
+import 'package:nerve/core/utils/i18n.dart';
+import 'package:nerve/core/theme/app_theme.dart';
+import 'package:nerve/core/services/bank_account_service.dart';
+import 'package:nerve/core/services/sound_service.dart';
+import 'package:nerve/core/services/haptic_service.dart';
 
-import 'package:vive_app/features/saving/domain/category_model.dart';
-import 'package:vive_app/features/saving/providers/category_provider.dart';
-import 'package:vive_app/features/saving/providers/saving_provider.dart';
-import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
-import 'package:vive_app/core/theme/theme_provider.dart';
-import 'package:vive_app/features/home/providers/navigation_provider.dart';
-import 'package:vive_app/features/dashboard/providers/reward_state_provider.dart';
-import 'package:vive_app/features/saving/presentation/widgets/custom_keypad.dart';
-import 'package:vive_app/core/ui/bouncy_button.dart';
+import 'package:nerve/features/saving/domain/category_model.dart';
+import 'package:nerve/features/saving/providers/category_provider.dart';
+import 'package:nerve/features/saving/providers/saving_provider.dart';
+import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
+import 'package:nerve/core/theme/theme_provider.dart';
+import 'package:nerve/features/home/providers/navigation_provider.dart';
+import 'package:nerve/features/dashboard/providers/reward_state_provider.dart';
+import 'package:nerve/features/saving/presentation/widgets/custom_keypad.dart';
+import 'package:nerve/core/ui/bouncy_button.dart';
 
 class SavingRecordScreen extends ConsumerStatefulWidget {
   const SavingRecordScreen({super.key});

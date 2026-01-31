@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:vive_app/features/wishlist/domain/wishlist_model.dart';
-import 'package:vive_app/features/auth/providers/auth_provider.dart';
+import 'package:nerve/features/wishlist/domain/wishlist_model.dart';
+import 'package:nerve/features/auth/providers/auth_provider.dart';
 
 final wishlistStreamProvider = StreamProvider.autoDispose<List<WishlistModel>>((
   ref,

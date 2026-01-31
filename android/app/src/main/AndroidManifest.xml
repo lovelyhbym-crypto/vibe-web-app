@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <application
-        android:label="vive_app"
+        android:label="너브"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -36,7 +36,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <!-- Custom Scheme -->
-                <data android:scheme="vibeapp" android:host="login-callback" />
+                <data android:scheme="nerveapp" android:host="login-callback" />
                 <!-- Standard Supabase Scheme -->
                 <data android:scheme="io.supabase.flutter" android:host="login-callback" />
             </intent-filter>

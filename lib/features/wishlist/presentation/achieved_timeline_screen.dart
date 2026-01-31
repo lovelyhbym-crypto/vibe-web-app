@@ -9,8 +9,8 @@ import '../providers/wishlist_provider.dart';
 import '../domain/wishlist_model.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/ui/glass_card.dart';
-import 'package:vive_app/core/theme/app_theme.dart';
-import 'package:vive_app/core/theme/theme_provider.dart';
+import 'package:nerve/core/theme/app_theme.dart';
+import 'package:nerve/core/theme/theme_provider.dart';
 
 class AchievedTimelineScreen extends ConsumerStatefulWidget {
   const AchievedTimelineScreen({super.key});

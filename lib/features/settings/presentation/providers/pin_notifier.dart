@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vive_app/core/services/secure_storage_service.dart';
+import 'package:nerve/core/services/secure_storage_service.dart';
 
 final pinProvider = StateNotifierProvider<PinNotifier, AsyncValue<String?>>((
   ref,

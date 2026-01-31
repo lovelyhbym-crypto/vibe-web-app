@@ -1,7 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import 'package:vive_app/features/saving/providers/saving_provider.dart';
-import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
+import 'package:nerve/features/saving/providers/saving_provider.dart';
+import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
 import '../domain/dashboard_model.dart';
 
 part 'dashboard_provider.g.dart';

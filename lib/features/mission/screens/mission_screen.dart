@@ -8,10 +8,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:vive_app/core/ui/background_gradient.dart';
-import 'package:vive_app/core/ui/bouncy_button.dart';
-import 'package:vive_app/core/ui/glass_card.dart';
-import 'package:vive_app/features/mission/providers/mission_provider.dart';
+import 'package:nerve/core/ui/background_gradient.dart';
+import 'package:nerve/core/ui/bouncy_button.dart';
+import 'package:nerve/core/ui/glass_card.dart';
+import 'package:nerve/features/mission/providers/mission_provider.dart';
 
 // Reuse DamageEntry
 class DamageEntry {

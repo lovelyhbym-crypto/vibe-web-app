@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:ui' as dart_ui;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:vive_app/features/wishlist/providers/wishlist_provider.dart';
-import 'package:vive_app/core/theme/app_theme.dart';
+import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
+import 'package:nerve/core/theme/app_theme.dart';
 
 class CountdownTimerWidget extends ConsumerWidget {
   final DateTime targetDate;

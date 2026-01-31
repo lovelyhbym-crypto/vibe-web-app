@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vive_app/features/saving/providers/saving_provider.dart';
+import 'package:nerve/features/saving/providers/saving_provider.dart';
 import 'savings_period_provider.dart';
 
 part 'total_saved_provider.g.dart';

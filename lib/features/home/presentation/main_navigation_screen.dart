@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:vive_app/features/saving/presentation/saving_record_screen.dart';
-import 'package:vive_app/features/wishlist/presentation/wishlist_screen.dart';
-import 'package:vive_app/features/dashboard/presentation/dashboard_screen.dart';
-import 'package:vive_app/features/home/providers/navigation_provider.dart';
-import 'package:vive_app/core/theme/app_theme.dart';
+import 'package:nerve/features/saving/presentation/saving_record_screen.dart';
+import 'package:nerve/features/wishlist/presentation/wishlist_screen.dart';
+import 'package:nerve/features/dashboard/presentation/dashboard_screen.dart';
+import 'package:nerve/features/home/providers/navigation_provider.dart';
+import 'package:nerve/core/theme/app_theme.dart';
 
 class MainNavigationScreen extends ConsumerWidget {
   const MainNavigationScreen({super.key});

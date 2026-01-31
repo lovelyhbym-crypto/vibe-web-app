@@ -1,4 +1,4 @@
-package com.example.vive_app
+package com.lovelyhbym.nerve
 
 import io.flutter.embedding.android.FlutterActivity
 

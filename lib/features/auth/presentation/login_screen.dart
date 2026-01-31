@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
-import 'package:vive_app/core/ui/bouncy_button.dart';
+import 'package:nerve/core/ui/bouncy_button.dart';
 import 'widgets/engine_core_widget.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -240,12 +240,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     .scale(
                       begin: const Offset(0.8, 0.8),
                       end: const Offset(1.1, 1.1),
-                      duration: 2.seconds,
+                      duration: 800.ms,
                       curve: Curves.easeInOut,
                     )
                     .fadeOut(
                       begin: 0.3,
-                      duration: 2.seconds,
+                      duration: 800.ms,
                       curve: Curves.easeInOut,
                     ),
           ),
@@ -273,13 +273,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   const SizedBox(height: 12),
                                   // VIBE Logo with Shimmer and Synced Halo
                                   Text(
-                                        'VIBE',
+                                        'NERVE',
                                         style: TextStyle(
                                           fontSize: 64,
                                           fontWeight: FontWeight.w900,
                                           fontStyle: FontStyle.italic,
                                           color: accentColor,
-                                          letterSpacing: -3.0,
+                                          letterSpacing: 3.0,
                                           height: 1.0,
                                           shadows: [
                                             Shadow(
@@ -296,17 +296,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         onPlay: (c) => c.repeat(reverse: true),
                                       )
                                       .custom(
-                                        duration: 1.seconds, // 엔진 코어와 동기화
+                                        duration: 800.ms, // 엔진 코어와 동기화
                                         curve: Curves.easeInOutSine,
                                         builder: (context, value, child) {
                                           return Text(
-                                            'VIBE',
+                                            'NERVE',
                                             style: TextStyle(
                                               fontSize: 64,
                                               fontWeight: FontWeight.w900,
                                               fontStyle: FontStyle.italic,
                                               color: accentColor,
-                                              letterSpacing: -3.0,
+                                              letterSpacing: 3.0,
                                               height: 1.0,
                                               shadows: [
                                                 // Halo (후광) 효과: 엔진과 동기화
@@ -337,7 +337,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       ),
                                   const SizedBox(height: 8), // 간격 좁힘
                                   Text(
-                                    'Visionary Incentive & Behavioral Engine'
+                                    'Neural Efficiency & Reward Verification Engine'
                                         .toUpperCase(),
                                     style: const TextStyle(
                                       fontSize: 10,
@@ -349,12 +349,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   const Text(
-                                    '> 당신의 목표를 실현하는 저축 엔진',
+                                    '> 신경 효율성 및 보상 검증 엔진',
                                     style: TextStyle(
                                       fontSize: 12, // 크기 축소
                                       fontWeight: FontWeight.w300,
                                       color: Colors.white38, // 투명도 하향
                                       letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'NERVE SYSTEM v1.0.42',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w200,
+                                      color: accentColor.withValues(alpha: 0.4),
+                                      letterSpacing: 1.2,
                                     ),
                                   ),
                                 ],
@@ -490,7 +500,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Opacity(
                             opacity: 0.8,
                             child: Text(
-                              'CHIEF ENGINEER H.B. YOUNGMAN',
+                              'NERVE PROTOCOL OPERATED BY CHIEF ENGINEER H.B. YOUNGMAN',
                               style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.1),
                                 fontSize: 9.0,
