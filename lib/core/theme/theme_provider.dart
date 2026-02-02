@@ -8,18 +8,18 @@ final themeNotifierProvider =
     });
 
 class ThemeNotifier extends StateNotifier<VibeThemeMode> {
-  // 기본값: 사이버펑크 (추후 저장소 연동 시 저장된 값 불러오기 가능)
+  // 기본값: 사이버펑크 (사용자의 요청으로 사이버펑크 모드로 고정)
   ThemeNotifier() : super(VibeThemeMode.cyberpunk);
 
-  // 테마 변경 기능
+  // 테마 변경 기능 비활성화 (사이버펑크 고정)
   void toggleTheme() {
-    state = state == VibeThemeMode.cyberpunk
-        ? VibeThemeMode.pureFinance
-        : VibeThemeMode.cyberpunk;
+    // state = state == VibeThemeMode.cyberpunk
+    //     ? VibeThemeMode.pureFinance
+    //     : VibeThemeMode.cyberpunk;
   }
 
-  // 특정 테마로 강제 설정
+  // 특정 테마로 강제 설정 비활성화 (사이버펑크 고정)
   void setMode(VibeThemeMode mode) {
-    state = mode;
+    // state = mode;
   }
 }

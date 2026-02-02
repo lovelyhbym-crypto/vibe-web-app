@@ -44,6 +44,14 @@ class CategoryNotifier extends _$CategoryNotifier {
         color: '0xFF8E8E93', // Gray
         isCustom: false,
       ),
+      // [Trophy Mode] Hidden Category for System Optimization
+      const CategoryModel(
+        id: 'system_optimization',
+        name: '유혹방어 & 자산지킴',
+        iconPath: 'security',
+        color: '0xFFD4FF00', // Neon Lime
+        isCustom: false,
+      ),
     ];
   }
 

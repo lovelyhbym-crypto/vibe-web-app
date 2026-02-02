@@ -53,7 +53,9 @@ GoRouter goRouter(Ref ref) {
       ),
       GoRoute(
         path: '/saving',
-        builder: (context, state) => const SavingRecordScreen(),
+        builder: (context, state) => SavingRecordScreen(
+          initialData: state.extra as Map<String, dynamic>?,
+        ),
       ),
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(

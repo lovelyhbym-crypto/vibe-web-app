@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class EngineCoreWidget extends StatelessWidget {
-  const EngineCoreWidget({super.key});
+  final bool isAccelerated;
+
+  const EngineCoreWidget({super.key, this.isAccelerated = false});
 
   @override
   Widget build(BuildContext context) {
     const accentColor = Color(0xFFCCFF00);
+    final speedMultiplier = isAccelerated ? 3.0 : 1.0;
 
     return Container(
       height: 300, // 380 -> 300px로 추가 압축 (하단 문구 잘림 방지)
@@ -30,7 +33,8 @@ class EngineCoreWidget extends StatelessWidget {
                 final distance = 180.0 + random.nextDouble() * 30.0;
                 final startX = math.cos(angle) * distance;
                 final startY = math.sin(angle) * distance;
-                final duration = (2.0 + random.nextDouble() * 1.5).seconds;
+                final baseDuration = (2.0 + random.nextDouble() * 1.5);
+                final duration = (baseDuration / speedMultiplier).seconds;
 
                 return Positioned(
                   left: centerX + startX,
@@ -67,19 +71,19 @@ class EngineCoreWidget extends StatelessWidget {
               _VortexRing(
                 diameter: 250,
                 color: accentColor.withValues(alpha: 0.35), // 묵직한 존재감 복원
-                duration: 40.seconds,
+                duration: (40.0 / speedMultiplier).seconds,
                 clockwise: true,
               ),
               _VortexRing(
                 diameter: 180,
                 color: accentColor.withValues(alpha: 0.35),
-                duration: 25.seconds,
+                duration: (25.0 / speedMultiplier).seconds,
                 clockwise: false,
               ),
               _VortexRing(
                 diameter: 120,
                 color: accentColor.withValues(alpha: 0.35),
-                duration: 15.seconds,
+                duration: (15.0 / speedMultiplier).seconds,
                 clockwise: true,
               ),
 
@@ -109,7 +113,7 @@ class EngineCoreWidget extends StatelessWidget {
                   .scale(
                     begin: const Offset(1.0, 1.0),
                     end: const Offset(1.2, 1.2),
-                    duration: 800.ms,
+                    duration: (800 / speedMultiplier).ms,
                     curve: Curves.easeInOutSine,
                   ),
             ],

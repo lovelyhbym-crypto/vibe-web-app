@@ -192,12 +192,6 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                 final isAfter8PM = now.hour >= 20;
 
                 // 이미 오늘 체크했는지 확인하려면 리스트의 첫 번째 아이템(혹은 대표)을 확인해야 함.
-                // 여기서는 리스트 전체 중 하나라도 오늘 체크된 게 있으면 '체크 완료'로 간주하거나,
-                // 개별 아이템마다 버튼을 두는 게 아니라 '오늘 하루'에 대한 선언이므로
-                // 대표 아이템(혹은 첫번째)에 기록한다고 가정?
-                // 아니면 performSurvivalCheck를 Global하게?
-                // Provider의 performSurvivalCheck는 ID를 받으므로, 활성화된 첫 번째 아이템에 적용하거나
-                // 가장 최근에 수정한 아이템? -> 일단 '활성 목표 중 첫 번째'에 적용.
                 if (activeWishlist.isEmpty) return const SizedBox.shrink();
                 final targetItem = activeWishlist.first;
 
@@ -216,25 +210,51 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
 
                 if (isCheckedToday) {
                   return Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 20,
+                      horizontal: 16,
+                    ),
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
-                      color: colors.surface.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.green.withValues(alpha: 0.3),
+                        color: const Color(0xFFD4FF00).withValues(alpha: 0.3),
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFD4FF00).withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          spreadRadius: 1,
+                        ),
+                      ],
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.check_circle, color: Colors.green),
-                        const SizedBox(width: 8),
-                        Text(
-                          "오늘 생존 완료",
-                          style: TextStyle(
-                            color: colors.textMain,
-                            fontWeight: FontWeight.bold,
+                        const Icon(
+                          Icons.check_circle,
+                          color: Color(0xFFD4FF00),
+                          size: 24,
+                        ),
+                        const SizedBox(width: 12),
+                        RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -1.0,
+                            ),
+                            children: [
+                              const TextSpan(
+                                text: "[ZERO] ",
+                                style: TextStyle(color: Color(0xFFD4FF00)),
+                              ),
+                              const TextSpan(
+                                text: "동기화 완료",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -242,97 +262,123 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                   );
                 }
 
-                return BouncyButton(
-                  onTap: isAfter8PM
-                      ? () async {
-                          // Trigger Logic
-                          await ref
-                              .read(wishlistProvider.notifier)
-                              .performSurvivalCheck(targetItem.id!);
+                return Column(
+                  children: [
+                    BouncyButton(
+                      onTap: isAfter8PM
+                          ? () async {
+                              // Trigger Logic
+                              await ref
+                                  .read(wishlistProvider.notifier)
+                                  .performSurvivalCheck(targetItem.id!);
 
-                          if (mounted) {
-                            _confettiController.play();
+                              if (mounted) {
+                                _confettiController.play();
 
-                            // [Haptic Feedback]
-                            // HapticFeedback.lightImpact(); // [Stage 3] BouncyButton already handles this
+                                // [Show Overlay]
+                                _showBonusOverlay();
 
-                            // [Show Overlay]
-                            _showBonusOverlay();
-
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text(
-                                    '🎉 생존 성공! 성공 확률 1% 상승 + 안개 제거 완료!',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text(
+                                        '오늘의 무지출 데이터가 엔진에 기록되었습니다. 자산 효율이 상승합니다.',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      duration: const Duration(seconds: 3),
+                                      behavior: SnackBarBehavior.floating,
+                                      backgroundColor: colors.accent,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
                                     ),
+                                  );
+                                }
+                              }
+                            }
+                          : () {},
+                      child: Container(
+                        key: _buttonKey, // Attach Key
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 16,
+                        ),
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          color: isAfter8PM
+                              ? Colors.black
+                              : Colors.grey.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isAfter8PM
+                                ? colors.accent
+                                : colors.textSub.withValues(alpha: 0.2),
+                            width: isAfter8PM ? 2 : 1,
+                          ),
+                          boxShadow: isAfter8PM
+                              ? [
+                                  BoxShadow(
+                                    color: colors.accent.withValues(alpha: 0.4),
+                                    blurRadius: 20,
+                                    spreadRadius: 2,
                                   ),
-                                  duration: const Duration(seconds: 2),
-                                  behavior: SnackBarBehavior.floating,
-                                  backgroundColor: colors.accent,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                ]
+                              : null,
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  isAfter8PM
+                                      ? Icons.check_circle_outline_rounded
+                                      : Icons.verified_user_outlined,
+                                  color: isAfter8PM
+                                      ? colors.accent
+                                      : colors.textSub,
+                                  size: 28,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  isAfter8PM ? "무지출 데이터 확정" : "생존 보고 대기 중",
+                                  style: TextStyle(
+                                    color: isAfter8PM
+                                        ? colors.accent
+                                        : colors.textSub,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 18,
+                                    letterSpacing: -0.5,
                                   ),
                                 ),
-                              );
-                            }
-                          }
-                        }
-                      : () {}, // Empty callback to allow animation even if disabled (visual feedback)
-                  child: Container(
-                    key: _buttonKey, // Attach Key
-                    padding: const EdgeInsets.all(16),
-                    margin: const EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(
-                      color: isAfter8PM
-                          ? colors.accent.withValues(alpha: 0.1)
-                          : Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isAfter8PM
-                            ? colors.accent
-                            : colors.textSub.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.verified_user_outlined,
-                              color: isAfter8PM
-                                  ? colors.accent
-                                  : colors.textSub,
+                              ],
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              isAfter8PM ? "오늘 지출 0원" : "8시 이후에 생존 보고가 가능합니다",
-                              style: TextStyle(
-                                color: isAfter8PM
-                                    ? colors.textMain
-                                    : colors.textSub,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                            if (!isAfter8PM) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                "20시 이후에 무지출 인증이 가능합니다 (현재: ${now.hour}시)",
+                                style: TextStyle(
+                                  color: colors.textSub,
+                                  fontSize: 12,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
-                        if (!isAfter8PM) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            "현재 시각: ${now.hour}시 (20시부터 활성화)",
-                            style: TextStyle(
-                              color: colors.textSub,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ],
+                      ),
                     ),
-                  ),
+                    if (isAfter8PM)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 24),
+                        child: Text(
+                          "> 오늘 지출이 없는 경우 버튼을 눌러 무지출을 인증하세요.",
+                          style: TextStyle(fontSize: 10, color: Colors.white24),
+                        ),
+                      ),
+                  ],
                 );
               }
 

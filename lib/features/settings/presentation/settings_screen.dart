@@ -154,7 +154,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     activeTrackColor: colors.accent,
                     value: isPureFinance,
                     onChanged: (value) {
-                      ref.read(themeNotifierProvider.notifier).toggleTheme();
+                      // ref.read(themeNotifierProvider.notifier).toggleTheme();
+                      // 사이버펑크 모드 고정을 위해 토글 기능을 비활성화함
                     },
                   ),
                   Divider(

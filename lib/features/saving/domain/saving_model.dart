@@ -5,6 +5,7 @@ class SavingModel {
   final String category;
   final int amount;
   final DateTime createdAt;
+  final String? note; // Added for Victory Logging and general notes
 
   final List<String> wishlistIds;
 
@@ -13,6 +14,7 @@ class SavingModel {
     required this.category,
     required this.amount,
     required this.createdAt,
+    this.note,
     this.wishlistIds = const [],
   });
 
@@ -21,6 +23,7 @@ class SavingModel {
       'category': category,
       'amount': amount,
       'created_at': createdAt.toIso8601String(),
+      'note': note,
       'wishlist_ids': wishlistIds,
     };
   }
@@ -42,6 +45,7 @@ class SavingModel {
       category: json['category'] as String,
       amount: int.tryParse(json['amount']?.toString() ?? '0') ?? 0,
       createdAt: DateTime.parse(json['created_at'] as String),
+      note: json['note'] as String?,
       wishlistIds:
           (json['wishlist_ids'] as List<dynamic>?)
               ?.map((e) => e.toString())

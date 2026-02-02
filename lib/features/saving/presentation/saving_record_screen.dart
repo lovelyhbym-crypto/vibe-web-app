@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:confetti/confetti.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:nerve/core/utils/i18n.dart';
 import 'package:nerve/core/theme/app_theme.dart';
 import 'package:nerve/core/services/bank_account_service.dart';
@@ -14,27 +13,35 @@ import 'package:nerve/features/saving/domain/category_model.dart';
 import 'package:nerve/features/saving/providers/category_provider.dart';
 import 'package:nerve/features/saving/providers/saving_provider.dart';
 import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
+import 'package:nerve/features/wishlist/domain/wishlist_model.dart';
 import 'package:nerve/core/theme/theme_provider.dart';
+import 'package:nerve/features/auth/presentation/widgets/engine_core_widget.dart';
+import 'dart:async';
+import 'dart:math' as math;
 import 'package:nerve/features/home/providers/navigation_provider.dart';
 import 'package:nerve/features/dashboard/providers/reward_state_provider.dart';
 import 'package:nerve/features/saving/presentation/widgets/custom_keypad.dart';
 import 'package:nerve/core/ui/bouncy_button.dart';
 
 class SavingRecordScreen extends ConsumerStatefulWidget {
-  const SavingRecordScreen({super.key});
+  final Map<String, dynamic>? initialData;
+  const SavingRecordScreen({super.key, this.initialData});
 
   @override
   ConsumerState<SavingRecordScreen> createState() => _SavingRecordScreenState();
 }
 
 class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   final _amountController = TextEditingController();
+  final _memoController = TextEditingController();
   final _bankAccountService = BankAccountService();
   late ConfettiController _confettiController;
   String? _selectedCategoryId;
+  bool _isTrophyMode = false;
   bool _isLoading = false;
   bool _isWaitingForTransfer = false;
+  late AnimationController _syncController;
 
   @override
   void initState() {
@@ -43,13 +50,32 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 1),
     );
+    _syncController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2500),
+    )..repeat();
+
+    // [Auto-Preset] Handle initial data
+    if (widget.initialData != null) {
+      _amountController.text = widget.initialData!['initialAmount'] ?? '';
+      _memoController.text = widget.initialData!['initialMemo'] ?? '';
+      _selectedCategoryId = widget.initialData!['initialCategoryId'];
+      _isTrophyMode = widget.initialData!['isTrophyMode'] ?? false;
+
+      // If trophy mode, force amount to 0
+      if (_isTrophyMode) {
+        _amountController.text = '0';
+      }
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _amountController.dispose();
+    _memoController.dispose();
     _confettiController.dispose();
+    _syncController.dispose();
     super.dispose();
   }
 
@@ -58,6 +84,24 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     if (state == AppLifecycleState.resumed && _isWaitingForTransfer) {
       _showSuccessDialog();
     }
+  }
+
+  Future<void> _showSyncOverlay() async {
+    final completer = Completer<void>();
+
+    OverlayEntry? entry;
+    entry = OverlayEntry(
+      builder: (context) => _NeuralSyncOverlay(
+        onComplete: () {
+          entry?.remove();
+          completer.complete();
+        },
+        isRapidMode: _isTrophyMode, // [Rapid Sync]
+      ),
+    );
+
+    Overlay.of(context).insert(entry);
+    return completer.future;
   }
 
   void _addAmount(int amount) {
@@ -406,12 +450,21 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     final i18n = I18n.of(context);
 
     // 기본 검증
-    if (_selectedCategoryId == null || amount == null || amount <= 0) {
+    // [수정] 전리품 모드일 때는 카테고리 선택을 강제하지 않음 (orElse에서 처리됨)
+    final bool isCategoryValid = _isTrophyMode || _selectedCategoryId != null;
+
+    if (!isCategoryValid || amount == null || (!_isTrophyMode && amount <= 0)) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(i18n.snackBarSelect)));
       }
+      return;
+    }
+
+    // 전리품 모드라면 은행 확인 없이 바로 저장 루틴 진입
+    if (_isTrophyMode) {
+      await _performActualSaving();
       return;
     }
 
@@ -447,42 +500,35 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
       return;
     }
 
-    // 3. 토스 딥링크 실행
-    // 계좌번호 정제 (하이픈, 공백 제거)
-    final cleanAccountNo = accountNo.replaceAll(RegExp(r'[^0-9]'), '');
-    final String url =
-        'supertoss://send?bank=092&accountNo=$cleanAccountNo&amount=$amount';
-    final Uri uri = Uri.parse(url);
-
-    try {
-      final bool canLaunch = await canLaunchUrl(uri);
-      if (canLaunch) {
-        setState(() {
-          _isWaitingForTransfer = true;
-        });
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        // Fallback: canLaunchUrl may fail on some Android versions even with <queries>
-        // Try launching directly as a last resort
-        try {
-          setState(() {
-            _isWaitingForTransfer = true;
-          });
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        } catch (innerError) {
-          // 웹 테스트용 시뮬레이션: 앱 실행 실패 시에도 다이얼로그 강제 호출
-          debugPrint(
-            'Toss app not found (inner). Simulation Mode: Showing success dialog.',
+    // 3. 토스 딥링크 실행 (Step 3: Protocol with Fallback)
+    await _bankAccountService.launchToss(
+      accountNo: accountNo,
+      amount: amount,
+      onFallback: () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                '토스 연결 실패. 계좌번호가 복사되었습니다. 은행 앱을 직접 열어주세요.',
+                style: TextStyle(
+                  color: Color(0xFFD4FF00), // neonLime
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              backgroundColor: Colors.black87,
+              behavior: SnackBarBehavior.floating,
+              shape: const StadiumBorder(),
+              margin: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+            ),
           );
-          _showSuccessDialog();
         }
-      }
-    } catch (e) {
-      debugPrint(
-        'Deep Link Error: $e. Simulation Mode: Showing success dialog.',
-      );
-      _showSuccessDialog();
-    }
+      },
+    );
+
+    // [Step 4] Mark waiting if successful or even if fallback (user will confirm later)
+    setState(() {
+      _isWaitingForTransfer = true;
+    });
   }
 
   void _showSuccessDialog() {
@@ -533,14 +579,16 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               // 1. 팝업 먼저 닫기 (dialogContext 사용)
               Navigator.pop(dialogContext);
 
-              // 2. 보상 장전 (전역 폭죽 신호 + 사운드)
+              // 2. 저축 데이터 기록 (Neural Sync Protocol 포함)
+              // [버그 수정] 사용자가 무결성 검사에서 '다시 확인'을 눌렀을 경우 여기서 중단되어야 함
+              final bool success = await _performActualSaving();
+              if (success != true) return; // '다시 확인하기'를 눌렀을 때 차가운 침묵을 실현
+
+              // 3. 보상 및 효과 (검증 완료 후 실행)
               ref.read(rewardStateProvider.notifier).triggerConfetti();
               // [Added] Sensory Feedback: Firework Sound & Strong Vibration
               SoundService().playFirework();
               HapticService.vibrate();
-
-              // 3. 저축 데이터 기록
-              await _performActualSaving();
 
               // 4. 목표 탭으로 즉시 이동 (메인 context 사용)
               if (mounted) {
@@ -556,8 +604,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     );
   }
 
-  Future<void> _performActualSaving() async {
-    if (_isLoading) return;
+  Future<bool> _performActualSaving() async {
+    if (_isLoading) return false;
 
     final theme = Theme.of(context);
     final vibeTheme = theme.extension<VibeThemeExtension>();
@@ -571,30 +619,71 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
         .trim();
     final amount = int.tryParse(cleanText);
 
-    if (amount == null) return;
+    if (amount == null || amount < 0) {
+      debugPrint('PerformActualSaving Failed: Invalid amount $amount');
+      return false;
+    }
 
     setState(() {
       _isLoading = true;
     });
 
+    debugPrint('Starting _performActualSaving... isLoading set to true');
+
     try {
+      // [Neural Sync Protocol] 5-Second Sync Overlay
+      await _showSyncOverlay();
+
+      // [Neural Sync Protocol] 10% Probability Integrity Check
+      // [Rapid Sync] Skip if Trophy Mode
+      if (!_isTrophyMode && math.Random().nextInt(10) == 0) {
+        final bool? isHonest = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const _IntegrityCheckDialog(),
+        );
+
+        if (isHonest != true) {
+          setState(() => _isLoading = false);
+          return false; // 차가운 침묵: 모든 보상 시퀀스 중단
+        }
+      }
+
       String finalCategoryName = '';
       final categories = ref.read(categoryProvider).value ?? [];
 
       final category = categories.firstWhere(
         (c) => c.id == _selectedCategoryId,
-        orElse: () => const CategoryModel(id: 'unknown', name: 'Unknown'),
+        orElse: () => _isTrophyMode
+            ? const CategoryModel(id: 'system_optimization', name: '유혹 방어')
+            : const CategoryModel(id: 'unknown', name: 'Unknown'),
       );
       finalCategoryName = category.name;
 
-      // 목표 확인
-      final wishlistAsync = ref.read(wishlistProvider);
-      final activeWishlists = wishlistAsync.maybeWhen(
-        data: (list) => list.where((w) => !w.isAchieved).toList(),
-        orElse: () => [],
-      );
+      // 목표 확인 (비동기 처리)
+      // [CRITICAL FIX] 앱이 재시작되었거나 로딩 중일 수 있으므로 future를 대기해야 함
+      debugPrint('Fetching wishlist data...');
+      List<WishlistModel> allWishlists = [];
+      try {
+        allWishlists = await ref.read(wishlistProvider.future);
+      } catch (e) {
+        debugPrint('Failed to load wishlists: $e');
+        setState(() => _isLoading = false);
+        return false;
+      }
 
-      if (activeWishlists.isEmpty) return;
+      final activeWishlists = allWishlists.where((w) => !w.isAchieved).toList();
+
+      if (activeWishlists.isEmpty) {
+        setState(() => _isLoading = false);
+        debugPrint('No active wishlists found.');
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('활성화된 목표가 없습니다.')));
+        }
+        return false;
+      }
       final targetWishlistId = activeWishlists.first.id!;
 
       debugPrint(
@@ -608,6 +697,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
             category: finalCategoryName,
             amount: amount,
             createdAt: DateTime.now(),
+            note: _memoController.text.trim(),
             wishlistIds: [targetWishlistId],
           );
 
@@ -642,9 +732,11 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
           );
         }
       }
+      return true; // 성공 시에만 true 반환
     } catch (e) {
       debugPrint('Saving error: $e');
       setState(() => _isLoading = false);
+      return false; // 에러 시 false 반환
     }
   }
 
@@ -694,76 +786,81 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                   Wrap(
                     spacing: 12,
                     runSpacing: 12,
-                    children: categories.map((category) {
-                      final isSelected = _selectedCategoryId == category.id;
-                      final iconData = _getIconData(category.iconPath);
+                    children: categories
+                        .where(
+                          (c) => c.id != 'system_optimization',
+                        ) // [UI Refinement] Hide System Category
+                        .map((category) {
+                          final isSelected = _selectedCategoryId == category.id;
+                          final iconData = _getIconData(category.iconPath);
 
-                      return BouncyButton(
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedCategoryId = null;
-                            } else {
-                              _selectedCategoryId = category.id;
-                            }
-                          });
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? colors.accent.withValues(alpha: 0.2)
-                                : colors.surface,
-                            borderRadius: BorderRadius.circular(30),
-                            border: Border.all(
-                              color: isSelected
-                                  ? colors
-                                        .accent // Neon Green
-                                  : Colors.transparent,
-                              width: isSelected ? 2 : 1,
-                            ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: colors.accent.withValues(
-                                        alpha: 0.4,
-                                      ),
-                                      blurRadius: 8,
-                                      spreadRadius: 1,
-                                    ),
-                                  ]
-                                : [],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                iconData,
-                                size: 20,
+                          return BouncyButton(
+                            onTap: () {
+                              setState(() {
+                                if (isSelected) {
+                                  _selectedCategoryId = null;
+                                } else {
+                                  _selectedCategoryId = category.id;
+                                }
+                              });
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
                                 color: isSelected
-                                    ? colors.accent
-                                    : Colors.white70,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                category.name,
-                                style: TextStyle(
+                                    ? colors.accent.withValues(alpha: 0.2)
+                                    : colors.surface,
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(
                                   color: isSelected
-                                      ? colors.accent
-                                      : Colors.white70,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
+                                      ? colors
+                                            .accent // Neon Green
+                                      : Colors.transparent,
+                                  width: isSelected ? 2 : 1,
                                 ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: colors.accent.withValues(
+                                            alpha: 0.4,
+                                          ),
+                                          blurRadius: 8,
+                                          spreadRadius: 1,
+                                        ),
+                                      ]
+                                    : [],
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    iconData,
+                                    size: 20,
+                                    color: isSelected
+                                        ? colors.accent
+                                        : Colors.white70,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    category.name,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? colors.accent
+                                          : Colors.white70,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        })
+                        .toList(),
                   ),
 
                   const SizedBox(height: 40),
@@ -846,6 +943,51 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                     ],
                   ),
 
+                  // Memo Section (Conditional with Animation)
+                  Visibility(
+                    visible: _isTrophyMode,
+                    child: AnimatedOpacity(
+                      opacity: _isTrophyMode ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeIn,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 32),
+                          _buildInlineSyncAnimation(colors),
+                          const SizedBox(height: 8),
+                          _buildSectionTitle('메모 (전리품 기록)', colors),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colors.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: colors.border),
+                            ),
+                            child: TextField(
+                              controller: _memoController,
+                              style: TextStyle(color: colors.textMain),
+                              maxLines: 2,
+                              decoration: InputDecoration(
+                                hintText: i18n.isKorean
+                                    ? '유혹을 이겨낸 소감을 기록하세요...'
+                                    : 'Add a trophy note...',
+                                hintStyle: TextStyle(
+                                  color: colors.textSub.withValues(alpha: 0.5),
+                                ),
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                   const SizedBox(height: 40),
                   const SizedBox(height: 40),
                   _buildTargetGoalCard(colors, isPureFinance),
@@ -869,7 +1011,9 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                               horizontal: 24,
                             ),
                             decoration: BoxDecoration(
-                              color: colors.accent,
+                              color: _isTrophyMode
+                                  ? const Color(0xFFA6CC00) // Deeper neon lime
+                                  : colors.accent,
                               borderRadius: BorderRadius.circular(18),
                               // PRD-compliant shadow
                               boxShadow: [
@@ -897,8 +1041,12 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                                           CrossAxisAlignment.center,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Text(
-                                          '송금으로 구출하기',
+                                        Text(
+                                          _isTrophyMode
+                                              ? "전리품 기록 저장 및 동기화"
+                                              : (i18n.isKorean
+                                                    ? '송금으로 구출하기'
+                                                    : 'Rescue with Transfer'),
                                           style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.w900,
@@ -908,7 +1056,9 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          '$amountText원 송금하기',
+                                          _isTrophyMode
+                                              ? '파괴 결과 저장하기'
+                                              : '$amountText원 송금하기',
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.white.withValues(
@@ -968,8 +1118,12 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                                           CrossAxisAlignment.start,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        const Text(
-                                          '송금으로 구출하기',
+                                        Text(
+                                          _isTrophyMode
+                                              ? "전리품 기록 저장 및 동기화"
+                                              : (i18n.isKorean
+                                                    ? '송금으로 구출하기'
+                                                    : 'Rescue with Transfer'),
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.w900,
@@ -979,7 +1133,9 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          '토스뱅크로 $amountText원 송금',
+                                          _isTrophyMode
+                                              ? '파괴 결과 저장하기'
+                                              : '토스뱅크로 $amountText원 송금',
                                           style: TextStyle(
                                             fontSize: 12,
                                             color: Colors.black.withValues(
@@ -1043,7 +1199,32 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                   const SizedBox(height: 48),
                   // List
                   _TodaysRecordsList(),
+
+                  const SizedBox(height: 24),
                 ],
+              ),
+            ),
+          ),
+
+          // System Warning (Step 1 of Neural Sync Protocol - Optimized)
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Opacity(
+                opacity: 0.1,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    '허위 정보 입력 시 시스템 오류로 인해 자산 기록이 모두 꼬일 수 있습니다.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -1064,6 +1245,67 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildInlineSyncAnimation(VibeColors colors) {
+    return AnimatedBuilder(
+      animation: _syncController,
+      builder: (context, child) {
+        final flickerVal =
+            (math.sin(DateTime.now().millisecondsSinceEpoch / 50) * 0.2) + 0.8;
+        final slideProgress = _syncController.value;
+
+        // [Rapid Sync] Speed up inline animation if Trophy Mode
+        // This is a visual trick: we use the same controller but map the value differently
+        // effectively speeding it up visually if we wanted, but here we rely on controller duration.
+        // Since controller duration is set in initState, this is just rendering.
+
+        return SizedBox(
+          height: 30,
+          child: Stack(
+            children: [
+              Positioned(
+                left: (slideProgress * 300) - 100,
+                child: Opacity(
+                  opacity: flickerVal.clamp(0.4, 1.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4FF00),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFFD4FF00,
+                              ).withValues(alpha: 0.6),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'system sync...',
+                        style: TextStyle(
+                          color: Color(0xFFD4FF00),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2,
+                          fontFamily: 'Courier',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1361,17 +1603,42 @@ class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
                                     ),
                                     child: Row(
                                       children: [
-                                        Text(
-                                          _getCategoryIcon(item.category),
-                                          style: const TextStyle(fontSize: 20),
-                                        ),
+                                        if (item.category == '유혹방어 & 자산지킴')
+                                          const Icon(
+                                            Icons.whatshot,
+                                            color: Color(
+                                              0xFFD4FF00,
+                                            ), // [Visual Tuning] Neon Lime Icon
+                                            size: 24,
+                                          )
+                                        else
+                                          Text(
+                                            _getCategoryIcon(item.category),
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                            ),
+                                          ),
                                         const SizedBox(width: 12),
-                                        Text(
-                                          item.category,
-                                          style: TextStyle(
-                                            color: colors.textMain,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 15,
+                                        Expanded(
+                                          child: Text(
+                                            item.category == '유혹방어 & 자산지킴'
+                                                ? (item.note?.isNotEmpty == true
+                                                      ? '[DESTROYED] ${item.note}'
+                                                      : item.category)
+                                                : item.category,
+                                            style: TextStyle(
+                                              color:
+                                                  item.category == '유혹방어 & 자산지킴'
+                                                  ? Colors
+                                                        .white // [Visual Tuning] Revert Title to White
+                                                  : colors.textMain,
+                                              fontWeight:
+                                                  item.category == '유혹방어 & 자산지킴'
+                                                  ? FontWeight.w900
+                                                  : FontWeight.w500,
+                                              fontSize: 15,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
                                         ),
                                         const Spacer(),
@@ -1379,10 +1646,16 @@ class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
                                           '+ ${i18n.formatCurrency(item.amount.toDouble())}',
                                           style: TextStyle(
                                             color:
-                                                Theme.of(context).brightness ==
-                                                    Brightness.light
-                                                ? colors.textMain
-                                                : colors.accent,
+                                                item.category == '유혹방어 & 자산지킴'
+                                                ? const Color(
+                                                    0xFFD4FF00,
+                                                  ) // [Visual Tuning] Neon Lime Amount
+                                                : (Theme.of(
+                                                            context,
+                                                          ).brightness ==
+                                                          Brightness.light
+                                                      ? colors.textMain
+                                                      : colors.accent),
                                             fontWeight: FontWeight.bold,
                                             fontSize: 15,
                                           ),
@@ -1425,4 +1698,175 @@ String _getCategoryIcon(String category) {
   if (lower.contains('담배') || lower.contains('cigarette')) return '🚬';
   if (lower.contains('게임') || lower.contains('game')) return '🎮';
   return '💸';
+}
+
+class _NeuralSyncOverlay extends StatefulWidget {
+  final VoidCallback onComplete;
+  final bool isRapidMode;
+
+  const _NeuralSyncOverlay({
+    required this.onComplete,
+    this.isRapidMode = false,
+  });
+
+  @override
+  State<_NeuralSyncOverlay> createState() => _NeuralSyncOverlayState();
+}
+
+class _NeuralSyncOverlayState extends State<_NeuralSyncOverlay> {
+  List<String> _logs = [
+    "[SYNC] 금융망 데이터 정밀 스캔 중...",
+    "[VERIFY] 송금 신호와 실제 내역 교차 검증...",
+    "[NERVE] 입력된 정보의 진실성 판별 중...",
+    "[AUTH] 외부 금융 서버 응답 대기 중...",
+  ];
+  int _logIndex = 0;
+  Timer? _logTimer;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // [Rapid Sync] 설정을 반영한 타이머/로그 설정
+    final totalDuration = widget.isRapidMode ? 1500 : 5000;
+
+    if (widget.isRapidMode) {
+      _logs = ["[SYSTEM] 전리품 데이터 고속 업로드 중..."];
+    }
+
+    // Timer Interval: Total / Message Count
+    // Rapid: 1500 / 1 = 1500ms
+    // Normal: 5000 / 4 = 1250ms
+    final interval = (totalDuration / _logs.length).floor();
+
+    _logTimer = Timer.periodic(Duration(milliseconds: interval), (timer) {
+      if (mounted) {
+        setState(() {
+          _logIndex = (_logIndex + 1) % _logs.length;
+        });
+      }
+    });
+
+    Future.delayed(Duration(milliseconds: totalDuration), () {
+      if (mounted) widget.onComplete();
+    });
+  }
+
+  @override
+  void dispose() {
+    _logTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black87,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const EngineCoreWidget(isAccelerated: true),
+            const Padding(
+              padding: EdgeInsets.only(top: 48),
+            ), // Increased vertical spacing
+            // Fade-in/out Log Text
+            Container(
+              height: 24,
+              child:
+                  Text(
+                        _logs[_logIndex],
+                        key: ValueKey(_logIndex),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color(0xFFD4FF00),
+                          fontFamily: 'Courier',
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                      .animate(key: ValueKey('anim_$_logIndex'))
+                      .fadeIn(duration: (widget.isRapidMode ? 200 : 300).ms)
+                      .then(delay: (widget.isRapidMode ? 1000 : 750).ms)
+                      .fadeOut(duration: (widget.isRapidMode ? 200 : 200).ms),
+            ),
+            const Padding(padding: EdgeInsets.only(top: 16)),
+            const Text(
+                  "PROCESSSING NEURAL SYNC...",
+                  style: TextStyle(
+                    color: Colors.white24,
+                    fontSize: 10,
+                    letterSpacing: 3,
+                    fontWeight: FontWeight.w300,
+                  ),
+                )
+                .animate(onPlay: (c) => c.repeat())
+                .shimmer(duration: 2.seconds, color: Colors.white10),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _IntegrityCheckDialog extends StatelessWidget {
+  const _IntegrityCheckDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
+
+    return AlertDialog(
+      backgroundColor: const Color(0xFF121212),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: Color(0xFFD4FF00), width: 1),
+      ),
+      title: Row(
+        children: [
+          const Icon(
+            Icons.report_problem_rounded,
+            color: Color(0xFFD4FF00),
+            size: 24,
+          ),
+          const Padding(padding: EdgeInsets.only(right: 12)),
+          Text(
+            '데이터 정밀 검증 실패',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+      content: const Text(
+        '송금 신호와 입력 정보 사이의 비대칭이 감지되었습니다. 부정확한 기록은 자산 엔진의 분석 오차를 발생시킵니다. 실제 송금 여부를 다시 확인하십시오.',
+        style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.of(context).pop(false), // '다시 확인' -> false 반환
+          child: Text('다시 확인', style: TextStyle(color: colors.textSub)),
+        ),
+        ElevatedButton(
+          onPressed: () =>
+              Navigator.of(context).pop(true), // '데이터 확정' -> true 반환
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFD4FF00),
+            foregroundColor: Colors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            elevation: 0,
+          ),
+          child: const Text(
+            '데이터 확정',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    );
+  }
 }
