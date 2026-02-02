@@ -1,10 +1,10 @@
 import 'dart:math';
+import 'dart:ui'; // [Added] For ImageFilter
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/ui/glass_card.dart';
-import '../../../core/ui/bouncy_button.dart';
+import 'protocol_dialog.dart';
 import 'shredder_mission_screen.dart';
 import 'asmr_mission_screen.dart';
 import '../../mission/presentation/pages/reality_awareness_screen.dart';
@@ -18,14 +18,15 @@ class VibeShifterDialog extends StatefulWidget {
 
 class _VibeShifterDialogState extends State<VibeShifterDialog> {
   bool _isLoading = true;
-  late _VibeMission _selectedMission;
+  late _ProtocolType _selectedProtocol;
 
   @override
   void initState() {
     super.initState();
-    _selectRandomMission();
+    _selectRandomProtocol();
+
     // Simulate analyzing delay
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -34,191 +35,365 @@ class _VibeShifterDialogState extends State<VibeShifterDialog> {
     });
   }
 
-  void _selectRandomMission() {
+  void _selectRandomProtocol() {
     final random = Random();
-    final chance = random.nextDouble(); // 0.0 to 1.0
+    final chance = random.nextDouble();
 
-    if (chance < 0.5) {
-      // 50%
-      _selectedMission = _VibeMission(
-        title: '[이미지 분쇄]',
-        description: '눈앞의 유혹을 가루로 만들어버리세요.',
-        color: Colors.redAccent,
-        icon: Icons.recycling_rounded,
-      );
-    } else if (chance < 0.7) {
-      // 20% (0.5 to 0.7)
-      _selectedMission = _VibeMission(
-        title: '[힐링 타임]',
-        description: '지갑 닫고, 눈 감고, 귀를 열어봐요',
-        color: Colors.purpleAccent,
-        icon: Icons.headphones_rounded,
-      );
+    if (chance < 0.33) {
+      _selectedProtocol = _ProtocolType.neuralStabilization; // Purple
+    } else if (chance < 0.66) {
+      _selectedProtocol = _ProtocolType.cognitiveCorrection; // Cyan
     } else {
-      // 30% (0.7 to 1.0)
-      final actions = ['딱 3분만 딴짓을 해봅시다.'];
-      _selectedMission = _VibeMission(
-        title: '[현실 자각]',
-        description: actions[0],
-        color: Colors.cyanAccent,
-        icon: Icons.bolt_rounded,
-      );
+      _selectedProtocol = _ProtocolType.temptationDestroyer; // Red
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const _LoadingDialog();
+    }
+
+    switch (_selectedProtocol) {
+      case _ProtocolType.neuralStabilization:
+        return ProtocolDialog(
+          themeColor: const Color(0xFFD050FF), // Neon Purple
+          title: "[마음 진정 사운드]",
+          subTitle: "CODE: NEURAL_STABLIZATION",
+          description: "지금 버튼을 눌러\n3분간 마음을 가라앉히세요.",
+          centerWidget: const _WaveformAnimation(),
+          onAccept: () {
+            context.pop();
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const AsmrMissionScreen(),
+              ),
+            );
+          },
+        );
+
+      case _ProtocolType.cognitiveCorrection:
+        return ProtocolDialog(
+          themeColor: const Color(0xFF00FFD1), // Neon Cyan
+          title: "[정신 번뜩 딴짓]",
+          subTitle: "CODE: COGNITIVE_RESET",
+          description: "지금 버튼을 눌러\n3분간 다른 것에 집중하세요.",
+          centerWidget: const _GlitchIcon(
+            Icons.bolt_rounded,
+            Color(0xFF00FFD1),
+          ),
+          bottomWidget: const _CountdownProgressBar(color: Color(0xFF00FFD1)),
+          onAccept: () {
+            context.pop();
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const RealityAwarenessScreen(),
+              ),
+            );
+          },
+        );
+
+      case _ProtocolType.temptationDestroyer:
+        return ProtocolDialog(
+          themeColor: const Color(0xFFFF3B30), // Neon Red
+          title: "[유혹 즉시 파쇄]",
+          subTitle: "CODE: TEMPTATION_DESTROY",
+          description: "지금 버튼을 눌러\n지름신을 가루로 만드세요.",
+          centerWidget: const _CrosshairAnimation(),
+          isPulse: true,
+          onAccept: () {
+            context.pop();
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const ShredderMissionScreen(),
+              ),
+            );
+          },
+        );
+    }
+  }
+}
+
+enum _ProtocolType {
+  neuralStabilization,
+  cognitiveCorrection,
+  temptationDestroyer,
+}
+
+// --- Loading Dialog ---
+class _LoadingDialog extends StatelessWidget {
+  const _LoadingDialog();
+
+  @override
+  Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(20),
-      child: GlassCard(
-        backgroundColor: Colors.black.withAlpha(217),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: _isLoading ? Colors.white24 : _selectedMission.color,
-          width: 2,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_isLoading) _buildLoadingState() else _buildMissionReveal(),
-          ],
+      insetPadding: EdgeInsets.zero, // [UX] Full screen dimming effect
+      child: GestureDetector(
+        onTap: () => Navigator.of(
+          context,
+        ).pop(), // [UX Fix] Force dismissal on background tap
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          color: Colors.black.withOpacity(
+            0.7,
+          ), // [UX] Dim background to obscure data
+          child: Center(
+            child: GestureDetector(
+              onTap: () {}, // [UX] Prevent dismissal when tapping content
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Icon with Scan Effect
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      const Icon(
+                        Icons.analytics_outlined,
+                        size: 80,
+                        color: Colors.white38,
+                      ),
+                      ShaderMask(
+                            shaderCallback: (bounds) {
+                              return LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: const [
+                                  Colors.transparent,
+                                  Color(0xFFD4FF00), // Neon Lime
+                                  Colors.transparent,
+                                ],
+                                stops: const [0.0, 0.5, 1.0],
+                              ).createShader(bounds);
+                            },
+                            blendMode: BlendMode.srcIn,
+                            child: const Icon(
+                              Icons.analytics_outlined,
+                              size: 80,
+                              color: Colors.white,
+                            ),
+                          )
+                          .animate(onPlay: (c) => c.repeat())
+                          .moveY(begin: -40, end: 40, duration: 1.5.seconds),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Enhanced Text with Background Band
+                  ClipRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                      child:
+                          Container(
+                                width: double
+                                    .infinity, // [Layout] Full width to support centering
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, // [Layout] Side padding
+                                  vertical:
+                                      2, // [Layout] Minimal height to fit text
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(
+                                    0.5, // [Visual] Ghost layer opacity
+                                  ),
+                                  border: Border.symmetric(
+                                    horizontal: BorderSide(
+                                      color: const Color(
+                                        0xFFD4FF00,
+                                      ).withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Text(
+                                  'PROTOCOL ANALYZING...',
+                                  maxLines: 1, // [Layout] Force single line
+                                  overflow: TextOverflow
+                                      .visible, // [Layout] No ellipsis for this effect
+                                  style: TextStyle(
+                                    fontSize:
+                                        16, // [Layout] Adjusted for fitting
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFFD4FF00),
+                                    fontFamily: 'Courier',
+                                    letterSpacing: 3.0,
+                                    shadows: [
+                                      BoxShadow(
+                                        color: Color(0xFFD4FF00),
+                                        blurRadius: 15,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                              .animate(onPlay: (c) => c.repeat())
+                              .shimmer(
+                                duration: 2.seconds,
+                                color: Colors.white.withOpacity(0.5),
+                              ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
+}
 
-  Widget _buildLoadingState() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.analytics_outlined, size: 64, color: Colors.white70)
-            .animate(onPlay: (c) => c.repeat())
-            .shimmer(duration: 1.seconds, color: Colors.redAccent),
-        const SizedBox(height: 24),
-        const Text(
-              '최적의 솔루션을 찾는 중...',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontFamily: 'Courier', // Tech/Hacking vibe
-                letterSpacing: 2,
+// --- Specific Animations ---
+
+class _WaveformAnimation extends StatelessWidget {
+  const _WaveformAnimation();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(5, (index) {
+        return Container(
+              width: 8,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFFD050FF),
+                borderRadius: BorderRadius.circular(4),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFD050FF).withOpacity(0.5),
+                    blurRadius: 10,
+                  ),
+                ],
               ),
             )
             .animate(onPlay: (c) => c.repeat(reverse: true))
-            .fadeIn(duration: 500.ms)
-            .then()
-            .fadeOut(duration: 500.ms),
-      ],
+            .scaleY(
+              begin: 0.2,
+              end: 1.0,
+              duration: Duration(milliseconds: 600 + (index * 200)),
+              curve: Curves.easeInOutQuad,
+            );
+      }),
     );
   }
+}
 
-  Widget _buildMissionReveal() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+class _GlitchIcon extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _GlitchIcon(this.icon, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
       children: [
-        Icon(_selectedMission.icon, size: 80, color: _selectedMission.color)
-            .animate()
-            .scale(duration: 400.ms, curve: Curves.elasticOut)
+        Icon(icon, size: 80, color: color.withOpacity(0.5))
+            .animate(onPlay: (c) => c.repeat())
+            .move(
+              begin: const Offset(-2, 0),
+              end: const Offset(2, 0),
+              duration: 100.ms,
+            )
+            .shake(hz: 8),
+        Icon(icon, size: 80, color: color)
+            .animate(onPlay: (c) => c.repeat(reverse: true))
+            .fadeIn(duration: 50.ms)
             .then()
-            .shake(duration: 400.ms),
-        const SizedBox(height: 24),
-        Text(
-          _selectedMission.title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
-            color: Colors.white,
-            shadows: [
-              BoxShadow(
-                color: _selectedMission.color.withAlpha(204),
-                blurRadius: 20,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-        ).animate().fadeIn(duration: 400.ms).moveY(begin: 10, end: 0),
-        const SizedBox(height: 16),
-        Text(
-          _selectedMission.description,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Colors.white70,
-            height: 1.4,
-          ),
-        ).animate().fadeIn(delay: 200.ms).moveY(begin: 10, end: 0),
-        const SizedBox(height: 40),
-        BouncyButton(
-          onTap: () {
-            context.pop();
-            // Phase 2: Navigate to separate screen for Shredder Mission
-            if (_selectedMission.title == '[이미지 분쇄]') {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const ShredderMissionScreen(),
-                ),
-              );
-            } else if (_selectedMission.title == '[힐링 타임]') {
-              // Phase 3: Navigate to ASMR Mission Screen
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const AsmrMissionScreen(),
-                ),
-              );
-            } else if (_selectedMission.title == '[현실 자각]') {
-              // Phase 4: Navigate to Reality Awareness Screen
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const RealityAwarenessScreen(),
-                ),
-              );
-            }
-          },
-
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-            decoration: BoxDecoration(
-              color: _selectedMission.color.withAlpha(51),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: _selectedMission.color.withAlpha(128)),
-              boxShadow: [
-                BoxShadow(
-                  color: _selectedMission.color.withAlpha(51),
-                  blurRadius: 15,
-                  spreadRadius: 1,
-                ),
-              ],
-            ),
-            child: Text(
-              "돈 굳히러 가기 Let's Go",
-              style: TextStyle(
-                color: _selectedMission.color,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ),
-        ).animate().fadeIn(delay: 600.ms).scale(),
+            .fadeOut(duration: 150.ms),
       ],
     );
   }
 }
 
-class _VibeMission {
-  final String title;
-  final String description;
+class _CountdownProgressBar extends StatelessWidget {
   final Color color;
-  final IconData icon;
 
-  _VibeMission({
-    required this.title,
-    required this.description,
-    required this.color,
-    required this.icon,
-  });
+  const _CountdownProgressBar({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 4,
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: FractionallySizedBox(
+        alignment: Alignment.centerLeft,
+        widthFactor: 1.0,
+        child:
+            Container(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+                boxShadow: [BoxShadow(color: color, blurRadius: 5)],
+              ),
+            ).animate().custom(
+              duration: 3.seconds, // Just a visual demo of shrinking
+              builder: (_, value, child) {
+                return FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: 1.0 - value, // Shrink
+                  child: child,
+                );
+              },
+            ),
+      ),
+    );
+  }
+}
+
+class _CrosshairAnimation extends StatelessWidget {
+  const _CrosshairAnimation();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+          alignment: Alignment.center,
+          children: [
+            // Rotating Outer Ring
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFFF3B30), width: 2),
+              ),
+            ).animate(onPlay: (c) => c.repeat()).rotate(duration: 3.seconds),
+
+            // Inner Cross
+            const Icon(Icons.add, size: 40, color: Color(0xFFFF3B30)),
+
+            // Targeting Dots
+            ...List.generate(4, (index) {
+              return Transform.rotate(
+                angle: index * (pi / 2),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Container(
+                    width: 4,
+                    height: 10,
+                    color: const Color(0xFFFF3B30),
+                    margin: const EdgeInsets.only(top: 25),
+                  ),
+                ),
+              );
+            }),
+          ],
+        )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .scale(
+          begin: const Offset(0.9, 0.9),
+          end: const Offset(1.1, 1.1),
+          duration: 500.ms,
+        );
+  }
 }

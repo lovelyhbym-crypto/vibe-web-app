@@ -193,6 +193,9 @@ class DashboardScreen extends ConsumerWidget {
                 onPressed: () {
                   showDialog(
                     context: context,
+                    barrierDismissible:
+                        true, // [SOS UX Fix] Enable tap-to-dismiss
+                    barrierLabel: '', // [SOS UX Fix] Explicit barrier label
                     builder: (context) => const VibeShifterDialog(),
                   );
                 },
