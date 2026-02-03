@@ -537,7 +537,9 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
                             '/saving',
                             extra: {
                               'initialAmount': '0',
-                              'initialMemo': '#이미지분쇄기 #유혹방어성공 #자산지킴',
+                              'initialMemo': _targetText?.isNotEmpty == true
+                                  ? _targetText
+                                  : '유혹방어',
                               'initialCategoryId': 'system_optimization',
                               'isTrophyMode': true,
                             },

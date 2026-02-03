@@ -62,9 +62,12 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
       _selectedCategoryId = widget.initialData!['initialCategoryId'];
       _isTrophyMode = widget.initialData!['isTrophyMode'] ?? false;
 
-      // If trophy mode, force amount to 0
+      // If trophy mode, force amount to 0 and set default note
       if (_isTrophyMode) {
         _amountController.text = '0';
+        if (_memoController.text.isEmpty) {
+          _memoController.text = '유혹방어';
+        }
       }
     }
   }
@@ -586,7 +589,13 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
   }
 
   Future<void> _submit() async {
-    if (_isLoading) return;
+    debugPrint(
+      '[DEBUG] _submit called. isLoading: $_isLoading, isTrophyMode: $_isTrophyMode',
+    );
+    if (_isLoading) {
+      debugPrint('[DEBUG] _submit ignored due to isLoading: true');
+      return;
+    }
 
     final cleanerText = _amountController.text
         .replaceAll(',', '')
@@ -801,7 +810,10 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
       final category = categories.firstWhere(
         (c) => c.id == _selectedCategoryId,
         orElse: () => _isTrophyMode
-            ? const CategoryModel(id: 'system_optimization', name: '유혹 방어')
+            ? const CategoryModel(
+                id: 'system_optimization',
+                name: '유혹방어 & 자산지킴',
+              )
             : const CategoryModel(id: 'unknown', name: 'Unknown'),
       );
       finalCategoryName = category.name;
@@ -942,6 +954,9 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
 
                           return BouncyButton(
                             onTap: () {
+                              debugPrint(
+                                '[DEBUG] Category tapped: ${category.id}',
+                              );
                               setState(() {
                                 if (isSelected) {
                                   _selectedCategoryId = null;
@@ -1135,7 +1150,6 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                   ),
 
                   const SizedBox(height: 40),
-                  const SizedBox(height: 40),
                   _buildTargetGoalCard(colors, isPureFinance),
 
                   const SizedBox(height: 40),
@@ -1149,7 +1163,14 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
 
                       if (isPureFinance) {
                         return BouncyButton(
-                          onTap: _isLoading ? () {} : _submit,
+                          onTap: _isLoading
+                              ? () {}
+                              : () {
+                                  debugPrint(
+                                    '[DEBUG] Save Button (PureFinance) tapped. Calling _submit.',
+                                  );
+                                  _submit();
+                                },
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(
@@ -1262,7 +1283,14 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                           ),
                         ],
                         child: BouncyButton(
-                          onTap: _isLoading ? () {} : _submit,
+                          onTap: _isLoading
+                              ? () {}
+                              : () {
+                                  debugPrint(
+                                    '[DEBUG] Save Button tapped. Calling _submit.',
+                                  );
+                                  _submit();
+                                },
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
@@ -1446,21 +1474,23 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
           ),
 
           // System Warning (Step 1 of Neural Sync Protocol - Optimized)
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Opacity(
-                opacity: 0.1,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Text(
-                    '허위 정보 입력 시 시스템 오류로 인해 자산 기록이 모두 꼬일 수 있습니다.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white,
-                      letterSpacing: -0.2,
+          IgnorePointer(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Opacity(
+                  opacity: 0.1,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                      '허위 정보 입력 시 시스템 오류로 인해 자산 기록이 모두 꼬일 수 있습니다.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white,
+                        letterSpacing: -0.2,
+                      ),
                     ),
                   ),
                 ),
@@ -1860,10 +1890,8 @@ class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
-                                            item.category == '유혹방어 & 자산지킴'
-                                                ? (item.note?.isNotEmpty == true
-                                                      ? '[DESTROYED] ${item.note}'
-                                                      : item.category)
+                                            (item.note ?? '').isNotEmpty
+                                                ? item.note!
                                                 : item.category,
                                             style: TextStyle(
                                               color:

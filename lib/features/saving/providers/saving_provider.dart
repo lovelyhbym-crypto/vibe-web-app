@@ -22,22 +22,37 @@ class SavingNotifier extends _$SavingNotifier {
     }
 
     // Fetch from Supabase for logged-in users
-    final response = await ref
-        .read(supabaseProvider)
-        .from('savings')
-        .select()
-        .order('created_at', ascending: false);
+    try {
+      final response = await ref
+          .read(supabaseProvider)
+          .from('savings')
+          .select()
+          .order('created_at', ascending: false);
 
-    // Filter out items with null IDs
-    final safeResponse = response.where((e) => e['id'] != null).toList();
+      // Filter out items with null IDs
+      final safeResponse = response.where((e) => e['id'] != null).toList();
 
-    if (safeResponse.length < response.length) {
-      debugPrint(
-        'Filtered out ${response.length - safeResponse.length} savings with null IDs',
-      );
+      if (safeResponse.length < response.length) {
+        debugPrint(
+          'Filtered out ${response.length - safeResponse.length} savings with null IDs',
+        );
+      }
+      return safeResponse.map((e) => SavingModel.fromJson(e)).toList();
+    } catch (e) {
+      // [Resilience] If select('*') fails due to missing 'note' column
+      if (e.toString().contains('PGRST204') || e.toString().contains('note')) {
+        debugPrint(
+          'Fetch failed due to missing note column, falling back to safe select...',
+        );
+        final fallbackResponse = await ref
+            .read(supabaseProvider)
+            .from('savings')
+            .select('id, category, amount, created_at, wishlist_ids')
+            .order('created_at', ascending: false);
+        return fallbackResponse.map((e) => SavingModel.fromJson(e)).toList();
+      }
+      rethrow;
     }
-
-    return safeResponse.map((e) => SavingModel.fromJson(e)).toList();
   }
 
   Future<void> addSaving({
@@ -128,15 +143,17 @@ class SavingNotifier extends _$SavingNotifier {
         );
         try {
           // Remove potential new columns preventing insert
-          // note column might be missing in the cached schema
+          // [CRITICAL FIX] If 'note' column is missing, strip it and retry
           final safeJson = newItem.toJson();
-          safeJson.remove('note');
+          safeJson.remove('note'); // Strip note to avoid PGRST204
 
           final response = await ref
               .read(supabaseProvider)
               .from('savings')
               .insert({...safeJson, 'user_id': user.id})
-              .select()
+              .select(
+                'id, category, amount, created_at, wishlist_ids',
+              ) // Explicitly exclude 'note'
               .single();
 
           if (response['id'] == null) throw Exception('Retry failed: ID null');
