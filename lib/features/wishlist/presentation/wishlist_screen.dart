@@ -195,18 +195,17 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                 if (activeWishlist.isEmpty) return const SizedBox.shrink();
                 final targetItem = activeWishlist.first;
 
-                bool isCheckedToday = false;
-                if (targetItem.lastSurvivalCheckAt != null) {
+                // [Global Check] 오늘 어떤 위시리스트라도 이미 체크했는지 확인
+                bool isCheckedToday = wishlist.any((item) {
+                  if (item.lastSurvivalCheckAt == null) return false;
                   final today = DateTime(now.year, now.month, now.day);
                   final lastCheck = DateTime(
-                    targetItem.lastSurvivalCheckAt!.year,
-                    targetItem.lastSurvivalCheckAt!.month,
-                    targetItem.lastSurvivalCheckAt!.day,
+                    item.lastSurvivalCheckAt!.year,
+                    item.lastSurvivalCheckAt!.month,
+                    item.lastSurvivalCheckAt!.day,
                   );
-                  if (today.isAtSameMomentAs(lastCheck)) {
-                    isCheckedToday = true;
-                  }
-                }
+                  return today.isAtSameMomentAs(lastCheck);
+                });
 
                 if (isCheckedToday) {
                   return Container(

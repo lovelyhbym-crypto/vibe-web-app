@@ -149,9 +149,28 @@ class WishlistNotifier extends _$WishlistNotifier {
     final authNotifier = ref.read(authProvider.notifier);
     final user = ref.read(authProvider).asData?.value;
 
+    final currentList = state.valueOrNull ?? [];
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final wasCheckedToday = currentList.any((it) {
+      if (it.lastSurvivalCheckAt == null) return false;
+      final lastDate = DateTime(
+        it.lastSurvivalCheckAt!.year,
+        it.lastSurvivalCheckAt!.month,
+        it.lastSurvivalCheckAt!.day,
+      );
+      return lastDate.isAtSameMomentAs(today);
+    });
+
+    // 만약 오늘 이미 확정했다면 새로운 목표도 확정된 상태로 생성 (버튼 재활성 방지)
+    final processedItem = wasCheckedToday
+        ? item.copyWith(lastSurvivalCheckAt: now)
+        : item;
+
     if (authNotifier.isGuest || user == null) {
       // Generate a temporary ID for local items
-      final newItem = item.copyWith(
+      final newItem = processedItem.copyWith(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
       );
       _guestWishlist.add(newItem);
@@ -160,11 +179,11 @@ class WishlistNotifier extends _$WishlistNotifier {
     }
 
     try {
-      debugPrint('Adding wishlist item to Supabase: ${item.title}');
+      debugPrint('Adding wishlist item to Supabase: ${processedItem.title}');
       final response = await ref
           .read(supabaseProvider)
           .from('wishlists')
-          .insert({...item.toJson(), 'user_id': user.id})
+          .insert({...processedItem.toJson(), 'user_id': user.id})
           .select()
           .single();
 
