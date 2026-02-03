@@ -619,7 +619,17 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
 
     // 전리품 모드라면 은행 확인 없이 바로 저장 루틴 진입
     if (_isTrophyMode) {
-      await _performActualSaving();
+      final bool success = await _performActualSaving();
+      if (success && mounted) {
+        // [Victory Feedback Loop] WoW Effect & Navigation
+        ref.read(rewardStateProvider.notifier).triggerConfetti();
+        SoundService().playFirework();
+
+        await Future.delayed(const Duration(milliseconds: 1000));
+        if (mounted) {
+          context.pop(); // 유혹 파괴 프로토콜 화면으로 복귀
+        }
+      }
       return;
     }
 

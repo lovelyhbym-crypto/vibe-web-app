@@ -490,6 +490,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
                   vertical: 40.0,
                 ),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
