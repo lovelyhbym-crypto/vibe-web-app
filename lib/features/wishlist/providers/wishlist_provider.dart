@@ -1001,17 +1001,21 @@ class WishlistNotifier extends _$WishlistNotifier {
     final newSavedAmount = item.savedAmount + amount;
 
     // 3. 성공 조건 검사
-    // - 조건 A: 2일 연속 송금 (기존 3일 -> 2일)
-    // - 조건 B: 목표 금액의 10%를 '한 번에' 송금 (기존 누적 10% -> 1회 10%)
+    // - 조건 A: 2일 연속 송금
+    // - 조건 B: 목표 금액의 10%를 '한 번에' 송금
+    // - [New] 조건 C: 저축액이 목표가에 도달함 (사용자 요청: 사진이 깨져도 달성 가능)
+    final isNowAchieved = newSavedAmount >= item.totalGoal;
     final conditionA = newConsecutive >= 2;
     final conditionB = amount >= (item.totalGoal * 0.1);
-    final isRecovered = conditionA || conditionB;
+    final isRecovered = conditionA || conditionB || isNowAchieved;
 
     if (isRecovered) {
       // 복구 성공: 모든 퀘스트 필드 초기화 및 isBroken 해제, 페널티 제거
       debugPrint('REDEMPTION SUCCESS: Goal "${item.title}" restored!');
       return item.copyWith(
         isBroken: false,
+        isAchieved: isNowAchieved,
+        achievedAt: isNowAchieved ? now : null,
         savedAmount: newSavedAmount,
         brokenAt: null,
         questSavedAmount: 0.0,
@@ -1062,6 +1066,8 @@ class WishlistNotifier extends _$WishlistNotifier {
           .update({
             'saved_amount': updatedItem.savedAmount.toInt(),
             'is_broken': updatedItem.isBroken,
+            'is_achieved': updatedItem.isAchieved,
+            'achieved_at': updatedItem.achievedAt?.toIso8601String(),
             'quest_saved_amount': updatedItem.questSavedAmount,
             'consecutive_valid_days': updatedItem.consecutiveValidDays,
             'broken_at': updatedItem.brokenAt?.toIso8601String(),
