@@ -437,136 +437,147 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
             borderRadius: BorderRadius.circular(0), // Sharp edges
             side: BorderSide(color: colors?.danger ?? Colors.red, width: 2),
           ),
-          title: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Left: Icon + Title
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.warning_amber_rounded,
-                          size: 28,
-                          color: colors?.danger ?? Colors.red,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          "지출 발생 신고",
-                          style: TextStyle(
-                            color: colors?.danger ?? Colors.red,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // Right: Code Tag
-                    Text(
-                      "[CODE: 402_LEAK]",
-                      style: TextStyle(
-                        color: (colors?.danger ?? Colors.red).withValues(
-                          alpha: 0.7,
-                        ),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Courier',
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 1. Center Title (Korean)
+              Text(
+                "지출 확정 보고서",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: colors?.danger ?? Colors.red,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5, // Increased letter spacing
                 ),
-                const SizedBox(height: 12),
-                // Subtext Guide
-                Text(
-                  "돈을 썼다면 클릭해서 기록하세요.",
-                  style: TextStyle(
-                    color: (colors?.danger ?? Colors.red).withValues(
-                      alpha: 0.7,
-                    ),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+              ),
+              const SizedBox(height: 4),
+              // 2. Centered Code Tag
+              Text(
+                "[CODE: 402_LEAK]",
+                style: TextStyle(
+                  color: (colors?.danger ?? Colors.red).withValues(alpha: 0.3),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Courier',
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '약속한 벌칙을 수행하시겠습니까??',
-                style: TextStyle(
-                  color: Colors.white,
-                  height: 1.5,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(height: 12),
+              // Main Label (Korean)
+              const Center(
+                child: Text(
+                  '지출 금액을 입력하십시오',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
               ),
-              const SizedBox(height: 24),
-              Text(
-                '얼마를 낭비했습니까?',
-                style: TextStyle(color: colors?.textSub ?? Colors.white70),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: controller,
-                keyboardType: TextInputType.number,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
+              const SizedBox(height: 16),
+
+              // Neon Input Box (Cleaned)
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  border: Border.all(
+                    color: colors?.danger ?? Colors.redAccent,
+                    width: 1.5,
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (colors?.danger ?? Colors.red).withValues(
+                        alpha: 0.1,
+                      ),
+                      blurRadius: 4, // Reduced blur for clean look
+                      spreadRadius: 1,
+                    ),
+                  ],
                 ),
-                cursorColor: colors?.danger,
-                decoration: InputDecoration(
-                  hintText: '금액 입력',
-                  hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 0,
+                ), // Minimal padding
+                child: TextField(
+                  controller: controller,
+                  textAlign: TextAlign.center, // Centered Text
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    fontFamily: 'Courier',
                   ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: colors?.danger ?? Colors.redAccent,
-                      width: 2,
-                    ),
-                  ),
-                  focusedBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: colors?.danger ?? Colors.redAccent,
-                      width: 4, // Intensive focus
-                    ),
+                  cursorColor: colors?.danger,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
               ),
             ],
           ),
+          actionsAlignment: MainAxisAlignment.center,
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('취소', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colors?.danger ?? Colors.red[900],
-                foregroundColor: Colors.white,
-                shape: const RoundedRectangleBorder(), // Sharp
-                elevation: 0,
-              ),
-              onPressed: () {
-                // [Visual FX] Glitch on press
-                final amount = double.tryParse(controller.text) ?? 0;
-                Navigator.pop(context);
-                _executeDefeatSequence(amount);
-              },
-              child: const Text(
-                '지출 확정',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+            Row(
+              children: [
+                // Cancel Button (Balanced)
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(
+                        alpha: 0.1,
+                      ), // Dark Grey
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      '취소',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Confirm Button (Balanced)
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colors?.danger ?? Colors.red[900],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onPressed: () {
+                      final amount = double.tryParse(controller.text) ?? 0;
+                      Navigator.pop(context);
+                      _executeDefeatSequence(amount);
+                    },
+                    child: const Text(
+                      '지출 확정',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1216,26 +1227,42 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                         );
                       }
 
-                      return BouncyButton(
-                        onTap: _isLoading ? () {} : _submit,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 20,
-                            horizontal: 24,
+                      return Animate(
+                        onPlay: (controller) =>
+                            controller.repeat(reverse: true),
+                        effects: [
+                          CustomEffect(
+                            duration: 2500.ms,
+                            curve: Curves.easeInOut,
+                            builder: (context, value, child) {
+                              final glowOpacity =
+                                  0.2 + (value * 0.3); // 0.2 -> 0.5
+                              return Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 20,
+                                  horizontal: 24,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colors.accent,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: colors.accent.withValues(
+                                        alpha: glowOpacity,
+                                      ),
+                                      blurRadius: 10, // Reduced from 20
+                                      spreadRadius: 3,
+                                    ),
+                                  ],
+                                ),
+                                child: child,
+                              );
+                            },
                           ),
-                          decoration: BoxDecoration(
-                            color: colors.accent,
-                            borderRadius: BorderRadius.circular(20),
-                            // PRD: Neon Glow Optimization
-                            boxShadow: [
-                              BoxShadow(
-                                color: colors.accent.withValues(alpha: 0.4),
-                                blurRadius: 20,
-                                spreadRadius: 3,
-                              ),
-                            ],
-                          ),
+                        ],
+                        child: BouncyButton(
+                          onTap: _isLoading ? () {} : _submit,
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
@@ -1295,87 +1322,114 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                     },
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 32),
 
                   // Defeat Button (Asset Leak Declaration)
                   // [Modified] Step 1: Defeat Button Overhaul
                   // Defeat Button (Asset Leak Declaration)
+                  // Defeat Button (Asset Leak Declaration)
                   Container(
                     width: double.infinity,
                     margin: const EdgeInsets.only(bottom: 24),
-                    decoration: BoxDecoration(
-                      color: colors.danger,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: colors.danger.withValues(alpha: 0.4),
-                          blurRadius: 20,
-                          spreadRadius: 3,
-                        ),
-                      ],
-                    ),
-                    child: InkWell(
-                      onTap: _showDefeatDialog,
-                      borderRadius: BorderRadius.circular(20),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 20,
-                          horizontal: 24,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.warning_amber_rounded,
-                              size: 50,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        "지출 발생 신고",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: 20,
-                                          color: Colors.white,
-                                          letterSpacing: -0.5,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        "[CODE: 402_LEAK]",
-                                        style: TextStyle(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.8,
-                                          ),
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'Courier',
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "유혹 방어 실패 시 피해 규모를 기록하십시오.",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 12,
-                                      color: Colors.white.withValues(
-                                        alpha: 0.8,
-                                      ),
+                    child: Animate(
+                      onPlay: (controller) => controller.repeat(reverse: true),
+                      effects: [
+                        CustomEffect(
+                          duration: 2500.ms,
+                          curve: Curves.easeInOut,
+                          builder: (context, value, child) {
+                            final glowOpacity =
+                                0.2 + (value * 0.3); // Restore missing variable
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: colors.danger.withValues(
+                                  alpha: 0.1,
+                                ), // Faint background
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: colors.danger,
+                                  width: 2,
+                                ), // Solid Red Border
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: colors.danger.withValues(
+                                      alpha: glowOpacity,
                                     ),
+                                    blurRadius: 10,
+                                    spreadRadius: 3,
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
+                              child: child,
+                            );
+                          },
+                        ),
+                      ],
+                      child: InkWell(
+                        onTap: _showDefeatDialog,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 20,
+                            horizontal: 24,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                size: 45, // Reduced from 50 (10% decrease)
+                                color: colors
+                                    .danger, // Changed to red for visibility
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          "지출 발생 신고",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 20,
+                                            color:
+                                                colors.danger, // Changed to red
+                                            letterSpacing: -0.5,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          "[CODE: 402_LEAK]",
+                                          style: TextStyle(
+                                            color: colors.danger.withValues(
+                                              alpha: 0.7,
+                                            ),
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: 'Courier',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "유혹 방어 실패 시 피해 규모를 기록하십시오.",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 12,
+                                        color: colors.danger.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
