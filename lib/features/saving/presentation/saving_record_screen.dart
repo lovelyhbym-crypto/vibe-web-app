@@ -193,7 +193,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
   }
 
   void _executeDefeatSequence(double amount) async {
-    // 1. Sound: 유리창 깨지는 소리 시뮬레이션 (삭제: 목표 탭 진입 시 재생)
+    // 1. Sound: 유리창 깨지는 소리 시뮬레이션
     debugPrint('Sound Simulation: Glass Breaking Sound (Deferred)');
 
     // 2. State: 현재 위시리스트 파괴
@@ -222,122 +222,188 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     await showGeneralDialog(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.95), // Pitch black overlay
+      barrierColor: Colors.black.withValues(alpha: 0.95),
       pageBuilder: (context, anim1, anim2) {
         return PopScope(
-          canPop: false, // Prevent back button
+          canPop: false,
           child: Scaffold(
             backgroundColor: Colors.transparent,
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.broken_image_rounded,
-                    size: 80,
-                    color: Colors.white24,
-                  ),
-                  const SizedBox(height: 32),
-                  const Text(
-                    "실패가 확정되었습니다.",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 24,
-                    ),
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A0000),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: colors.danger.withValues(alpha: 0.5),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        const Text(
-                          "약속하신 벌칙",
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          penaltyText ?? "설정된 벌칙이 없습니다.",
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            height: 1.5,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        if (penaltyText != null)
-                          const Text(
-                            "지금 즉시 수행하십시오.",
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 12,
+            body: Stack(
+              fit: StackFit.expand,
+              children: [
+                // [Visual FX] Scanline Effect
+                IgnorePointer(
+                  child:
+                      Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                stops: const [0.0, 0.5, 0.51, 1.0],
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.1),
+                                  Colors.black.withValues(alpha: 0.1),
+                                  Colors.transparent,
+                                ],
+                                tileMode: TileMode.repeated,
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 60),
-                  SizedBox(
-                    width: 200,
-                    height: 56,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colors.danger,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 8,
-                        shadowColor: colors.danger.withValues(alpha: 0.5),
-                      ),
-                      onPressed: () {
-                        // [Added] Trigger Shatter Sound for next screen
-                        ref.read(rewardStateProvider.notifier).triggerShatter();
-                        Navigator.of(context).pop(); // Close overlay
-                      },
-                      child: const Text(
-                        "수행하겠습니다",
+                          )
+                          .animate(onPlay: (c) => c.repeat())
+                          .moveY(begin: -10, end: 10, duration: 2000.ms),
+                ),
+
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                            Icons.broken_image_rounded,
+                            size: 80,
+                            color: colors.danger,
+                          )
+                          .animate(onPlay: (c) => c.repeat(reverse: true))
+                          .shake(
+                            duration: 100.ms,
+                            hz: 5,
+                            offset: const Offset(2, 0),
+                          ) // Glitch jitter
+                          .tint(
+                            color: Colors.white,
+                            duration: 50.ms,
+                          ), // Glitch flash
+
+                      const SizedBox(height: 32),
+
+                      const Text(
+                        "[SYSTEM BREACH]",
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          color: Colors.redAccent,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2.0,
                         ),
                       ),
-                    ),
+                      const Text(
+                        "유혹 방어 실패",
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -1.0,
+                          shadows: [Shadow(color: Colors.red, blurRadius: 20)],
+                        ),
+                      ).animate().fadeIn().shake(duration: 500.ms),
+
+                      const SizedBox(height: 48),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 24,
+                        ),
+                        margin: const EdgeInsets.symmetric(horizontal: 24),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A0000),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: colors.danger, width: 2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: colors.danger.withValues(alpha: 0.2),
+                              blurRadius: 20,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              "[REMEDIATION] 강제 복구 프로토콜 이행",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              penaltyText ?? "설정된 프로토콜이 없습니다.",
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                height: 1.5,
+                                fontFamily:
+                                    'Courier', // Monospace for high-tech feel
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            if (penaltyText != null)
+                              const Text(
+                                "시스템 정상화를 위해 즉시 위 절차를 이행하십시오.",
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 12,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 60),
+
+                      // Action Button
+                      SizedBox(
+                            width: 240,
+                            height: 56,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: colors.danger,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    4,
+                                  ), // Angular High-tech look
+                                ),
+                                elevation: 10,
+                                shadowColor: colors.danger,
+                              ),
+                              onPressed: () {
+                                // [Added] Trigger Glitch & Shatter Sound for next screen
+                                ref
+                                    .read(rewardStateProvider.notifier)
+                                    .triggerShatter();
+                                Navigator.of(context).pop(); // Close overlay
+                              },
+                              child: const Text(
+                                "프로토콜 수용 및 이행 시작",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ),
+                          )
+                          .animate(target: 1)
+                          .shake(
+                            delay: 500.ms,
+                            duration: 200.ms,
+                          ), // Glitch on user interaction hint
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
       },
-      transitionDuration: const Duration(milliseconds: 400),
+      transitionDuration: const Duration(milliseconds: 200),
       transitionBuilder: (context, anim1, anim2, child) {
-        return FadeTransition(
-          opacity: anim1,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.95, end: 1.0).animate(
-              CurvedAnimation(parent: anim1, curve: Curves.easeOutCubic),
-            ),
-            child: child,
-          ),
-        );
+        // Hard sharp cut or quick fade for glitch feel
+        return FadeTransition(opacity: anim1, child: child);
       },
     );
 
@@ -356,85 +422,154 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: colors?.background ?? const Color(0xFF111111),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: colors?.danger ?? Colors.redAccent),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              color: colors?.danger ?? Colors.redAccent,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '마지막 경고',
-              style: TextStyle(
-                color: colors?.danger ?? Colors.redAccent,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '패배를 인정하시겠습니까?\n이 선택은 되돌릴 수 없으며,\n설정하신 벌칙을 즉시 수행해야 합니다.',
-              style: TextStyle(color: Colors.white70, height: 1.5),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              '얼마를 낭비했습니까?',
-              style: TextStyle(color: colors?.textSub ?? Colors.white70),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: '금액 입력',
-                hintStyle: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(
-                    color: colors?.danger ?? Colors.redAccent,
-                  ),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(
-                    color: colors?.danger ?? Colors.redAccent,
-                    width: 2,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: colors?.danger ?? Colors.red[900],
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              final amount = double.tryParse(controller.text) ?? 0;
-              Navigator.pop(context);
-              _executeDefeatSequence(amount);
-            },
-            child: const Text('패배 확정'),
-          ),
+      builder: (context) => Animate(
+        effects: [
+          FadeEffect(duration: 100.ms),
+          ShakeEffect(
+            duration: 200.ms,
+            hz: 10,
+            offset: const Offset(5, 0),
+          ), // [Visual FX] Glitch on appear
         ],
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF0F0F0F),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(0), // Sharp edges
+            side: BorderSide(color: colors?.danger ?? Colors.red, width: 2),
+          ),
+          title: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Left: Icon + Title
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          size: 28,
+                          color: colors?.danger ?? Colors.red,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "지출 발생 신고",
+                          style: TextStyle(
+                            color: colors?.danger ?? Colors.red,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Right: Code Tag
+                    Text(
+                      "[CODE: 402_LEAK]",
+                      style: TextStyle(
+                        color: (colors?.danger ?? Colors.red).withValues(
+                          alpha: 0.7,
+                        ),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Courier',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Subtext Guide
+                Text(
+                  "돈을 썼다면 클릭해서 기록하세요.",
+                  style: TextStyle(
+                    color: (colors?.danger ?? Colors.red).withValues(
+                      alpha: 0.7,
+                    ),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '약속한 벌칙을 수행하시겠습니까??',
+                style: TextStyle(
+                  color: Colors.white,
+                  height: 1.5,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                '얼마를 낭비했습니까?',
+                style: TextStyle(color: colors?.textSub ?? Colors.white70),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+                cursorColor: colors?.danger,
+                decoration: InputDecoration(
+                  hintText: '금액 입력',
+                  hintStyle: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: colors?.danger ?? Colors.redAccent,
+                      width: 2,
+                    ),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(
+                      color: colors?.danger ?? Colors.redAccent,
+                      width: 4, // Intensive focus
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('취소', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colors?.danger ?? Colors.red[900],
+                foregroundColor: Colors.white,
+                shape: const RoundedRectangleBorder(), // Sharp
+                elevation: 0,
+              ),
+              onPressed: () {
+                // [Visual FX] Glitch on press
+                final amount = double.tryParse(controller.text) ?? 0;
+                Navigator.pop(context);
+                _executeDefeatSequence(amount);
+              },
+              child: const Text(
+                '지출 확정',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1162,35 +1297,85 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
 
                   const SizedBox(height: 16),
 
-                  // Defeat Button (시인성 강화 버전)
-                  SizedBox(
+                  // Defeat Button (Asset Leak Declaration)
+                  // [Modified] Step 1: Defeat Button Overhaul
+                  // Defeat Button (Asset Leak Declaration)
+                  Container(
                     width: double.infinity,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: colors.danger.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: colors.danger.withValues(alpha: 0.5),
-                          width: 2,
+                    margin: const EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(
+                      color: colors.danger,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.danger.withValues(alpha: 0.4),
+                          blurRadius: 20,
+                          spreadRadius: 3,
                         ),
-                      ),
-                      child: TextButton.icon(
-                        onPressed: _showDefeatDialog,
-                        style: TextButton.styleFrom(
-                          foregroundColor: colors.danger,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                      ],
+                    ),
+                    child: InkWell(
+                      onTap: _showDefeatDialog,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 20,
+                          horizontal: 24,
                         ),
-                        icon: const Icon(Icons.warning_amber_rounded, size: 20),
-                        label: const Text(
-                          "패배 버튼",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 15,
-                            letterSpacing: -0.5,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              size: 50,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        "지출 발생 신고",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 20,
+                                          color: Colors.white,
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        "[CODE: 402_LEAK]",
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.8,
+                                          ),
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Courier',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "유혹 방어 실패 시 피해 규모를 기록하십시오.",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 12,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.8,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
