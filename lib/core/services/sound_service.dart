@@ -74,4 +74,24 @@ class SoundService {
       debugPrint('Error playing firework sound: $e');
     }
   }
+
+  /// P3: Impact Hit Sound (Rapid Tapping Feedback)
+  Future<void> playImpactHit(int tapCount) async {
+    try {
+      // Create a fresh player instance for overlapping sounds
+      final player = AudioPlayer();
+      await player.setPlayerMode(PlayerMode.lowLatency);
+
+      // Calculate pitch (Starts at 1.0, increases by 0.05 per tap, max 2.0)
+      final pitch = (1.0 + (tapCount * 0.05)).clamp(1.0, 2.0);
+
+      await player.setPlaybackRate(pitch);
+      await player.play(AssetSource('audio/impact_hit.mp3'), volume: 0.7);
+
+      // Clean up player after completion to prevent memory leaks
+      player.onPlayerComplete.listen((_) => player.dispose());
+    } catch (e) {
+      debugPrint('Error playing impact hit sound: $e');
+    }
+  }
 }

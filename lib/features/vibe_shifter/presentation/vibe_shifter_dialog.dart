@@ -39,12 +39,12 @@ class _VibeShifterDialogState extends State<VibeShifterDialog> {
     final random = Random();
     final chance = random.nextDouble();
 
-    if (chance < 0.33) {
-      _selectedProtocol = _ProtocolType.neuralStabilization; // Purple
-    } else if (chance < 0.66) {
-      _selectedProtocol = _ProtocolType.cognitiveCorrection; // Cyan
+    if (chance < 0.20) {
+      _selectedProtocol = _ProtocolType.neuralStabilization; // [20%] 마음 진정 사운드
+    } else if (chance < 0.60) {
+      _selectedProtocol = _ProtocolType.cognitiveCorrection; // [40%] 정신 번뜩 딴짓
     } else {
-      _selectedProtocol = _ProtocolType.temptationDestroyer; // Red
+      _selectedProtocol = _ProtocolType.temptationDestroyer; // [40%] 유혹 즉시 파쇄
     }
   }
 

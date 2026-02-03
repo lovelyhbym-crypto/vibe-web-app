@@ -42,6 +42,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
   bool _isLoading = false;
   bool _isWaitingForTransfer = false;
   late AnimationController _syncController;
+  int _shatterTapCount = 0; // [Sound Engine] Tap count for dynamic pitch
 
   @override
   void initState() {
@@ -1636,18 +1637,27 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                     children: [
                       if (target.imageUrl != null &&
                           target.imageUrl!.isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            target.imageUrl!,
-                            width: 48,
-                            height: 48,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _shatterTapCount++;
+                            });
+                            SoundService().playImpactHit(_shatterTapCount);
+                            HapticService.light();
+                          },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              target.imageUrl!,
                               width: 48,
                               height: 48,
-                              color: colors.surface,
-                              child: Icon(Icons.image, color: colors.textSub),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 48,
+                                height: 48,
+                                color: colors.surface,
+                                child: Icon(Icons.image, color: colors.textSub),
+                              ),
                             ),
                           ),
                         )

@@ -11,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../../core/services/haptic_service.dart';
 import '../../../core/ui/bouncy_button.dart';
+import '../../../core/services/sound_service.dart';
 
 // Robust Damage Entry Class
 class DamageEntry {
@@ -51,6 +52,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
   bool _isNavigating = false;
   bool _showVictoryPanel = false;
   bool _isGlitching = false;
+  int _tapCount = 0; // [Sound Engine] Track taps for pitch shifting
 
   late AnimationController _shakeController;
   late AnimationController _panelController;
@@ -232,11 +234,9 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
 
     // Safety: Try-Catch to prevent app crash on animation error
     try {
-      // 1. Audio Impact
-      _audioPlayer.play(
-        AssetSource('audio/chip.mp3'),
-        mode: PlayerMode.lowLatency,
-      );
+      // 1. Audio Impact - Enhanced Pitch Logic
+      _tapCount++;
+      SoundService().playImpactHit(_tapCount);
 
       // 2. Physical Vibration (Mechanical Shredding Feel)
       HapticService.light();
@@ -305,6 +305,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
       _isDestroyed = true;
       _isNavigating = true; // Block future taps
       _damageNumbers.clear();
+      _tapCount = 0; // Reset sound pitch for the next session
     });
 
     // Final Destruction Sound & Vibration
