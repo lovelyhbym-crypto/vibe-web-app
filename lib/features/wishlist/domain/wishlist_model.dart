@@ -102,6 +102,23 @@ class WishlistModel {
     return remaining.inSeconds > 0 && remaining.inHours < 24;
   }
 
+  /// [D-Day Logic] Standardized Display
+  String get dDayText {
+    if (targetDate == null) return '';
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(
+      targetDate!.year,
+      targetDate!.month,
+      targetDate!.day,
+    );
+    final diff = target.difference(today).inDays;
+
+    if (diff < 0) return "D+${diff.abs()}";
+    if (diff == 0) return "D-Day";
+    return "D-$diff";
+  }
+
   // Helper to safely parse strings to DateTime?
   static DateTime? _parseDateTime(dynamic value) {
     if (value == null) return null;

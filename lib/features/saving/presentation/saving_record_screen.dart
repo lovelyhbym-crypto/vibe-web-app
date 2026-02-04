@@ -831,16 +831,23 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
       );
       finalCategoryName = category.name;
 
-      // 목표 확인 (비동기 처리)
-      // [CRITICAL FIX] 앱이 재시작되었거나 로딩 중일 수 있으므로 future를 대기해야 함
+      // 목표 확인 (비동기 처리 - 독립적)
       debugPrint('Fetching wishlist data...');
       List<WishlistModel> allWishlists = [];
       try {
-        allWishlists = await ref.read(wishlistProvider.future);
+        // First try to get cached data immediately
+        final cached = ref.read(wishlistProvider).valueOrNull;
+        if (cached != null && cached.isNotEmpty) {
+          allWishlists = cached;
+        } else {
+          // Fallback to future with timeout to avoid infinite blocking
+          allWishlists = await ref
+              .read(wishlistProvider.future)
+              .timeout(const Duration(seconds: 2), onTimeout: () => []);
+        }
       } catch (e) {
-        debugPrint('Failed to load wishlists: $e');
-        setState(() => _isLoading = false);
-        return false;
+        debugPrint('Failed to load wishlists (continuing without target): $e');
+        // Don't stop saving, just proceed (check logic below will handle empty list)
       }
 
       final activeWishlists = allWishlists.where((w) => !w.isAchieved).toList();
@@ -876,6 +883,9 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
         HapticService.success();
         // [수정] 이동 후 해당 화면에서 폭죽을 터뜨리므로 로컬 폭죽은 제거
         // _confettiController.play();
+
+        // [Saving Sync] Force Refresh to update lists immediately
+        ref.invalidate(savingProvider);
 
         if (mounted) {
           _amountController.clear();
@@ -1741,6 +1751,26 @@ class _TodaysRecordsList extends ConsumerStatefulWidget {
 class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
   bool _isExpanded = true;
   int _previousCount = 0;
+  bool _isLongLoading = false;
+  Timer? _loadingTimer;
+
+  @override
+  void dispose() {
+    _loadingTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startLoadingTimer() {
+    _loadingTimer?.cancel();
+    _isLongLoading = false;
+    _loadingTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _isLongLoading = true;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1748,8 +1778,35 @@ class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
     final savingAsync = ref.watch(savingProvider);
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
 
+    // [Step 2] Auto-Expand Logic using ref.listen
+    ref.listen(savingProvider, (previous, next) {
+      next.whenData((savings) {
+        final now = DateTime.now();
+        final todayParams = DateTime(now.year, now.month, now.day);
+        final todaysCount = savings.where((s) {
+          final sDate = DateTime(
+            s.createdAt.year,
+            s.createdAt.month,
+            s.createdAt.day,
+          );
+          return sDate.isAtSameMomentAs(todayParams);
+        }).length;
+
+        if (todaysCount > _previousCount) {
+          setState(() {
+            _isExpanded = true;
+            _previousCount = todaysCount;
+          });
+        } else {
+          _previousCount = todaysCount;
+        }
+      });
+    });
+
     return savingAsync.when(
       data: (savings) {
+        _loadingTimer?.cancel(); // Cancel timer on success
+
         final now = DateTime.now();
         final todayParams = DateTime(now.year, now.month, now.day);
         final todaysRecords = savings.where((s) {
@@ -1761,25 +1818,7 @@ class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
           return sDate.isAtSameMomentAs(todayParams);
         }).toList();
 
-        // Auto-expand logic
-        if (todaysRecords.length > _previousCount) {
-          Future.microtask(() {
-            if (mounted) {
-              setState(() {
-                _isExpanded = true;
-                _previousCount = todaysRecords.length;
-              });
-            }
-          });
-        } else if (todaysRecords.length < _previousCount) {
-          Future.microtask(() {
-            if (mounted) {
-              setState(() {
-                _previousCount = todaysRecords.length;
-              });
-            }
-          });
-        }
+        // Removed manual microtask loop
 
         if (todaysRecords.isEmpty) return const SizedBox.shrink();
 
@@ -1835,6 +1874,10 @@ class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
                                       await ref
                                           .read(savingProvider.notifier)
                                           .deleteSaving(item.id);
+
+                                      // Force refresh to update stats/list
+                                      ref.invalidate(savingProvider);
+
                                       if (context.mounted) {
                                         ScaffoldMessenger.of(
                                           context,
@@ -1970,7 +2013,21 @@ class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
           ],
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () {
+        _startLoadingTimer();
+        if (_isLongLoading) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Center(
+              child: Text(
+                "기록을 불러올 수 없습니다",
+                style: TextStyle(color: colors.textSub),
+              ),
+            ),
+          );
+        }
+        return const Center(child: CircularProgressIndicator());
+      },
       error: (e, st) => Text("Error: $e"),
     );
   }

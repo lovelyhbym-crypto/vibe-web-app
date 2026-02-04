@@ -13,11 +13,15 @@ double totalSaved(Ref ref) {
   return savingsAsync.maybeWhen(
     data: (list) {
       final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+
       return list.fold(0.0, (sum, item) {
         bool include = false;
+        final date = item.createdAt;
         switch (period) {
-          case SavingsPeriod.total:
-            include = true;
+          case SavingsPeriod.today:
+            final itemDate = DateTime(date.year, date.month, date.day);
+            include = itemDate.isAtSameMomentAs(today);
             break;
           case SavingsPeriod.yearly:
             include = item.createdAt.year == now.year;

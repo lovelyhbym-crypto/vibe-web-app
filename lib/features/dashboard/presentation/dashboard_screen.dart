@@ -309,7 +309,12 @@ class DashboardScreen extends ConsumerWidget {
 class _PeriodSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedPeriod = ref.watch(savingsPeriodProvider);
+    var selectedPeriod = ref.watch(savingsPeriodProvider);
+    // Safety check for Hot Reload/enum changes:
+    if (!SavingsPeriod.values.contains(selectedPeriod)) {
+      selectedPeriod = SavingsPeriod.values.first;
+    }
+
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
     final isPureFinance = colors is PureFinanceColors;
 
@@ -361,7 +366,10 @@ class _SummaryCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final i18n = I18n.of(context);
-    final period = ref.watch(savingsPeriodProvider);
+    var period = ref.watch(savingsPeriodProvider);
+    if (!SavingsPeriod.values.contains(period)) {
+      period = SavingsPeriod.values.first;
+    }
     final navIndex = ref.watch(
       navigationIndexProvider,
     ); // Watch nav index locally
@@ -373,8 +381,8 @@ class _SummaryCard extends ConsumerWidget {
 
     String labelText;
     switch (period) {
-      case SavingsPeriod.total:
-        labelText = i18n.totalSaved;
+      case SavingsPeriod.today:
+        labelText = '오늘 절약 금액';
         break;
       case SavingsPeriod.yearly:
         labelText = '올해 절약 금액';
@@ -568,34 +576,16 @@ class _WishlistProgressCard extends StatelessWidget {
     required this.navIndex,
   });
 
-  Color _getProgressColor(
-    double progress,
-    VibeColors colors,
-    bool isPureFinance,
-  ) {
-    return isPureFinance ? colors.accent : colors.success;
-  }
-
   @override
   Widget build(BuildContext context) {
     final title = topWishlist.title;
     final total = topWishlist.totalGoal;
     final saved = topWishlist.savedAmount;
-    final progress = (saved / total).clamp(0.0, 1.0);
-    final remaining = total - saved;
+    final progress = total > 0 ? (saved / total).clamp(0.0, 1.0) : 0.0;
 
     // Theme logic
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
     final isPureFinance = colors is PureFinanceColors;
-
-    DateTime? prediction;
-    if (remaining > 0 && averageDailySavings > 0) {
-      final daysToFinish = (remaining / averageDailySavings).ceil();
-      prediction = DateTime.now().add(Duration(days: daysToFinish));
-    }
-
-    // Adjust progress color based on theme
-    final progressColor = _getProgressColor(progress, colors, isPureFinance);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -633,24 +623,23 @@ class _WishlistProgressCard extends StatelessWidget {
             ],
           ),
           const Spacer(),
+          // Progress Labels
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${(progress * 100).toInt()}%',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isPureFinance ? colors.textMain : Colors.white,
-                  fontSize: 24,
-                ),
+                '모은 금액',
+                style: TextStyle(color: Colors.white, fontSize: 12),
               ),
               Text(
-                '₩${saved.toStringAsFixed(0)} / ₩${total.toStringAsFixed(0)}',
-                style: TextStyle(color: colors.textSub, fontSize: 12),
+                '목표 금액',
+                style: TextStyle(color: Colors.white, fontSize: 12),
               ),
             ],
           ),
           const SizedBox(height: 8),
+
+          // Neon Progress Bar
           TweenAnimationBuilder<double>(
             tween: Tween<double>(end: progress),
             duration: const Duration(milliseconds: 1000),
@@ -658,39 +647,40 @@ class _WishlistProgressCard extends StatelessWidget {
             builder: (context, value, child) {
               return LinearProgressIndicator(
                 value: value,
-                backgroundColor: colors.textSub.withValues(alpha: 0.1),
-                color: isPureFinance
-                    ? colors.accent
-                    : const Color(0xFFD4FF00), // 토스는 밝은 블루, 사이버펑크는 네온 노랑
+                backgroundColor: Colors.white10, // [UI] White10 Background
+                color: const Color(0xFFD4FF00), // [UI] Neon Lime
                 minHeight: 12,
                 borderRadius: BorderRadius.circular(6),
               );
             },
           ),
-          if (prediction != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: progressColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+
+          const SizedBox(height: 12),
+
+          // Bottom Stats: Amounts and D-Day
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '₩${saved.toStringAsFixed(0)} / ₩${total.toStringAsFixed(0)}',
+                style: TextStyle(
+                  color: colors.textSub,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.auto_awesome, size: 16, color: progressColor),
-                  const SizedBox(height: 8),
-                  Text(
-                    ' Estimated completion: ${prediction.year}.${prediction.month}.${prediction.day}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: progressColor,
-                      fontWeight: FontWeight.w600,
-                    ),
+              // [UI] Centralized D-Day Display
+              if (topWishlist.dDayText.isNotEmpty)
+                Text(
+                  topWishlist.dDayText,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFD4FF00), // Neon Lime
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -843,18 +833,30 @@ class _CategoryPieChart extends StatelessWidget {
       return PieChartSectionData(
         color: color,
         value: e.value,
+        // External Label Logic
         title: '${i18n.categoryName(e.key)}\n${e.value.toInt()}',
-        radius: 60,
-        titleStyle: const TextStyle(
-          fontSize: 12,
+        titlePositionPercentageOffset: 1.6, // Move Outside
+        radius: 50, // Slightly smaller radius to give space
+        showTitle: true,
+        titleStyle: TextStyle(
+          fontSize: 11,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: colors.textMain, // Visible text color
+          shadows: [
+            BoxShadow(
+              blurRadius: 2,
+              color: colors.background,
+            ), // Outline for readability
+          ],
         ),
+        // Leader line simulation is hard without custom painter or specific lib support.
+        // Using border side to simulate specific highlight?
+        borderSide: BorderSide(color: color, width: 1),
       );
     }).toList();
 
     return Container(
-      height: 300,
+      height: 350, // Increased height for external labels
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colors.surface,
@@ -880,7 +882,7 @@ class _CategoryPieChart extends StatelessWidget {
               color: colors.textMain,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 30), // More space for top labels
           Expanded(
             child: PieChart(
               duration: const Duration(milliseconds: 1000),
@@ -888,7 +890,8 @@ class _CategoryPieChart extends StatelessWidget {
               PieChartData(
                 sections: sections,
                 centerSpaceRadius: 40,
-                sectionsSpace: 2,
+                sectionsSpace: 4, // More space
+                startDegreeOffset: 270,
               ),
             ),
           ),

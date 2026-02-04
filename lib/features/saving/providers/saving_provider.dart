@@ -4,6 +4,8 @@ import '../../../core/network/supabase_client.dart';
 import 'package:nerve/features/auth/providers/auth_provider.dart';
 import '../domain/saving_model.dart';
 import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 part 'saving_provider.g.dart';
 
@@ -18,6 +20,20 @@ class SavingNotifier extends _$SavingNotifier {
     final user = ref.watch(authProvider).asData?.value;
 
     if (authNotifier.isGuest || user == null) {
+      // [Persistence] Load from SharedPrefs
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final String? storedData = prefs.getString('guest_savings');
+        if (storedData != null) {
+          final List<dynamic> decoded = jsonDecode(storedData);
+          _guestSavings.clear();
+          _guestSavings.addAll(
+            decoded.map((e) => SavingModel.fromJson(e)).toList(),
+          );
+        }
+      } catch (e) {
+        debugPrint('Failed to load guest savings: $e');
+      }
       return _guestSavings;
     }
 
@@ -79,6 +95,18 @@ class SavingNotifier extends _$SavingNotifier {
         wishlistIds: wishlistIds,
       );
       _guestSavings.insert(0, newItem);
+
+      // [Persistence] Save to SharedPrefs
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final String encodedData = jsonEncode(
+          _guestSavings.map((e) => e.toJson()).toList(),
+        );
+        await prefs.setString('guest_savings', encodedData);
+      } catch (e) {
+        debugPrint('Failed to save guest savings: $e');
+      }
+
       state = AsyncValue.data([..._guestSavings]);
       return;
     }
@@ -196,6 +224,18 @@ class SavingNotifier extends _$SavingNotifier {
 
     if (authNotifier.isGuest || user == null) {
       _guestSavings.removeWhere((item) => item.id == id);
+
+      // [Persistence] Save to SharedPrefs
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final String encodedData = jsonEncode(
+          _guestSavings.map((e) => e.toJson()).toList(),
+        );
+        await prefs.setString('guest_savings', encodedData);
+      } catch (e) {
+        debugPrint('Failed to save guest savings after delete: $e');
+      }
+
       state = AsyncValue.data([..._guestSavings]);
       return;
     }
@@ -224,6 +264,15 @@ class SavingNotifier extends _$SavingNotifier {
 
     if (authNotifier.isGuest || user == null) {
       _guestSavings.clear();
+
+      // [Persistence] Clear SharedPrefs
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('guest_savings');
+      } catch (e) {
+        debugPrint('Failed to clear guest savings: $e');
+      }
+
       state = const AsyncValue.data([]);
       return;
     }
