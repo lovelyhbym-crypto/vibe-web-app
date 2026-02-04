@@ -99,103 +99,200 @@ class _AsmrMissionScreenState extends State<AsmrMissionScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black, // Deep Dark Background
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Close Button
-            Positioned(
-              top: 16,
-              right: 16,
-              child: IconButton(
-                onPressed: () => context.pop(),
-                icon: const Icon(Icons.close, color: Colors.white54, size: 32),
-              ),
+      body: Stack(
+        children: [
+          // 1. Digital Noise Background
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _DigitalNoisePainter(animation: _breathingController),
             ),
+          ),
 
-            // Content Center
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+          SafeArea(
+            child: Stack(
               children: [
-                const Spacer(),
-
-                // 1. Breathing Circle (Central Object)
-                AnimatedBuilder(
-                  animation: _breathingController,
-                  builder: (context, child) {
-                    final scale =
-                        1.0 + (_breathingController.value * 0.2); // 1.0 ~ 1.2
-                    return Transform.scale(
-                      scale: scale,
-                      child: Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.amber.withAlpha(26),
-                          border: Border.all(
-                            color: Colors.amberAccent.withAlpha(153),
-                            width: 2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.amber.withAlpha(102),
-                              blurRadius:
-                                  20 +
-                                  (_breathingController.value * 20), // 20 ~ 40
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          "Listen...",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w300,
-                            fontStyle: FontStyle.italic,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                const Spacer(),
-
-                // 2. Fake Visualizer (Bottom)
-                SizedBox(
-                  height: 150,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: List.generate(7, (index) {
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 100),
-                        width: 20,
-                        height: _barHeights[index],
-                        decoration: BoxDecoration(
-                          color: Colors.greenAccent,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.greenAccent.withAlpha(128),
-                              blurRadius: 10,
-                              offset: const Offset(0, -2),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
+                // Close Button
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white54,
+                      size: 32,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 48),
+
+                // Content Center
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Spacer(),
+
+                    // 2. Neon Frequency Widget (Replaces Breathing Circle)
+                    AnimatedBuilder(
+                      animation: _breathingController,
+                      builder: (context, child) {
+                        final value = _breathingController.value;
+                        return Container(
+                          width: 240,
+                          height: 240,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            // Neon Glow Gradient
+                            gradient: RadialGradient(
+                              colors: [
+                                Colors.transparent,
+                                const Color(
+                                  0xFFD050FF,
+                                ).withOpacity(0.1 + (value * 0.2)),
+                                const Color(0xFFD050FF).withOpacity(0.0),
+                              ],
+                              stops: const [0.5, 0.9, 1.0],
+                            ),
+                            border: Border.all(
+                              color: const Color(0xFFD050FF).withOpacity(0.6),
+                              width: 1 + (value * 2),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFD050FF).withOpacity(0.3),
+                                blurRadius: 20 + (value * 20),
+                                spreadRadius: value * 5,
+                              ),
+                            ],
+                          ),
+                          alignment: Alignment.center,
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Inner Rings
+                              Container(
+                                width: 180 + (value * 20),
+                                height: 180 + (value * 20),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.cyanAccent.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                width: 100 - (value * 10),
+                                height: 100 - (value * 10),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.5),
+                                    width: 1,
+                                  ),
+                                ),
+                              ),
+                              // Icon Only
+                              const Icon(
+                                Icons.waves,
+                                color: Color(0xFFD050FF),
+                                size: 32,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Text Label (Moved Outside)
+                    Text(
+                      "TUNING...",
+                      style: TextStyle(
+                        color: const Color(0xFFD050FF).withOpacity(0.8),
+                        fontSize: 20, // Increased size
+                        fontFamily: 'Courier',
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    // 3. Tech Visualizer (Bottom)
+                    SizedBox(
+                      height: 100,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: List.generate(15, (index) {
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 100),
+                            width: 6,
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            height:
+                                (_barHeights[index % 7] * 0.6) +
+                                (index % 3 * 10), // Randomized look
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD050FF), // Neon Purple
+                              borderRadius: BorderRadius.circular(2),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0xFFD050FF),
+                                  blurRadius: 6,
+                                  offset: Offset(0, -1),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                  ],
+                ).animate().fadeIn(duration: 800.ms),
               ],
-            ).animate().fadeIn(duration: 800.ms),
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
+}
+
+// Digital Noise Painter
+class _DigitalNoisePainter extends CustomPainter {
+  final Animation<double> animation;
+  final Random _random = Random();
+
+  _DigitalNoisePainter({required this.animation}) : super(repaint: animation);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    // Draw random static dots
+    for (int i = 0; i < 500; i++) {
+      paint.color = Colors.white.withOpacity(
+        _random.nextDouble() * 0.15,
+      ); // increased opacity for visibility
+      canvas.drawRect(
+        Rect.fromLTWH(
+          _random.nextDouble() * size.width,
+          _random.nextDouble() * size.height,
+          2, // dot size
+          2,
+        ),
+        paint,
+      );
+    }
+
+    // Draw scan line
+    final scanY = (animation.value * size.height) % size.height;
+    paint.color = const Color(0xFFD050FF).withOpacity(0.1);
+    canvas.drawRect(Rect.fromLTWH(0, scanY, size.width, 4), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DigitalNoisePainter oldDelegate) => true;
 }

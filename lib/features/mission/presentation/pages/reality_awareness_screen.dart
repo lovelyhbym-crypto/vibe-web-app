@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../../../../core/ui/glass_card.dart';
 import '../../../../core/ui/bouncy_button.dart';
-import '../../../../core/ui/background_gradient.dart';
+import '../../../../core/services/haptic_service.dart';
 
 class RealityAwarenessScreen extends StatefulWidget {
   const RealityAwarenessScreen({super.key});
@@ -14,7 +16,8 @@ class RealityAwarenessScreen extends StatefulWidget {
   State<RealityAwarenessScreen> createState() => _RealityAwarenessScreenState();
 }
 
-class _RealityAwarenessScreenState extends State<RealityAwarenessScreen> {
+class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
+    with TickerProviderStateMixin {
   // 15 Master-Selected Missions
   final List<String> _missions = [
     '찬물 한 컵 원샷하기',
@@ -38,11 +41,18 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen> {
   Timer? _timer;
   int _timeLeft = 180; // 3 minutes
 
+  // Sequence Flags
+  bool _isScanning = false;
+  bool _isBlackout = false;
+  bool _showSuccessReveal = false;
+  double _scanLineY = -1.0;
+
   @override
   void initState() {
     super.initState();
-    // Random Selection
-    _currentMission = _missions[Random().nextInt(_missions.length)];
+    final rawMission = _missions[Random().nextInt(_missions.length)];
+    // Step 5 Typography: > CMD: prefix
+    _currentMission = '> CMD: ${rawMission.replaceAll('\n', ' ')}';
     _startTimer();
   }
 
@@ -65,8 +75,52 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen> {
     });
   }
 
-  void _completeMission() {
+  Future<void> _completeMission() async {
     _timer?.cancel();
+    if (_isScanning || _isBlackout) return;
+
+    // Feedback
+    HapticService.success();
+    final player = AudioPlayer();
+    await player.play(AssetSource('audio/chip.mp3'));
+
+    // Step 1: Laser Sweep (0.5s)
+    setState(() {
+      _isScanning = true;
+      _scanLineY = -1.0;
+    });
+
+    const int sweepSteps = 25;
+    const sweepDuration = Duration(milliseconds: 500 ~/ sweepSteps);
+    for (int i = 0; i <= sweepSteps; i++) {
+      await Future.delayed(sweepDuration);
+      if (mounted) {
+        setState(() {
+          _scanLineY = -1.0 + (i / sweepSteps) * 2.5; // Sweep past bottom
+        });
+      }
+    }
+
+    // Step 2: The Blackout (0.5s)
+    if (mounted) {
+      setState(() {
+        _isScanning = false;
+        _isBlackout = true;
+      });
+    }
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Step 3: Success Reveal (1.0s Fade-in)
+    if (mounted) {
+      setState(() {
+        _showSuccessReveal = true;
+      });
+    }
+    await Future.delayed(const Duration(seconds: 1));
+
+    // Step 4: Wait & Auto-Navigation (0.5s)
+    await Future.delayed(const Duration(milliseconds: 500));
+
     if (mounted && context.canPop()) {
       context.pop();
     }
@@ -80,98 +134,420 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BackgroundGradient(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            onPressed: () {
-              if (context.canPop()) context.pop();
-            },
+    const mintColor = Color(0xFF00FFD1);
+    const neonBlueColor = Color(0xFF00E5FF);
+
+    return Scaffold(
+      backgroundColor: Colors.black, // Deep Dark Background
+      body: Stack(
+        children: [
+          // 1. Grid Background
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _GridBackgroundPainter(
+                scanLineY: _scanLineY,
+                isScanning: _isScanning,
+              ),
+            ),
           ),
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Icon
-                const Icon(
-                  Icons.spa_rounded,
-                  size: 80,
-                  color: Colors.cyanAccent,
-                ).animate().scale(duration: 500.ms, curve: Curves.elasticOut),
 
-                const SizedBox(height: 32),
-
-                // Mission Text
-                Text(
-                  _currentMission,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    height: 1.3,
-                  ),
-                  textAlign: TextAlign.center,
-                ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.2, end: 0),
-
-                const SizedBox(height: 16),
-                const Text(
-                  '지금 바로 위 행동을 수행하며\n충동을 흘려보내세요.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
-                ),
-
-                const SizedBox(height: 48),
-
-                // Timer
-                Text(
-                      _formattedTime,
-                      style: const TextStyle(
-                        fontSize: 64,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.redAccent,
-                        fontFeatures: [FontFeature.tabularFigures()],
-                      ),
-                    )
-                    .animate(onPlay: (c) => c.repeat())
-                    .shimmer(
-                      duration: 2000.ms,
-                      color: Colors.white.withAlpha(50),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Close Button (Custom placement)
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white54),
+                      onPressed: () {
+                        if (context.canPop()) context.pop();
+                      },
                     ),
+                  ),
 
-                const SizedBox(height: 64),
+                  const Spacer(),
 
-                // Complete Button
-                BouncyButton(
-                  onTap: _completeMission,
-                  child: GlassCard(
-                    width: double.infinity,
-                    height: 60,
-                    backgroundColor: Colors.cyanAccent.withAlpha(51),
-                    border: Border.all(color: Colors.cyanAccent.withAlpha(128)),
-                    child: const Center(
-                      child: Text(
-                        '미션 완료',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
+                  // 2. Icon & Tag
+                  Column(
+                    children: [
+                      Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.black, // [UI] Pure Black Core
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: mintColor.withOpacity(
+                                  0.5,
+                                ), // [UI] Thin Neon Lime
+                                width: 0.5,
+                              ),
+                              // Multi-layered Shadow for Glow effect
+                              boxShadow: [
+                                BoxShadow(
+                                  color: neonBlueColor.withOpacity(0.25),
+                                  blurRadius: 20,
+                                  spreadRadius: 10,
+                                ),
+                                BoxShadow(
+                                  color: neonBlueColor.withOpacity(0.15),
+                                  blurRadius: 40,
+                                  spreadRadius: 5,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.bolt_rounded,
+                              size: 60,
+                              color: mintColor, // [UI] Neon Lime
+                            ),
+                          )
+                          .animate(
+                            onPlay: (c) => c.repeat(reverse: true),
+                          ) // [UI] Pulse Loop
+                          .scale(
+                            begin: const Offset(1.0, 1.0),
+                            end: const Offset(1.05, 1.05),
+                            duration: 2.seconds,
+                            curve: Curves.easeInOut,
+                          )
+                          .shimmer(duration: 3.seconds, color: Colors.white10)
+                          .custom(
+                            duration: 2.seconds,
+                            curve: Curves.easeInOut,
+                            builder: (context, value, child) {
+                              // breathing glow pulse
+                              final glowIntensity = 0.2 + (value * 0.2);
+                              return Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: neonBlueColor.withOpacity(
+                                        glowIntensity,
+                                      ),
+                                      blurRadius: 20 + (value * 10),
+                                      spreadRadius: 10 + (value * 5),
+                                    ),
+                                    BoxShadow(
+                                      color: neonBlueColor.withOpacity(
+                                        glowIntensity * 0.5,
+                                      ),
+                                      blurRadius: 40 + (value * 20),
+                                      spreadRadius: 5 + (value * 5),
+                                    ),
+                                  ],
+                                ),
+                                child: child,
+                              );
+                            },
+                          ),
+                      const SizedBox(height: 24), // [UI] Increased spacing
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: mintColor.withOpacity(0.1),
+                          border: Border.all(color: mintColor),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: const TextStyle(
+                              color: mintColor,
+                              fontFamily: 'Courier',
+                              height: 1.0,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: "[ ",
+                                style: TextStyle(
+                                  fontSize: 17, // 1.2x bigger + visual weight
+                                  fontWeight: FontWeight.w300, // Thinner
+                                ),
+                              ),
+                              const TextSpan(
+                                text: "뇌 재부팅 중",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                              TextSpan(
+                                text: " ]",
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w300,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ).animate().fadeIn(delay: 200.ms),
+                    ],
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Mission Text (Typography Step 5)
+                  Text(
+                        _currentMission,
+                        style: const TextStyle(
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          height: 1.4,
+                          fontFamily: 'Courier',
+                          letterSpacing: 1.2,
+                        ),
+                        textAlign: TextAlign.center,
+                      )
+                      .animate()
+                      .fadeIn(duration: 500.ms)
+                      .slideY(begin: 0.2, end: 0),
+
+                  const SizedBox(height: 16),
+                  const Text(
+                    '지금 바로 위 행동을 수행하며\n충동을 흘려보내세요.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white54, fontSize: 14),
+                  ),
+
+                  const SizedBox(height: 48),
+
+                  // 3. Digital Timer
+                  Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          border: Border.all(
+                            color: Colors.redAccent.withOpacity(0.5),
+                            width: 1, // [Refine] Thinner border
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child:
+                            Text(
+                                  _formattedTime,
+                                  style: const TextStyle(
+                                    fontSize: 56,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.redAccent,
+                                    fontFamily:
+                                        'Courier', // Digital Clock style fallback
+                                    letterSpacing: 4,
+                                    fontFeatures: [
+                                      FontFeature.tabularFigures(),
+                                    ],
+                                    shadows: [
+                                      BoxShadow(
+                                        color: Colors.redAccent,
+                                        blurRadius: 10,
+                                      ),
+                                    ],
+                                  ),
+                                )
+                                .animate(
+                                  key: ValueKey(
+                                    _timeLeft,
+                                  ), // [Effect] Animate on change
+                                )
+                                .shake(
+                                  duration: 100.ms,
+                                  hz: 4,
+                                  offset: const Offset(2, 0), // Subtle shake
+                                ),
+                      )
+                      .animate(onPlay: (c) => c.repeat())
+                      .shimmer(
+                        duration: 2000.ms,
+                        color: Colors.white.withAlpha(50),
+                      ),
+
+                  const Spacer(),
+
+                  // 4. Complete Button
+                  BouncyButton(
+                    onTap: _completeMission,
+                    child: GlassCard(
+                      width: double.infinity,
+                      height: 60,
+                      backgroundColor: mintColor.withOpacity(0.1),
+                      border: Border.all(color: mintColor.withOpacity(0.5)),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min, // [UI] Minimal size
+                          children: [
+                            const Icon(
+                              Icons.check_circle_outline,
+                              color: mintColor,
+                              size: 18, // [UI] Matches bracket weight
+                            ),
+                            const SizedBox(width: 12), // [UI] Increased spacing
+                            RichText(
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  color: mintColor,
+                                  fontFamily: 'Courier',
+                                  height: 1.0,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: "[ ",
+                                    style: TextStyle(
+                                      fontSize:
+                                          21, // [UI] More majestic brackets
+                                      fontWeight: FontWeight.w300,
+                                    ),
+                                  ),
+                                  const TextSpan(
+                                    text: "미션 완료",
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 2.5,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: " ]",
+                                    style: TextStyle(
+                                      fontSize: 21,
+                                      fontWeight: FontWeight.w300,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
           ),
-        ),
+
+          // Step 1: Laser Sweep Overlay
+          if (_isScanning)
+            Positioned(
+              left: 0,
+              right: 0,
+              top:
+                  (MediaQuery.of(context).size.height *
+                      (_scanLineY + 1.0) /
+                      2.0) -
+                  1,
+              child: Container(
+                height: 2,
+                decoration: BoxDecoration(
+                  color: mintColor,
+                  boxShadow: [
+                    BoxShadow(
+                      color: mintColor.withOpacity(1.0),
+                      blurRadius: 15,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Step 2 & 3: Blackout & Reveal Layer
+          if (_isBlackout)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black, // Pure #000000
+                child: _showSuccessReveal
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "[ SYSTEM_STABILIZED ]",
+                              style: const TextStyle(
+                                color: mintColor,
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'Courier',
+                                letterSpacing: 2.0,
+                              ),
+                            ).animate().fadeIn(duration: 1.seconds),
+                            const SizedBox(height: 12),
+                            Text(
+                              "시스템 최적화가 완료되었습니다.",
+                              style: TextStyle(
+                                color: mintColor.withOpacity(0.8),
+                                fontSize: 14,
+                                fontFamily: 'Courier',
+                              ),
+                            ).animate().fadeIn(
+                              duration: 1.seconds,
+                              delay: 200.ms,
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ),
+        ],
       ),
     );
   }
+}
+
+// Grid Background Painter
+class _GridBackgroundPainter extends CustomPainter {
+  final double scanLineY;
+  final bool isScanning;
+
+  _GridBackgroundPainter({this.scanLineY = -1.0, this.isScanning = false});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (size.height <= 0 || size.width <= 0)
+      return; // [Fix] Prevent NaN or invalid layout crashes
+
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    const step = 40.0;
+
+    for (double x = 0; x < size.width; x += step) {
+      for (double y = 0; y < size.height; y += step) {
+        double opacity = 0.05;
+
+        if (isScanning) {
+          // Highlight grid if close to scanline
+          final normalizedY = (y / size.height) * 2.0 - 1.0;
+          final diff = (normalizedY - scanLineY).abs();
+          if (diff < 0.3) {
+            // [Fix] Clamp opacity to prevent withOpacity() errors
+            opacity = (0.4 * (1.0 - diff / 0.3)).clamp(0.0, 1.0);
+          }
+        }
+
+        paint.color = Colors.white.withOpacity(opacity);
+        canvas.drawRect(Rect.fromLTWH(x, y, step, step), paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GridBackgroundPainter oldDelegate) =>
+      oldDelegate.scanLineY != scanLineY ||
+      oldDelegate.isScanning != isScanning;
 }
