@@ -94,4 +94,22 @@ class SoundService {
       debugPrint('Error playing impact hit sound: $e');
     }
   }
+
+  /// P4: Receipt Printing Sound (System Verified)
+  Future<void> playReceiptPrint() async {
+    try {
+      await _player.play(AssetSource('audio/printer_print.mp3'), volume: 0.8);
+    } catch (e) {
+      debugPrint('Error playing printer sound: $e');
+    }
+  }
+
+  /// P5: Receipt Cutting Sound
+  Future<void> playReceiptCut() async {
+    try {
+      await _player.play(AssetSource('audio/printer_cut.mp3'), volume: 0.8);
+    } catch (e) {
+      debugPrint('Error playing cut sound: $e');
+    }
+  }
 }

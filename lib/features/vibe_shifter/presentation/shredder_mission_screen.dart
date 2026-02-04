@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:image_picker/image_picker.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui; // [Added] For BackdropFilter
 import 'dart:async';
@@ -7,11 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:intl/intl.dart';
 import '../../../core/services/haptic_service.dart';
 import '../../../core/ui/bouncy_button.dart';
 import '../../../core/services/sound_service.dart';
+import '../../saving/presentation/widgets/shatter_receipt_widget.dart';
 
 // Robust Damage Entry Class
 class DamageEntry {
@@ -52,6 +53,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
   bool _isNavigating = false;
   bool _showVictoryPanel = false;
   bool _isGlitching = false;
+  double _randomSavedAmount = 0;
   int _tapCount = 0; // [Sound Engine] Track taps for pitch shifting
 
   late AnimationController _shakeController;
@@ -93,8 +95,8 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
 
     _scanController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2500),
-    );
+      duration: const Duration(seconds: 10),
+    )..repeat(); // Permanent loop
 
     // [System Sync Refinement] Glitch Timer
     _glitchTimer = Timer.periodic(const Duration(milliseconds: 150), (timer) {
@@ -135,10 +137,8 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
   Future<void> _triggerGlitch(VoidCallback onComplete) async {
     setState(() => _isGlitching = true);
     HapticService.heavy();
-    _scanController.repeat(); // Loop for the flowing effect
     await Future.delayed(const Duration(milliseconds: 2000));
     if (mounted) {
-      _scanController.stop();
       setState(() => _isGlitching = false);
       onComplete();
     }
@@ -150,9 +150,8 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
         final picker = ImagePicker();
         final image = await picker.pickImage(
           source: ImageSource.gallery,
-          maxWidth: 300,
-          imageQuality: 30,
-          requestFullMetadata: false,
+          maxWidth: 600,
+          imageQuality: 50,
         );
 
         if (!mounted) return;
@@ -161,6 +160,8 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
           setState(() {
             _targetImage = image;
             _targetType = _TargetType.image;
+            _randomSavedAmount = (math.Random().nextInt(50000) + 1000)
+                .toDouble();
           });
         }
       } catch (e) {
@@ -181,6 +182,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
         setState(() {
           _targetText = _textController.text;
           _targetType = _TargetType.text;
+          _randomSavedAmount = (math.Random().nextInt(50000) + 1000).toDouble();
         });
       }
     });
@@ -197,7 +199,8 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
 
     // Fixed size container reference (320x480)
     const double w = 320;
-    const double h = 480;
+    const double h =
+        600; // OVERSHOOT: Generating longer cracks to ensure they reach screen bottom
 
     if (isHorizontal) {
       // Left to Right crack
@@ -310,12 +313,16 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
 
     // Final Destruction Sound & Vibration
     _audioPlayer.play(AssetSource('audio/shatter.mp3'));
+    SoundService().playImpactHit(_maxHp + 1); // Extra loud final hit
     HapticService.heavy();
 
-    await Future.delayed(const Duration(milliseconds: 1000));
+    // The receipt fragments will now scatter via the existing Animate() on the zone
+    // Wait for the explosion to settle before showing the final report/collect button
+    await Future.delayed(const Duration(milliseconds: 1500));
 
     if (mounted) {
       setState(() {
+        _isNavigating = false; // Allow interaction with final panel
         _showVictoryPanel = true;
       });
       _panelController.forward();
@@ -341,46 +348,250 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
   }
 
   Widget _buildInputSelection() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    final now = DateTime.now();
+    final dateStr = DateFormat('yyyy.MM.dd HH:mm').format(now);
+
+    return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '파괴할 대상을 선택하세요',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.5,
+        // Grid Background
+        Positioned.fill(child: CustomPaint(painter: _GridPainter())),
+
+        // Main Content
+        Column(
+          children: [
+            // Top: Scrolling Status Bar
+            Container(
+              height: 34,
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  width: 0.5,
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 48),
-              Column(
+              child: Stack(
                 children: [
-                  _buildOptionButton(
-                    icon: Icons.image_search_rounded,
-                    label: '시각적 유혹 파쇄',
-                    subLabel: "사고 싶은 그 물건의 '영정사진'을 등록하세요.",
-                    glowColor: const Color(0xFFD4FF00), // 네온 라임
-                    onTap: _pickImage,
+                  // [ ] Frames
+                  Positioned(
+                    left: 2,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child:
+                          Text(
+                                '[',
+                                style: TextStyle(
+                                  color: const Color(
+                                    0xFFD4FF00,
+                                  ).withValues(alpha: 0.9),
+                                  fontFamily: 'Courier',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                              .animate(onPlay: (c) => c.repeat(reverse: true))
+                              .scale(
+                                duration: 600.ms,
+                                begin: const Offset(1, 1),
+                                end: const Offset(1.2, 1.2),
+                                curve: Curves.easeInOut,
+                              ),
+                    ),
                   ),
-                  const SizedBox(height: 24),
-                  _buildOptionButton(
-                    icon: Icons.terminal_rounded,
-                    label: '관념적 유혹 파쇄',
-                    subLabel: "머릿속을 맴도는 지름신의 이름을 적으세요.",
-                    glowColor: Colors.redAccent, // 경고 레드
-                    onTap: () => _showTextInputDialog(context),
+                  Positioned(
+                    right: 2,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child:
+                          Text(
+                                ']',
+                                style: TextStyle(
+                                  color: const Color(
+                                    0xFFD4FF00,
+                                  ).withValues(alpha: 0.9),
+                                  fontFamily: 'Courier',
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                              .animate(onPlay: (c) => c.repeat(reverse: true))
+                              .scale(
+                                duration: 600.ms,
+                                begin: const Offset(1, 1),
+                                end: const Offset(1.2, 1.2),
+                                curve: Curves.easeInOut,
+                              ),
+                    ),
+                  ),
+
+                  // Scrolling Text with Edge Fading
+                  Positioned.fill(
+                    child: ShaderMask(
+                      shaderCallback: (bounds) {
+                        return const LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black,
+                            Colors.black,
+                            Colors.transparent,
+                          ],
+                          stops: [0.0, 0.15, 0.85, 1.0],
+                        ).createShader(bounds);
+                      },
+                      blendMode: BlendMode.dstIn,
+                      child: ClipRect(
+                        child: AnimatedBuilder(
+                          animation: _scanController,
+                          builder: (context, child) {
+                            return Transform.translate(
+                              offset: Offset(
+                                -200 + (_scanController.value * 1200),
+                                0,
+                              ),
+                              child: Center(child: child!),
+                            );
+                          },
+                          child: Text(
+                            'SCANNING FOR VULNERABILITIES... ' * 20,
+                            style: TextStyle(
+                              color: const Color(
+                                0xFFD4FF00,
+                              ).withValues(alpha: 0.3),
+                              fontFamily: 'Courier',
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                            ),
+                            maxLines: 1,
+                          ).animate().fadeIn(duration: 100.ms),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+
+            Expanded(
+              child: SingleChildScrollView(
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0,
+                      vertical: 32.0,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                              '> 파괴할 대상을 선택하세요 <',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontFamily: 'Courier',
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1,
+                              ),
+                              textAlign: TextAlign.center,
+                            )
+                            .animate(
+                              onPlay: (controller) => controller.repeat(),
+                            )
+                            .shake(
+                              hz: 4,
+                              duration: 50.ms,
+                              delay: 2.seconds,
+                              offset: const Offset(2, 0),
+                            )
+                            .tint(
+                              color: const Color(
+                                0xFFD4FF00,
+                              ).withValues(alpha: 0.2),
+                              duration: 50.ms,
+                              delay: 2.seconds,
+                            ),
+                        const SizedBox(height: 48),
+                        Column(
+                          children: [
+                            _buildOptionButton(
+                              icon: Icons.image_search_rounded,
+                              label: '사진으로 파괴 (PHOTO)',
+                              subLabel: "유혹의 실체를 스캔하여 파쇄 준비를 마칩니다.",
+                              glowColor: const Color(0xFFD4FF00), // 네온 라임
+                              onTap: _pickImage,
+                            ),
+                            const SizedBox(height: 24),
+                            _buildOptionButton(
+                              icon: Icons.terminal_rounded,
+                              label: '이름으로 파괴 (TEXT)',
+                              subLabel: "실체 없는 유혹의 이름을 적어 소거합니다.",
+                              glowColor: Colors.redAccent, // 경고 레드
+                              onTap: () => _showTextInputDialog(context),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Bottom: System Footer
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                children: [
+                  RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            fontFamily: 'Courier',
+                            fontSize: 9,
+                            letterSpacing: 1,
+                          ),
+                          children: [
+                            const TextSpan(text: 'LOG: '),
+                            TextSpan(
+                              text: 'READY_TO_PURGE',
+                              style: TextStyle(
+                                color: const Color(
+                                  0xFFD4FF00,
+                                ).withValues(alpha: 0.6),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextSpan(text: ' // $dateStr'),
+                          ],
+                        ),
+                      )
+                      .animate(onPlay: (c) => c.repeat())
+                      .custom(
+                        duration: 1.seconds,
+                        builder: (context, value, child) {
+                          final opacity =
+                              0.4 + (math.Random().nextDouble() * 0.6);
+                          return Opacity(opacity: opacity, child: child);
+                        },
+                      ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'SYSTEM_MODE: TEMPTATION_DESTROYER_V2.0',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      fontFamily: 'Courier',
+                      fontSize: 8,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -397,46 +608,128 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
       onTap: onTap,
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
         decoration: BoxDecoration(
           color: Colors.black,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: glowColor.withValues(alpha: 0.5),
-            width: 1.5,
+            color: glowColor.withValues(alpha: 0.3),
+            width: 1.0,
+          ),
+          gradient: RadialGradient(
+            colors: [
+              glowColor.withValues(alpha: 0.05),
+              Colors.black.withValues(alpha: 0.85),
+            ],
+            center: Alignment.center,
+            radius: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: glowColor.withValues(alpha: 0.15),
-              blurRadius: 15,
-              spreadRadius: 1,
+              color: glowColor.withValues(alpha: 0.05),
+              blurRadius: 12,
+              spreadRadius: 0.5,
             ),
           ],
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            Icon(icon, color: glowColor, size: 36),
-            const SizedBox(height: 12),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
+            // Top Right Neon Tag
+            Positioned(
+              top: -16,
+              right: -12,
+              child: Container(
+                width: 48,
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: glowColor.withValues(alpha: 0.6),
+                    width: 1.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: glowColor.withValues(alpha: 0.2),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Text(
+                  'PROMPT',
+                  style: TextStyle(
+                    color: glowColor,
+                    fontFamily: 'Courier',
+                    fontSize: 7,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 6),
-            Text(
-              subLabel,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.54),
-                fontSize: 11,
-                fontWeight: FontWeight.normal,
+
+            // Extra System Details
+            Positioned(
+              top: -12,
+              left: 4,
+              child: Text(
+                '[SEC-SCAN: OK]',
+                style: TextStyle(
+                  color: glowColor.withValues(alpha: 0.4),
+                  fontFamily: 'Courier',
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              textAlign: TextAlign.center,
+            ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(painter: _ScanlinePainter()),
+              ),
+            ),
+
+            Positioned(
+              bottom: -16,
+              right: 4,
+              child: Text(
+                '[ID: #402_PURGE]',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  fontFamily: 'Courier',
+                  fontSize: 7,
+                ),
+              ),
+            ),
+
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: glowColor, size: 36),
+                const SizedBox(height: 20),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  subLabel,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 11,
+                    fontWeight: FontWeight.normal,
+                    letterSpacing: -0.2,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ],
         ),
@@ -457,8 +750,8 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
                 color: Colors.black.withValues(alpha: 0.4),
                 child: _buildScanProtocolOverlay(),
               ),
-            ),
-          ).animate().fadeIn(duration: 100.ms),
+            ).animate().fadeIn(duration: 100.ms),
+          ),
         if (_showVictoryPanel) Positioned.fill(child: _buildVictoryPanel()),
       ],
     );
@@ -555,7 +848,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Text(
-                            '[전리품 기록: 무지출 인증]',
+                            '[전리품 수집: 저축하기]',
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 16,
@@ -619,10 +912,6 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
     );
   }
 
-  // Unused _buildRealityCheckUI removed
-
-  // ... (Keeping intervening methods)
-
   Future<void> _showTextInputDialog(BuildContext context) async {
     return showDialog(
       context: context,
@@ -675,79 +964,76 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
         onTapDown: _onTapTarget,
         child: SizedBox(
           width: 320,
-          height: 480,
+          height: 480, // Height is correctly set to 480
           child: Stack(
             alignment: Alignment.center,
             children: [
               // 1. Base Container (Simple, No BoxShadow)
               AnimatedBuilder(
-                animation: _shakeController,
-                builder: (context, child) {
-                  final double offset =
-                      _shakeController.value *
-                      8 *
-                      (0.5 - _shakeController.value).sign;
-                  return Transform.translate(
-                    offset: Offset(offset, 0),
-                    child: child,
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.black.withAlpha(128),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.redAccent, width: 2),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Content
-                      _targetType == _TargetType.image
-                          ? (kIsWeb
-                                ? Image.network(
-                                    _targetImage!.path,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Image.file(
+                    animation: _shakeController,
+                    builder: (context, child) {
+                      final double offset =
+                          _shakeController.value *
+                          8 *
+                          (0.5 - _shakeController.value).sign;
+                      return Transform.translate(
+                        offset: Offset(offset, 0),
+                        child: child,
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      clipBehavior: Clip.antiAlias,
+                      child: Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        color: Colors.transparent,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // Content Selection: Photo or Receipt
+                            if (_targetType == _TargetType.image &&
+                                _targetImage != null)
+                              Center(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Image.file(
                                     File(_targetImage!.path),
                                     fit: BoxFit.cover,
-                                  ))
-                          : Center(
-                              child: Text(
-                                _targetText ?? '',
-                                style: const TextStyle(
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  ),
                                 ),
-                                textAlign: TextAlign.center,
+                              )
+                            else
+                              Center(
+                                child: ShatterReceiptWidget(
+                                  targetName:
+                                      (_targetText != null &&
+                                          _targetText!.isNotEmpty)
+                                      ? _targetText!
+                                      : "유혹 파쇄 시스템",
+                                  savedAmount: _randomSavedAmount,
+                                  damageLevel: damagePercent,
+                                ),
+                              ),
+
+                            // BLACK CRACKS (Overlayed on both)
+                            IgnorePointer(
+                              child: CustomPaint(
+                                painter: CrackPainter(_crackPaths),
+                                size: Size.infinite,
                               ),
                             ),
-
-                      // Simple Color Overlay
-                      IgnorePointer(
-                        child: Container(
-                          color: Colors.red.withAlpha(
-                            ((damagePercent * 0.7).clamp(0.0, 0.9) * 255)
-                                .toInt(),
-                          ),
+                          ],
                         ),
                       ),
-
-                      // LIGHTWEIGHT CRACKS (No Blur, Just Lines)
-                      IgnorePointer(
-                        child: CustomPaint(
-                          painter: CrackPainter(_crackPaths),
-                          size: Size.infinite,
-                        ),
-                      ),
-                    ],
+                    ),
+                  )
+                  .animate(target: _isDestroyed ? 1 : 0)
+                  .fadeOut(duration: 150.ms)
+                  .scale(
+                    begin: const Offset(1, 1),
+                    end: const Offset(1.5, 1.5),
                   ),
-                ),
-              ).animate(target: _isDestroyed ? 1 : 0).fadeOut(duration: 150.ms),
 
               // 2. Floating Damage Numbers (Wrapped in IgnorePointer)
               for (final entry in _damageNumbers)
@@ -962,7 +1248,6 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
 }
 
 // Simple Painter without Blur
-// Simple Painter with Neon Effect restored
 class CrackPainter extends CustomPainter {
   final List<Path> cracks;
 
@@ -973,13 +1258,11 @@ class CrackPainter extends CustomPainter {
     if (cracks.isEmpty) return;
 
     final paint = Paint()
-      ..color = Colors.white.withAlpha(230)
+      ..color = Colors.black
+          .withOpacity(0.9) // Black cracks
       ..style = PaintingStyle.stroke
-      ..strokeWidth =
-          4.5 // Even thicker
-      ..strokeCap = StrokeCap.round
-      // Restore Neon Blur for dramatic effect
-      ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 4);
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.butt; // Sharp cap
 
     for (final path in cracks) {
       canvas.drawPath(path, paint);
@@ -990,4 +1273,45 @@ class CrackPainter extends CustomPainter {
   bool shouldRepaint(covariant CrackPainter oldDelegate) {
     return oldDelegate.cracks.length != cracks.length;
   }
+}
+
+/// Painter for the subtle digital grid background
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.03)
+      ..strokeWidth = 0.5;
+
+    const double spacing = 24.0;
+
+    // Vertical lines
+    for (double x = 0; x <= size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+
+    // Horizontal lines
+    for (double y = 0; y <= size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _ScanlinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.05)
+      ..strokeWidth = 0.5;
+
+    for (double y = 0; y < size.height; y += 4.0) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

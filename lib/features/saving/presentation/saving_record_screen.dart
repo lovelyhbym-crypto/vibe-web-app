@@ -42,7 +42,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
   bool _isLoading = false;
   bool _isWaitingForTransfer = false;
   late AnimationController _syncController;
-  int _shatterTapCount = 0; // [Sound Engine] Tap count for dynamic pitch
+  bool _isFinishing = false; // [Visual Engine] Final glitch effect trigger
 
   @override
   void initState() {
@@ -623,10 +623,12 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
       final bool success = await _performActualSaving();
       if (success && mounted) {
         // [Victory Feedback Loop] WoW Effect & Navigation
+        setState(() => _isFinishing = true);
+
         ref.read(rewardStateProvider.notifier).triggerConfetti();
         SoundService().playFirework();
 
-        await Future.delayed(const Duration(milliseconds: 1000));
+        await Future.delayed(const Duration(milliseconds: 1200));
         if (mounted) {
           context.pop(); // 유혹 파괴 프로토콜 화면으로 복귀
         }
@@ -942,375 +944,487 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
       body: Stack(
         children: [
           GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionTitle(i18n.whatDidYouResist, colors),
-                  const SizedBox(height: 16),
+                onTap: () => FocusScope.of(context).unfocus(),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle(i18n.whatDidYouResist, colors),
+                      const SizedBox(height: 16),
 
-                  // Category Grid
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: categories
-                        .where(
-                          (c) => c.id != 'system_optimization',
-                        ) // [UI Refinement] Hide System Category
-                        .map((category) {
-                          final isSelected = _selectedCategoryId == category.id;
-                          final iconData = _getIconData(category.iconPath);
+                      // Category Grid
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: categories
+                            .where(
+                              (c) => c.id != 'system_optimization',
+                            ) // [UI Refinement] Hide System Category
+                            .map((category) {
+                              final isSelected =
+                                  _selectedCategoryId == category.id;
+                              final iconData = _getIconData(category.iconPath);
 
-                          return BouncyButton(
-                            onTap: () {
-                              debugPrint(
-                                '[DEBUG] Category tapped: ${category.id}',
-                              );
-                              setState(() {
-                                if (isSelected) {
-                                  _selectedCategoryId = null;
-                                } else {
-                                  _selectedCategoryId = category.id;
-                                }
-                              });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? colors.accent.withValues(alpha: 0.2)
-                                    : colors.surface,
-                                borderRadius: BorderRadius.circular(30),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? colors
-                                            .accent // Neon Green
-                                      : Colors.transparent,
-                                  width: isSelected ? 2 : 1,
+                              return BouncyButton(
+                                onTap: () {
+                                  debugPrint(
+                                    '[DEBUG] Category tapped: ${category.id}',
+                                  );
+                                  setState(() {
+                                    if (isSelected) {
+                                      _selectedCategoryId = null;
+                                    } else {
+                                      _selectedCategoryId = category.id;
+                                    }
+                                  });
+                                },
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? colors.accent.withValues(alpha: 0.2)
+                                        : colors.surface,
+                                    borderRadius: BorderRadius.circular(30),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? colors
+                                                .accent // Neon Green
+                                          : Colors.transparent,
+                                      width: isSelected ? 2 : 1,
+                                    ),
+                                    boxShadow: isSelected
+                                        ? [
+                                            BoxShadow(
+                                              color: colors.accent.withValues(
+                                                alpha: 0.4,
+                                              ),
+                                              blurRadius: 8,
+                                              spreadRadius: 1,
+                                            ),
+                                          ]
+                                        : [],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        iconData,
+                                        size: 20,
+                                        color: isSelected
+                                            ? colors.accent
+                                            : Colors.white70,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        category.name,
+                                        style: TextStyle(
+                                          color: isSelected
+                                              ? colors.accent
+                                              : Colors.white70,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                boxShadow: isSelected
-                                    ? [
+                              );
+                            })
+                            .toList(),
+                      ),
+
+                      const SizedBox(height: 40),
+                      _buildSectionTitle(i18n.howMuchSaved, colors),
+                      const SizedBox(height: 16),
+
+                      // Amount Input
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: colors.border),
+                          boxShadow: isPure
+                              ? [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 10,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: TextField(
+                          controller: _amountController,
+                          // [Step 1] Custom Keypad Setup
+                          readOnly: true, // Prevent system keyboard
+                          onTap: () => _showKeypad(context),
+                          showCursor: true, // Show cursor to indicate focus
+                          keyboardType:
+                              TextInputType.none, // No system keyboard
+                          style: TextStyle(
+                            color: colors.textMain,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900, // Thick font
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '0', // Hint is '0'
+                            hintStyle: TextStyle(
+                              color: colors.textSub,
+                              fontWeight: FontWeight.w900, // Thick hint
+                            ),
+                            border: InputBorder.none,
+                            suffixText: i18n.isKorean ? "원" : "",
+                            suffixStyle: TextStyle(
+                              color: colors.textMain,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            prefixText: i18n.isKorean ? "" : "\$ ",
+                            prefixStyle: TextStyle(
+                              color: colors.textMain,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _QuickAmountButton(
+                            label: '+1,000',
+                            amount: 1000,
+                            onPressed: _addAmount,
+                          ),
+                          _QuickAmountButton(
+                            label: '+5,000',
+                            amount: 5000,
+                            onPressed: _addAmount,
+                          ),
+                          _QuickAmountButton(
+                            label: '+10,000',
+                            amount: 10000,
+                            onPressed: _addAmount,
+                          ),
+                        ],
+                      ),
+
+                      // Memo Section (Conditional with Animation)
+                      Visibility(
+                        visible: _isTrophyMode,
+                        child: AnimatedOpacity(
+                          opacity: _isTrophyMode ? 1.0 : 0.0,
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeIn,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 32),
+                              _buildInlineSyncAnimation(colors),
+                              const SizedBox(height: 8),
+                              _buildSectionTitle('메모 (전리품 기록)', colors),
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colors.surface,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: colors.border),
+                                ),
+                                child: TextField(
+                                  controller: _memoController,
+                                  style: TextStyle(color: colors.textMain),
+                                  maxLines: 2,
+                                  decoration: InputDecoration(
+                                    hintText: i18n.isKorean
+                                        ? '유혹을 이겨낸 소감을 기록하세요...'
+                                        : 'Add a trophy note...',
+                                    hintStyle: TextStyle(
+                                      color: colors.textSub.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                    border: InputBorder.none,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+                      _buildTargetGoalCard(colors, isPureFinance),
+
+                      const SizedBox(height: 40),
+
+                      // Save Button
+                      Builder(
+                        builder: (context) {
+                          final amountText = _amountController.text.isEmpty
+                              ? '0'
+                              : _amountController.text;
+
+                          if (isPureFinance) {
+                            return BouncyButton(
+                              onTap: _isLoading
+                                  ? () {}
+                                  : () {
+                                      debugPrint(
+                                        '[DEBUG] Save Button (PureFinance) tapped. Calling _submit.',
+                                      );
+                                      _submit();
+                                    },
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 18,
+                                  horizontal: 24,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _isTrophyMode
+                                      ? const Color(0xFFA6CC00)
+                                      : colors.accent,
+                                  borderRadius: BorderRadius.circular(18),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: colors.accent.withValues(
+                                        alpha: 0.3,
+                                      ),
+                                      blurRadius: 15,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        const Icon(
+                                          Icons.send_rounded,
+                                          size: 42,
+                                          color: Colors.black,
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              _isTrophyMode
+                                                  ? "전리품 기록 저장 및 동기화"
+                                                  : (i18n.isKorean
+                                                        ? '송금으로 구출하기'
+                                                        : 'Rescue with Transfer'),
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w900,
+                                                color: Colors.black,
+                                                letterSpacing: -0.5,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              _isTrophyMode
+                                                  ? '파괴 결과 저장하기'
+                                                  : '토스뱅크로 $amountText원 송금',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.7,
+                                                ),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    if (_isLoading)
+                                      const CircularProgressIndicator(
+                                        color: Colors.white,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+
+                          return Animate(
+                            onPlay: (controller) =>
+                                controller.repeat(reverse: true),
+                            effects: [
+                              CustomEffect(
+                                duration: 2500.ms,
+                                curve: Curves.easeInOut,
+                                builder: (context, value, child) {
+                                  final glowOpacity = 0.2 + (value * 0.3);
+                                  return Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 20,
+                                      horizontal: 24,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colors.accent,
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
                                         BoxShadow(
                                           color: colors.accent.withValues(
-                                            alpha: 0.4,
+                                            alpha: glowOpacity,
                                           ),
-                                          blurRadius: 8,
-                                          spreadRadius: 1,
+                                          blurRadius: 10,
+                                          spreadRadius: 3,
                                         ),
-                                      ]
-                                    : [],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    iconData,
-                                    size: 20,
-                                    color: isSelected
-                                        ? colors.accent
-                                        : Colors.white70,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    category.name,
-                                    style: TextStyle(
-                                      color: isSelected
-                                          ? colors.accent
-                                          : Colors.white70,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
+                                      ],
                                     ),
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            ],
+                            child: BouncyButton(
+                              onTap: _isLoading
+                                  ? () {}
+                                  : () {
+                                      _submit();
+                                    },
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.start,
+                                    children: [
+                                      const Icon(
+                                        Icons.send_rounded,
+                                        size: 42,
+                                        color: Colors.black,
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _isTrophyMode
+                                                ? "전리품 기록 저장 및 동기화"
+                                                : (i18n.isKorean
+                                                      ? '송금으로 구출하기'
+                                                      : 'Rescue with Transfer'),
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w900,
+                                              color: Colors.black,
+                                              letterSpacing: -0.5,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _isTrophyMode
+                                                ? '파괴 결과 저장하기'
+                                                : '토스뱅크로 $amountText원 송금',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.black.withValues(
+                                                alpha: 0.7,
+                                              ),
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
+                                  if (_isLoading)
+                                    const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
                                 ],
                               ),
                             ),
                           );
-                        })
-                        .toList(),
-                  ),
-
-                  const SizedBox(height: 40),
-                  _buildSectionTitle(i18n.howMuchSaved, colors),
-                  const SizedBox(height: 16),
-
-                  // Amount Input
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: colors.border),
-                      boxShadow: isPure
-                          ? [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: TextField(
-                      controller: _amountController,
-                      // [Step 1] Custom Keypad Setup
-                      readOnly: true, // Prevent system keyboard
-                      onTap: () => _showKeypad(context),
-                      showCursor: true, // Show cursor to indicate focus
-                      keyboardType: TextInputType.none, // No system keyboard
-                      style: TextStyle(
-                        color: colors.textMain,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900, // Thick font
+                        },
                       ),
-                      decoration: InputDecoration(
-                        hintText: '0', // Hint is '0'
-                        hintStyle: TextStyle(
-                          color: colors.textSub,
-                          fontWeight: FontWeight.w900, // Thick hint
-                        ),
-                        border: InputBorder.none,
-                        suffixText: i18n.isKorean ? "원" : "",
-                        suffixStyle: TextStyle(
-                          color: colors.textMain,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        prefixText: i18n.isKorean ? "" : "\$ ",
-                        prefixStyle: TextStyle(
-                          color: colors.textMain,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
 
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _QuickAmountButton(
-                        label: '+1,000',
-                        amount: 1000,
-                        onPressed: _addAmount,
-                      ),
-                      _QuickAmountButton(
-                        label: '+5,000',
-                        amount: 5000,
-                        onPressed: _addAmount,
-                      ),
-                      _QuickAmountButton(
-                        label: '+10,000',
-                        amount: 10000,
-                        onPressed: _addAmount,
-                      ),
-                    ],
-                  ),
+                      const SizedBox(height: 32),
 
-                  // Memo Section (Conditional with Animation)
-                  Visibility(
-                    visible: _isTrophyMode,
-                    child: AnimatedOpacity(
-                      opacity: _isTrophyMode ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 500),
-                      curve: Curves.easeIn,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 32),
-                          _buildInlineSyncAnimation(colors),
-                          const SizedBox(height: 8),
-                          _buildSectionTitle('메모 (전리품 기록)', colors),
-                          const SizedBox(height: 16),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colors.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: colors.border),
-                            ),
-                            child: TextField(
-                              controller: _memoController,
-                              style: TextStyle(color: colors.textMain),
-                              maxLines: 2,
-                              decoration: InputDecoration(
-                                hintText: i18n.isKorean
-                                    ? '유혹을 이겨낸 소감을 기록하세요...'
-                                    : 'Add a trophy note...',
-                                hintStyle: TextStyle(
-                                  color: colors.textSub.withValues(alpha: 0.5),
-                                ),
-                                border: InputBorder.none,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-                  _buildTargetGoalCard(colors, isPureFinance),
-
-                  const SizedBox(height: 40),
-
-                  // Save Button
-                  Builder(
-                    builder: (context) {
-                      final amountText = _amountController.text.isEmpty
-                          ? '0'
-                          : _amountController.text;
-
-                      if (isPureFinance) {
-                        return BouncyButton(
-                          onTap: _isLoading
-                              ? () {}
-                              : () {
-                                  debugPrint(
-                                    '[DEBUG] Save Button (PureFinance) tapped. Calling _submit.',
-                                  );
-                                  _submit();
-                                },
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 18,
-                              horizontal: 24,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _isTrophyMode
-                                  ? const Color(0xFFA6CC00) // Deeper neon lime
-                                  : colors.accent,
-                              borderRadius: BorderRadius.circular(18),
-                              // PRD-compliant shadow
-                              boxShadow: [
-                                BoxShadow(
-                                  color: colors.accent.withValues(alpha: 0.3),
-                                  blurRadius: 15,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(
-                                      Icons.send_rounded,
-                                      size: 24,
-                                      color: Colors.white,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          _isTrophyMode
-                                              ? "전리품 기록 저장 및 동기화"
-                                              : (i18n.isKorean
-                                                    ? '송금으로 구출하기'
-                                                    : 'Rescue with Transfer'),
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.w900,
-                                            color: Colors.white,
-                                            letterSpacing: -0.5,
-                                          ),
+                      // Defeat Button (Asset Leak Declaration)
+                      // [Modified] Step 1: Defeat Button Overhaul
+                      // Defeat Button (Asset Leak Declaration)
+                      // Defeat Button (Asset Leak Declaration)
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 24),
+                        child: Animate(
+                          onPlay: (controller) =>
+                              controller.repeat(reverse: true),
+                          effects: [
+                            CustomEffect(
+                              duration: 2500.ms,
+                              curve: Curves.easeInOut,
+                              builder: (context, value, child) {
+                                final glowOpacity =
+                                    0.2 +
+                                    (value * 0.3); // Restore missing variable
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: colors.danger.withValues(
+                                      alpha: 0.1,
+                                    ), // Faint background
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: colors.danger,
+                                      width: 2,
+                                    ), // Solid Red Border
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: colors.danger.withValues(
+                                          alpha: glowOpacity,
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          _isTrophyMode
-                                              ? '파괴 결과 저장하기'
-                                              : '$amountText원 송금하기',
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.white.withValues(
-                                              alpha: 0.9,
-                                            ),
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                if (_isLoading)
-                                  const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }
-
-                      return Animate(
-                        onPlay: (controller) =>
-                            controller.repeat(reverse: true),
-                        effects: [
-                          CustomEffect(
-                            duration: 2500.ms,
-                            curve: Curves.easeInOut,
-                            builder: (context, value, child) {
-                              final glowOpacity =
-                                  0.2 + (value * 0.3); // 0.2 -> 0.5
-                              return Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 20,
-                                  horizontal: 24,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colors.accent,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: colors.accent.withValues(
-                                        alpha: glowOpacity,
+                                        blurRadius: 10,
+                                        spreadRadius: 3,
                                       ),
-                                      blurRadius: 10, // Reduced from 20
-                                      spreadRadius: 3,
-                                    ),
-                                  ],
-                                ),
-                                child: child,
-                              );
-                            },
-                          ),
-                        ],
-                        child: BouncyButton(
-                          onTap: _isLoading
-                              ? () {}
-                              : () {
-                                  debugPrint(
-                                    '[DEBUG] Save Button tapped. Calling _submit.',
-                                  );
-                                  _submit();
-                                },
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Row(
+                                    ],
+                                  ),
+                                  child: child,
+                                );
+                              },
+                            ),
+                          ],
+                          child: InkWell(
+                            onTap: _showDefeatDialog,
+                            borderRadius: BorderRadius.circular(20),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 20,
+                                horizontal: 24,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
-                                  const Icon(
-                                    Icons.send_rounded,
-                                    size: 50,
-                                    color: Colors.black,
+                                  Icon(
+                                    Icons.warning_amber_rounded,
+                                    size: 45, // Reduced from 50 (10% decrease)
+                                    color: colors
+                                        .danger, // Changed to red for visibility
                                   ),
                                   const SizedBox(width: 16),
                                   Expanded(
@@ -1319,170 +1433,67 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                                           CrossAxisAlignment.start,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Text(
-                                          _isTrophyMode
-                                              ? "전리품 기록 저장 및 동기화"
-                                              : (i18n.isKorean
-                                                    ? '송금으로 구출하기'
-                                                    : 'Rescue with Transfer'),
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w900,
-                                            color: Colors.black,
-                                            letterSpacing: -0.5,
-                                          ),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              "지출 발생 신고",
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w900,
+                                                fontSize: 20,
+                                                color: colors
+                                                    .danger, // Changed to red
+                                                letterSpacing: -0.5,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              "[CODE: 402_LEAK]",
+                                              style: TextStyle(
+                                                color: colors.danger.withValues(
+                                                  alpha: 0.7,
+                                                ),
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                fontFamily: 'Courier',
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          _isTrophyMode
-                                              ? '파괴 결과 저장하기'
-                                              : '토스뱅크로 $amountText원 송금',
+                                          "유혹 방어 실패 시 피해 규모를 기록하십시오.",
                                           style: TextStyle(
+                                            fontWeight: FontWeight.w900,
                                             fontSize: 12,
-                                            color: Colors.black.withValues(
-                                              alpha: 0.7,
-                                            ),
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (_isLoading)
-                                const CircularProgressIndicator(
-                                  color: Colors.black,
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Defeat Button (Asset Leak Declaration)
-                  // [Modified] Step 1: Defeat Button Overhaul
-                  // Defeat Button (Asset Leak Declaration)
-                  // Defeat Button (Asset Leak Declaration)
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 24),
-                    child: Animate(
-                      onPlay: (controller) => controller.repeat(reverse: true),
-                      effects: [
-                        CustomEffect(
-                          duration: 2500.ms,
-                          curve: Curves.easeInOut,
-                          builder: (context, value, child) {
-                            final glowOpacity =
-                                0.2 + (value * 0.3); // Restore missing variable
-                            return Container(
-                              decoration: BoxDecoration(
-                                color: colors.danger.withValues(
-                                  alpha: 0.1,
-                                ), // Faint background
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: colors.danger,
-                                  width: 2,
-                                ), // Solid Red Border
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: colors.danger.withValues(
-                                      alpha: glowOpacity,
-                                    ),
-                                    blurRadius: 10,
-                                    spreadRadius: 3,
-                                  ),
-                                ],
-                              ),
-                              child: child,
-                            );
-                          },
-                        ),
-                      ],
-                      child: InkWell(
-                        onTap: _showDefeatDialog,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 20,
-                            horizontal: 24,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.warning_amber_rounded,
-                                size: 45, // Reduced from 50 (10% decrease)
-                                color: colors
-                                    .danger, // Changed to red for visibility
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          "지출 발생 신고",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: 20,
-                                            color:
-                                                colors.danger, // Changed to red
-                                            letterSpacing: -0.5,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          "[CODE: 402_LEAK]",
-                                          style: TextStyle(
                                             color: colors.danger.withValues(
                                               alpha: 0.7,
                                             ),
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: 'Courier',
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      "유혹 방어 실패 시 피해 규모를 기록하십시오.",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 12,
-                                        color: colors.danger.withValues(
-                                          alpha: 0.7,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
+
+                      const SizedBox(height: 48),
+                      // List
+                      _TodaysRecordsList(),
+
+                      const SizedBox(height: 24),
+                    ],
                   ),
-
-                  const SizedBox(height: 48),
-                  // List
-                  _TodaysRecordsList(),
-
-                  const SizedBox(height: 24),
-                ],
-              ),
-            ),
-          ),
+                ),
+              )
+              .animate(target: _isFinishing ? 1 : 0)
+              .shake(hz: 10, duration: 200.ms, curve: Curves.easeInOut)
+              .tint(color: const Color(0xFFD4FF00).withAlpha(50))
+              .blurXY(begin: 0, end: 5)
+              .fadeOut(delay: 800.ms),
 
           // System Warning (Step 1 of Neural Sync Protocol - Optimized)
           IgnorePointer(
@@ -1637,27 +1648,18 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                     children: [
                       if (target.imageUrl != null &&
                           target.imageUrl!.isNotEmpty)
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _shatterTapCount++;
-                            });
-                            SoundService().playImpactHit(_shatterTapCount);
-                            HapticService.light();
-                          },
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              target.imageUrl!,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            target.imageUrl!,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
                               width: 48,
                               height: 48,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                width: 48,
-                                height: 48,
-                                color: colors.surface,
-                                child: Icon(Icons.image, color: colors.textSub),
-                              ),
+                              color: colors.surface,
+                              child: Icon(Icons.image, color: colors.textSub),
                             ),
                           ),
                         )
