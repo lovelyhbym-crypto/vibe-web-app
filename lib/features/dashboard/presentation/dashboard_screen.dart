@@ -820,8 +820,29 @@ class _CategoryPieChart extends StatelessWidget {
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
     final isPureFinance = Theme.of(context).brightness == Brightness.light;
 
-    final sections = categoryData.entries.map((e) {
-      final index = categoryData.keys.toList().indexOf(e.key);
+    // [Filter Logic] Remove 'Defense' categories to focus on 'Temptations'
+    final filteredData = Map.fromEntries(
+      categoryData.entries.where((e) {
+        final key = e.key;
+        final normalizedKey = key.replaceAll(
+          ' ',
+          '',
+        ); // Allow fuzzy space matching
+
+        // Exclude defense/asset protection related keys
+        if (normalizedKey.contains('유혹방어') ||
+            normalizedKey.contains('자산지킴') ||
+            key == 'system_optimization') {
+          return false;
+        }
+        return true;
+      }),
+    );
+
+    if (filteredData.isEmpty) return const SizedBox.shrink();
+
+    final sections = filteredData.entries.map((e) {
+      final index = filteredData.keys.toList().indexOf(e.key);
       final color = [
         Colors.blueAccent,
         Colors.redAccent,
@@ -833,30 +854,14 @@ class _CategoryPieChart extends StatelessWidget {
       return PieChartSectionData(
         color: color,
         value: e.value,
-        // External Label Logic
-        title: '${i18n.categoryName(e.key)}\n${e.value.toInt()}',
-        titlePositionPercentageOffset: 1.6, // Move Outside
-        radius: 50, // Slightly smaller radius to give space
-        showTitle: true,
-        titleStyle: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: colors.textMain, // Visible text color
-          shadows: [
-            BoxShadow(
-              blurRadius: 2,
-              color: colors.background,
-            ), // Outline for readability
-          ],
-        ),
-        // Leader line simulation is hard without custom painter or specific lib support.
-        // Using border side to simulate specific highlight?
-        borderSide: BorderSide(color: color, width: 1),
+        title: '', // Titles disabled
+        radius: 40,
+        showTitle: false, // [Refactor] Hide overlapping titles
       );
     }).toList();
 
     return Container(
-      height: 350, // Increased height for external labels
+      height: 400, // Increased height for legend
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colors.surface,
@@ -882,17 +887,81 @@ class _CategoryPieChart extends StatelessWidget {
               color: colors.textMain,
             ),
           ),
-          const SizedBox(height: 30), // More space for top labels
-          Expanded(
+          const SizedBox(height: 20),
+          // Chart Area
+          SizedBox(
+            height: 200,
             child: PieChart(
               duration: const Duration(milliseconds: 1000),
               curve: Curves.easeInOut,
               PieChartData(
                 sections: sections,
                 centerSpaceRadius: 40,
-                sectionsSpace: 4, // More space
+                sectionsSpace: 4,
                 startDegreeOffset: 270,
               ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Legend List Area
+          Expanded(
+            child: ListView.separated(
+              itemCount: filteredData.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final key = filteredData.keys.elementAt(index);
+                final value = filteredData[key]!;
+                final color = [
+                  Colors.blueAccent,
+                  Colors.redAccent,
+                  Colors.orangeAccent,
+                  Colors.purpleAccent,
+                  Colors.greenAccent,
+                ][index % 5];
+
+                return Row(
+                  children: [
+                    // Neon Indicator
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withValues(alpha: 0.5),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Category Name
+                    Expanded(
+                      child: Text(
+                        i18n.categoryName(key),
+                        style: TextStyle(
+                          color: colors.textMain,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    // Amount
+                    Text(
+                      i18n.formatCurrency(value),
+                      style: TextStyle(
+                        color: colors.textSub,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
