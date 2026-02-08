@@ -20,21 +20,21 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
     with TickerProviderStateMixin {
   // 15 Master-Selected Missions
   final List<String> _missions = [
-    '찬물 한 컵 원샷하기',
-    '팔굽혀펴기 15회 하기',
-    '플랭크 자세로 30~60초 유지하기',
-    '온 힘을 다해 1분간 벽 밀기',
-    '얼음 조각 손바닥에 올리고 30초 버티기',
-    '한 발로 서서 1분간 균형 잡기',
-    '주변(책상 등) 깨끗이 청소하기',
-    '가장 아끼는 물건 정성껏 닦아주기',
-    '손 씻고 로션 바르며 감각 집중하기',
-    '고마운 사람에게 안부 문자 보내기',
-    '5-4-3-2-1 오감 찾기: 주변에서 보이는 것 5개, 들리는 것 4개, 만져지는 것 3개, 냄새 2개, 맛 1개를 차례대로 마음속으로 찾아보며 현재 감각에 집중하세요.',
-    '1년 뒤 이 물건을 가진 나를 시각화하기',
-    '사고 싶은 물건 이름 30번 반복하기',
-    '이 물건의 장점 1개와 단점 3개 적기',
-    '좋아하는 음악 1곡 끝까지 감상하기',
+    '[ 찬물 한 컵 원샷하기 ]',
+    '[ 팔굽혀펴기 15회 하기 ]',
+    '[ 플랭크 자세로 30~60초 ]\n유지하기',
+    '[ 온 힘을 다해 1분간 ]\n벽밀기',
+    '[ 얼음 조각 손바닥에 올리고 ]\n30초 버티기',
+    '[ 한 발로 서서 1분간 ]\n균형잡기',
+    '[ 주변(책상 등) 깨끗히 ]\n청소하기',
+    '[ 가장 아끼는 물건 ]\n정성껏 닦아주기',
+    '[ 손 씻고 로션 바르며 ]\n감각 집중하기',
+    '[ 지금 당장 고마운 사람에게 ]\n안부 전화나 문자 하기',
+    '5-4-3-2-1 오감찾기\n보이는 것 5개, 들리는 소리 4개\n닿는 감촉 3개, 주변의 냄새 2개,\n입안의 맛 1개에\n감각을 집중하세요',
+    '[ 1년 뒤 이 물건을 가진 ]\n나를 상상하기',
+    '[ 사고 싶은 물건 이름 ]\n30번 반복하기',
+    '[ 이 물건을 가지고 싶은 이유 ]\n3개 적기',
+    '[ 좋아하는 음악 1곡 ]\n끝까지 감상하기',
   ];
 
   late String _currentMission;
@@ -51,8 +51,9 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
   void initState() {
     super.initState();
     final rawMission = _missions[Random().nextInt(_missions.length)];
-    // Step 5 Typography: > CMD: prefix
-    _currentMission = '> CMD: ${rawMission.replaceAll('\n', ' ')}';
+    // [Fixed] Don't add brackets - missions already include formatting
+    _currentMission = rawMission;
+
     _startTimer();
   }
 
@@ -118,8 +119,8 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
     }
     await Future.delayed(const Duration(seconds: 1));
 
-    // Step 4: Wait & Auto-Navigation (0.5s)
-    await Future.delayed(const Duration(milliseconds: 500));
+    // Step 4: Wait & Auto-Navigation (1.0s) - Increased for better readability
+    await Future.delayed(const Duration(seconds: 1));
 
     if (mounted && context.canPop()) {
       context.pop();
@@ -295,22 +296,37 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
 
                   const SizedBox(height: 32),
 
-                  // Mission Text (Typography Step 5)
-                  Text(
-                        _currentMission,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          height: 1.4,
-                          fontFamily: 'Courier',
-                          letterSpacing: 1.2,
-                        ),
-                        textAlign: TextAlign.center,
-                      )
-                      .animate()
-                      .fadeIn(duration: 500.ms)
-                      .slideY(begin: 0.2, end: 0),
+                  // Mission Text - Centered with brackets and width constraint
+                  Center(
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.8,
+                      ),
+                      child:
+                          Text(
+                                _currentMission,
+                                style: TextStyle(
+                                  // [Dynamic] Smaller font for mission #11
+                                  fontSize:
+                                      _currentMission.contains('5-4-3-2-1 오감찾기')
+                                      ? 14.0 // Reduced from 16.0
+                                      : 20.0, // Reduced from 22.0
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  height: 1.4,
+                                  fontFamily: 'Courier',
+                                  letterSpacing:
+                                      _currentMission.contains('5-4-3-2-1 오감찾기')
+                                      ? 0.5
+                                      : 1.2,
+                                ),
+                                textAlign: TextAlign.center,
+                              )
+                              .animate()
+                              .fadeIn(duration: 500.ms)
+                              .slideY(begin: 0.2, end: 0),
+                    ),
+                  ),
 
                   const SizedBox(height: 16),
                   const Text(
