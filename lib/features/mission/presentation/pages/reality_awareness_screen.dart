@@ -4,10 +4,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../../../../core/ui/glass_card.dart';
 import '../../../../core/ui/bouncy_button.dart';
 import '../../../../core/services/haptic_service.dart';
+import '../../../../core/services/sound_service.dart';
 
 class RealityAwarenessScreen extends StatefulWidget {
   const RealityAwarenessScreen({super.key});
@@ -81,8 +81,8 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
 
     // Feedback
     HapticService.success();
-    final player = AudioPlayer();
-    await player.play(AssetSource('audio/chip.mp3'));
+    // Integrated high-tech sweep sound via SoundService
+    SoundService().playLaserScan();
 
     // Step 1: Laser Sweep (0.5s)
     setState(() {
@@ -470,34 +470,82 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
               child: Container(
                 color: Colors.black, // Pure #000000
                 child: _showSuccessReveal
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "[ SYSTEM_STABILIZED ]",
-                              style: const TextStyle(
-                                color: mintColor,
-                                fontSize: 26,
-                                fontWeight: FontWeight.w900,
-                                fontFamily: 'Courier',
-                                letterSpacing: 2.0,
+                    ? Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Digital Confetti: Small mint particles popping for 0.5s
+                          ...List.generate(24, (index) {
+                            final random = Random();
+                            final angle = random.nextDouble() * 2 * pi;
+                            final distance =
+                                100.0 + random.nextDouble() * 150.0;
+                            return Container(
+                                  width: 2,
+                                  height: 2,
+                                  decoration: BoxDecoration(
+                                    color: mintColor.withOpacity(0.8),
+                                    shape: BoxShape.rectangle,
+                                  ),
+                                )
+                                .animate()
+                                .move(
+                                  begin: Offset.zero,
+                                  end: Offset(
+                                    cos(angle) * distance,
+                                    sin(angle) * distance,
+                                  ),
+                                  duration: 500.ms,
+                                  curve: Curves.easeOutCubic,
+                                )
+                                .fadeOut(duration: 500.ms);
+                          }),
+
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                    "[ MISSION_ACCOMPLISHED ]",
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: const TextStyle(
+                                      color: mintColor,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w900,
+                                      fontFamily: 'Courier',
+                                      letterSpacing: 1.0,
+                                      shadows: [
+                                        BoxShadow(
+                                          color: mintColor,
+                                          blurRadius: 15,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                  .animate()
+                                  .fadeIn(duration: 800.ms)
+                                  .scale(
+                                    begin: const Offset(0.9, 0.9),
+                                    end: const Offset(1.0, 1.0),
+                                  ),
+                              const SizedBox(height: 16),
+                              Text(
+                                "성공적으로 유혹을 뿌리쳤습니다.\n오늘 하루 중 가장 잘한 일입니다.",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: mintColor.withOpacity(0.9),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Courier',
+                                  height: 1.5,
+                                ),
+                              ).animate().fadeIn(
+                                duration: 1.seconds,
+                                delay: 200.ms,
                               ),
-                            ).animate().fadeIn(duration: 1.seconds),
-                            const SizedBox(height: 12),
-                            Text(
-                              "시스템 최적화가 완료되었습니다.",
-                              style: TextStyle(
-                                color: mintColor.withOpacity(0.8),
-                                fontSize: 14,
-                                fontFamily: 'Courier',
-                              ),
-                            ).animate().fadeIn(
-                              duration: 1.seconds,
-                              delay: 200.ms,
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                       )
                     : const SizedBox.shrink(),
               ),

@@ -112,4 +112,14 @@ class SoundService {
       debugPrint('Error playing cut sound: $e');
     }
   }
+
+  /// P6: Laser Scanning Sound (Mission Complete Sweep)
+  Future<void> playLaserScan() async {
+    try {
+      // Use high volume for satisfying sweep feedback
+      await _player.play(AssetSource('audio/laser_scan.mp3'), volume: 1.0);
+    } catch (e) {
+      debugPrint('Error playing laser scan sound: $e');
+    }
+  }
 }
