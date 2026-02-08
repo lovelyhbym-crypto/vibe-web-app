@@ -66,8 +66,8 @@ class ShatterReceiptWidget extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Store Info
-                          Column(
-                            children: const [
+                          const Column(
+                            children: [
                               Text(
                                 "금융치료 전문센터",
                                 style: TextStyle(
@@ -184,7 +184,7 @@ class ShatterReceiptWidget extends StatelessWidget {
                                             color: Colors.redAccent,
                                             width: 1.5,
                                           ),
-                                          color: Colors.redAccent.withOpacity(
+                                          color: Colors.redAccent.withValues(alpha: 
                                             0.05,
                                           ),
                                         ),
@@ -204,7 +204,7 @@ class ShatterReceiptWidget extends StatelessWidget {
                                       )
                                       .shimmer(
                                         duration: 2.seconds,
-                                        color: Colors.red.withOpacity(0.2),
+                                        color: Colors.red.withValues(alpha: 0.2),
                                       ),
                             ),
                         ],
@@ -249,7 +249,7 @@ class ShatterReceiptWidget extends StatelessWidget {
             return SizedBox(
               width: dashWidth,
               height: 1,
-              child: DecoratedBox(
+              child: const DecoratedBox(
                 decoration: BoxDecoration(color: Colors.black26),
               ),
             );
@@ -324,7 +324,7 @@ class _ReceiptPainter extends CustomPainter {
     // Shadow
     canvas.drawShadow(
       path.shift(const Offset(0, 8)),
-      Colors.black.withOpacity(0.15),
+      Colors.black.withValues(alpha: 0.15),
       15,
       true,
     );
@@ -338,7 +338,7 @@ class _ReceiptPainter extends CustomPainter {
 
     // 2. Scanline Texture (Black scanlines)
     final scanlinePaint = Paint()
-      ..color = Colors.black.withOpacity(0.03)
+      ..color = Colors.black.withValues(alpha: 0.03)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
@@ -348,7 +348,7 @@ class _ReceiptPainter extends CustomPainter {
 
     // Noise/Grain effect
     final noisePaint = Paint()
-      ..color = Colors.black.withOpacity(0.03)
+      ..color = Colors.black.withValues(alpha: 0.03)
       ..style = PaintingStyle.fill;
     final random = math.Random(123);
     for (int i = 0; i < 400; i++) {
@@ -369,7 +369,7 @@ class _ReceiptPainter extends CustomPainter {
 
     // 4. Border/Edge Highlight
     final borderPaint = Paint()
-      ..color = Colors.black.withOpacity(0.05)
+      ..color = Colors.black.withValues(alpha: 0.05)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
     canvas.drawPath(path, borderPaint);
@@ -380,9 +380,9 @@ class _ReceiptPainter extends CustomPainter {
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        Colors.black.withOpacity(0.02),
+        Colors.black.withValues(alpha: 0.02),
         Colors.transparent,
-        Colors.black.withOpacity(0.05),
+        Colors.black.withValues(alpha: 0.05),
       ],
       stops: const [0.0, 0.4, 1.0],
     );
@@ -403,7 +403,7 @@ class _ReceiptPainter extends CustomPainter {
 
     final crackPaint = Paint()
       ..color = Colors.black
-          .withOpacity(0.9) // Step 1: Deep black
+          .withValues(alpha: 0.9) // Step 1: Deep black
       ..style = PaintingStyle.stroke
       ..strokeWidth =
           1.5 +

@@ -593,6 +593,13 @@ class _WishlistProgressCard extends StatelessWidget {
 
     final imageUrl = topWishlist.imageUrl;
     final remaining = (total - saved).clamp(0, total).toInt();
+    final labelStyle = TextStyle(
+      color: (isPureFinance ? const Color(0xFF8B95A1) : Colors.white70)
+          .withValues(alpha: 0.75),
+      fontSize: 7,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.5,
+    );
 
     return IntrinsicHeight(
       child: Container(
@@ -902,21 +909,7 @@ class _WishlistProgressCard extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                '현재 금액 / 목표 금액',
-                                style: TextStyle(
-                                  color:
-                                      (isPureFinance
-                                              ? const Color(0xFF8B95A1)
-                                              : Colors
-                                                    .white70) // [Readability] Increased opacity
-                                          .withValues(alpha: 0.75),
-                                  fontSize: 7,
-                                  fontWeight: FontWeight
-                                      .w500, // [Readability] Improved weight
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                              Text('현재 금액 / 목표 금액', style: labelStyle),
                               const SizedBox(height: 2),
                               Text(
                                 '${NumberFormat.decimalPattern('ko_KR').format(saved)} / ${NumberFormat.decimalPattern('ko_KR').format(total)}',
@@ -942,21 +935,7 @@ class _WishlistProgressCard extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(
-                                '남은 금액',
-                                style: TextStyle(
-                                  color:
-                                      (isPureFinance
-                                              ? const Color(0xFF8B95A1)
-                                              : Colors
-                                                    .white70) // [Readability] Increased opacity
-                                          .withValues(alpha: 0.75),
-                                  fontSize: 7,
-                                  fontWeight: FontWeight
-                                      .w500, // [Readability] Improved weight
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                              Text('남은 금액', style: labelStyle),
                               const SizedBox(height: 2),
                               TweenAnimationBuilder<double>(
                                 key: ValueKey(
@@ -1356,7 +1335,7 @@ class _MilestoneDialogState extends State<_MilestoneDialog> {
                   onPressed: () {
                     Navigator.of(context).pop();
                     if (isSuccess) {
-                      // TODO: Navigate to Victory/Success recording screen or update status
+                      // Handled by RewardStateProvider
                     }
                   },
                   style: ElevatedButton.styleFrom(

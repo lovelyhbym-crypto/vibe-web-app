@@ -147,18 +147,18 @@ class _AsmrMissionScreenState extends State<AsmrMissionScreen>
                                 Colors.transparent,
                                 const Color(
                                   0xFFD050FF,
-                                ).withOpacity(0.1 + (value * 0.2)),
-                                const Color(0xFFD050FF).withOpacity(0.0),
+                                ).withValues(alpha: 0.1 + (value * 0.2)),
+                                const Color(0xFFD050FF).withValues(alpha: 0.0),
                               ],
                               stops: const [0.5, 0.9, 1.0],
                             ),
                             border: Border.all(
-                              color: const Color(0xFFD050FF).withOpacity(0.6),
+                              color: const Color(0xFFD050FF).withValues(alpha: 0.6),
                               width: 1 + (value * 2),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFFD050FF).withOpacity(0.3),
+                                color: const Color(0xFFD050FF).withValues(alpha: 0.3),
                                 blurRadius: 20 + (value * 20),
                                 spreadRadius: value * 5,
                               ),
@@ -175,7 +175,7 @@ class _AsmrMissionScreenState extends State<AsmrMissionScreen>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: Colors.cyanAccent.withOpacity(0.3),
+                                    color: Colors.cyanAccent.withValues(alpha: 0.3),
                                     width: 1,
                                   ),
                                 ),
@@ -186,7 +186,7 @@ class _AsmrMissionScreenState extends State<AsmrMissionScreen>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: Colors.white.withOpacity(0.5),
+                                    color: Colors.white.withValues(alpha: 0.5),
                                     width: 1,
                                   ),
                                 ),
@@ -209,7 +209,7 @@ class _AsmrMissionScreenState extends State<AsmrMissionScreen>
                     Text(
                       "TUNING...",
                       style: TextStyle(
-                        color: const Color(0xFFD050FF).withOpacity(0.8),
+                        color: const Color(0xFFD050FF).withValues(alpha: 0.8),
                         fontSize: 20, // Increased size
                         fontFamily: 'Courier',
                         fontWeight: FontWeight.bold,
@@ -273,7 +273,7 @@ class _DigitalNoisePainter extends CustomPainter {
 
     // Draw random static dots
     for (int i = 0; i < 500; i++) {
-      paint.color = Colors.white.withOpacity(
+      paint.color = Colors.white.withValues(alpha: 
         _random.nextDouble() * 0.15,
       ); // increased opacity for visibility
       canvas.drawRect(
@@ -289,7 +289,7 @@ class _DigitalNoisePainter extends CustomPainter {
 
     // Draw scan line
     final scanY = (animation.value * size.height) % size.height;
-    paint.color = const Color(0xFFD050FF).withOpacity(0.1);
+    paint.color = const Color(0xFFD050FF).withValues(alpha: 0.1);
     canvas.drawRect(Rect.fromLTWH(0, scanY, size.width, 4), paint);
   }
 

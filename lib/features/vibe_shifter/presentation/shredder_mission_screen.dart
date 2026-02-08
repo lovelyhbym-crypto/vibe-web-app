@@ -487,9 +487,9 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
+                        const Text(
                               '> 파괴할 대상을 선택하세요 <',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 18,
                                 fontFamily: 'Courier',
@@ -1232,15 +1232,15 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
                       child: Container(
                         width: 6, // Thicker
                         height: 50,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD4FF00),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFD4FF00),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFD4FF00),
+                              color: Color(0xFFD4FF00),
                               blurRadius: 25, // Stronger blur
                               spreadRadius: 4, // Stronger spread
                             ),
-                            const BoxShadow(
+                            BoxShadow(
                               color: Colors.white,
                               blurRadius: 10,
                               spreadRadius: 1,

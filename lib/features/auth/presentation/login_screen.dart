@@ -342,7 +342,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       fontSize: 10, // 11 -> 10px로 더 콤팩트하게
                                       fontWeight: FontWeight
                                           .w400, // Bold에서 Regular로 변경하여 세련미 추가
-                                      color: Colors.white.withOpacity(
+                                      color: Colors.white.withValues(alpha: 
                                         0.7,
                                       ), // 완벽한 화이트보다 살짝 투명하게
                                       letterSpacing: 4.0,
@@ -358,7 +358,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       fontSize:
                                           11.5, // 자간 폭이 넓어지므로 전체 폭을 맞추기 위해 12.5 -> 11.5
                                       fontWeight: FontWeight.w300,
-                                      color: Colors.white.withOpacity(0.35),
+                                      color: Colors.white.withValues(alpha: 0.35),
                                       letterSpacing:
                                           2.5, // 자간을 넓게 조정 (사진의 느낌 반영)
                                     ),

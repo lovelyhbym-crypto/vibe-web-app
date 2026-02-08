@@ -44,17 +44,17 @@ class ProtocolDialog extends StatelessWidget {
                       vertical: 32,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.8),
+                      color: Colors.black.withValues(alpha: 0.8),
                       borderRadius: const BorderRadius.all(
                         Radius.circular(2),
                       ), // Sharp tech corners
                       border: Border.all(
-                        color: themeColor.withOpacity(0.5),
+                        color: themeColor.withValues(alpha: 0.5),
                         width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: themeColor.withOpacity(
+                          color: themeColor.withValues(alpha: 
                             0.2, // [Low Glow] subtle opacity
                           ),
                           blurRadius: 6, // [Low Glow] 30% of previous 20 -> ~6
@@ -93,7 +93,7 @@ class ProtocolDialog extends StatelessWidget {
                                     fontFamily: 'Courier',
                                     shadows: [
                                       BoxShadow(
-                                        color: themeColor.withOpacity(0.8),
+                                        color: themeColor.withValues(alpha: 0.8),
                                         blurRadius: 15,
                                       ),
                                     ],
@@ -112,7 +112,7 @@ class ProtocolDialog extends StatelessWidget {
                                 subTitle!,
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: themeColor.withOpacity(0.7),
+                                  color: themeColor.withValues(alpha: 0.7),
                                   fontFamily: 'Courier',
                                   letterSpacing: 2.0,
                                   fontWeight: FontWeight.bold,
@@ -157,16 +157,16 @@ class ProtocolDialog extends StatelessWidget {
                                       vertical: 16,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: themeColor.withOpacity(0.2),
+                                      color: themeColor.withValues(alpha: 0.2),
                                       border: Border.all(
-                                        color: themeColor.withOpacity(0.6),
+                                        color: themeColor.withValues(alpha: 0.6),
                                       ),
                                       borderRadius: const BorderRadius.all(
                                         Radius.circular(4),
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: themeColor.withOpacity(0.2),
+                                          color: themeColor.withValues(alpha: 0.2),
                                           blurRadius: 10,
                                         ),
                                       ],
@@ -191,7 +191,7 @@ class ProtocolDialog extends StatelessWidget {
                                 .animate(onPlay: (c) => c.repeat(reverse: true))
                                 .shimmer(
                                   duration: 1500.ms,
-                                  color: themeColor.withOpacity(0.5),
+                                  color: themeColor.withValues(alpha: 0.5),
                                 ), // Shimmer Animation
                           ],
                         ),
@@ -209,7 +209,7 @@ class ProtocolDialog extends StatelessWidget {
                     decoration: BoxDecoration(
                       boxShadow: [
                         BoxShadow(
-                          color: themeColor.withOpacity(0.2 + (value * 0.3)),
+                          color: themeColor.withValues(alpha: 0.2 + (value * 0.3)),
                           blurRadius: 20 + (value * 20),
                           spreadRadius: value * 5,
                         ),

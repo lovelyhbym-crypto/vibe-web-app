@@ -675,8 +675,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
       onFallback: () {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
+            const SnackBar(
+              content: Text(
                 '토스 연결 실패. 계좌번호가 복사되었습니다. 은행 앱을 직접 열어주세요.',
                 style: TextStyle(
                   color: Color(0xFFD4FF00), // neonLime
@@ -685,8 +685,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               ),
               backgroundColor: Colors.black87,
               behavior: SnackBarBehavior.floating,
-              shape: const StadiumBorder(),
-              margin: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+              shape: StadiumBorder(),
+              margin: EdgeInsets.fromLTRB(24, 0, 24, 40),
             ),
           );
         }
@@ -801,6 +801,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
     try {
       // [Neural Sync Protocol] 5-Second Sync Overlay
       await _showSyncOverlay();
+      if (!mounted) return false;
 
       // [Neural Sync Protocol] 10% Probability Integrity Check
       // [Rapid Sync] Skip if Trophy Mode
@@ -1506,15 +1507,15 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               .fadeOut(delay: 800.ms),
 
           // System Warning (Step 1 of Neural Sync Protocol - Optimized)
-          IgnorePointer(
+          const IgnorePointer(
             child: Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: EdgeInsets.only(bottom: 12),
                 child: Opacity(
                   opacity: 0.1,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: EdgeInsets.symmetric(horizontal: 24),
                     child: Text(
                       '허위 정보 입력 시 시스템 오류로 인해 자산 기록이 모두 꼬일 수 있습니다.',
                       textAlign: TextAlign.center,
@@ -2057,7 +2058,7 @@ class _NeuralSyncOverlayState extends State<_NeuralSyncOverlay> {
               padding: EdgeInsets.only(top: 48),
             ), // Increased vertical spacing
             // Fade-in/out Log Text
-            Container(
+            SizedBox(
               height: 24,
               child:
                   Text(
@@ -2108,14 +2109,14 @@ class _IntegrityCheckDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         side: const BorderSide(color: Color(0xFFD4FF00), width: 1),
       ),
-      title: Row(
+      title: const Row(
         children: [
-          const Icon(
+          Icon(
             Icons.report_problem_rounded,
             color: Color(0xFFD4FF00),
             size: 24,
           ),
-          const Padding(padding: EdgeInsets.only(right: 12)),
+          Padding(padding: EdgeInsets.only(right: 12)),
           Text(
             '데이터 정밀 검증 실패',
             style: TextStyle(

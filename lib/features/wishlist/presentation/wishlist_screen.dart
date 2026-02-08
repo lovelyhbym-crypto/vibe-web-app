@@ -254,18 +254,18 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                             ),
                             const SizedBox(width: 12),
                             RichText(
-                              text: TextSpan(
-                                style: const TextStyle(
+                              text: const TextSpan(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: -1.0,
                                 ),
                                 children: [
-                                  const TextSpan(
+                                  TextSpan(
                                     text: "[ZERO] ",
                                     style: TextStyle(color: Color(0xFFD4FF00)),
                                   ),
-                                  const TextSpan(
+                                  TextSpan(
                                     text: "동기화 완료",
                                     style: TextStyle(color: Colors.white),
                                   ),

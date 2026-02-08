@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -180,7 +179,7 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                               color: Colors.black, // [UI] Pure Black Core
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: mintColor.withOpacity(
+                                color: mintColor.withValues(alpha: 
                                   0.5,
                                 ), // [UI] Thin Neon Lime
                                 width: 0.5,
@@ -188,12 +187,12 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                               // Multi-layered Shadow for Glow effect
                               boxShadow: [
                                 BoxShadow(
-                                  color: neonBlueColor.withOpacity(0.25),
+                                  color: neonBlueColor.withValues(alpha: 0.25),
                                   blurRadius: 20,
                                   spreadRadius: 10,
                                 ),
                                 BoxShadow(
-                                  color: neonBlueColor.withOpacity(0.15),
+                                  color: neonBlueColor.withValues(alpha: 0.15),
                                   blurRadius: 40,
                                   spreadRadius: 5,
                                 ),
@@ -226,14 +225,14 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: neonBlueColor.withOpacity(
+                                      color: neonBlueColor.withValues(alpha: 
                                         glowIntensity,
                                       ),
                                       blurRadius: 20 + (value * 10),
                                       spreadRadius: 10 + (value * 5),
                                     ),
                                     BoxShadow(
-                                      color: neonBlueColor.withOpacity(
+                                      color: neonBlueColor.withValues(alpha: 
                                         glowIntensity * 0.5,
                                       ),
                                       blurRadius: 40 + (value * 20),
@@ -252,14 +251,14 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: mintColor.withOpacity(0.1),
+                          color: mintColor.withValues(alpha: 0.1),
                           border: Border.all(color: mintColor),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: RichText(
                           textAlign: TextAlign.center,
-                          text: TextSpan(
-                            style: const TextStyle(
+                          text: const TextSpan(
+                            style: TextStyle(
                               color: mintColor,
                               fontFamily: 'Courier',
                               height: 1.0,
@@ -272,7 +271,7 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                                   fontWeight: FontWeight.w300, // Thinner
                                 ),
                               ),
-                              const TextSpan(
+                              TextSpan(
                                 text: "뇌 재부팅 중",
                                 style: TextStyle(
                                   fontSize: 14,
@@ -346,7 +345,7 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                         decoration: BoxDecoration(
                           color: Colors.black,
                           border: Border.all(
-                            color: Colors.redAccent.withOpacity(0.5),
+                            color: Colors.redAccent.withValues(alpha: 0.5),
                             width: 1, // [Refine] Thinner border
                           ),
                           borderRadius: BorderRadius.circular(8),
@@ -397,8 +396,8 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                     child: GlassCard(
                       width: double.infinity,
                       height: 60,
-                      backgroundColor: mintColor.withOpacity(0.1),
-                      border: Border.all(color: mintColor.withOpacity(0.5)),
+                      backgroundColor: mintColor.withValues(alpha: 0.1),
+                      border: Border.all(color: mintColor.withValues(alpha: 0.5)),
                       child: Center(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -411,8 +410,8 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                             ),
                             const SizedBox(width: 12), // [UI] Increased spacing
                             RichText(
-                              text: TextSpan(
-                                style: const TextStyle(
+                              text: const TextSpan(
+                                style: TextStyle(
                                   color: mintColor,
                                   fontFamily: 'Courier',
                                   height: 1.0,
@@ -426,7 +425,7 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                                       fontWeight: FontWeight.w300,
                                     ),
                                   ),
-                                  const TextSpan(
+                                  TextSpan(
                                     text: "미션 완료",
                                     style: TextStyle(
                                       fontSize: 15,
@@ -471,7 +470,7 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                   color: mintColor,
                   boxShadow: [
                     BoxShadow(
-                      color: mintColor.withOpacity(1.0),
+                      color: mintColor.withValues(alpha: 1.0),
                       blurRadius: 15,
                       spreadRadius: 2,
                     ),
@@ -499,7 +498,7 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                                   width: 2,
                                   height: 2,
                                   decoration: BoxDecoration(
-                                    color: mintColor.withOpacity(0.8),
+                                    color: mintColor.withValues(alpha: 0.8),
                                     shape: BoxShape.rectangle,
                                   ),
                                 )
@@ -519,11 +518,11 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                           Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
+                              const Text(
                                     "[ MISSION_ACCOMPLISHED ]",
                                     maxLines: 1,
                                     softWrap: false,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: mintColor,
                                       fontSize: 22,
                                       fontWeight: FontWeight.w900,
@@ -549,7 +548,7 @@ class _RealityAwarenessScreenState extends State<RealityAwarenessScreen>
                                 "성공적으로 유혹을 뿌리쳤습니다.\n오늘 하루 중 가장 잘한 일입니다.",
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: mintColor.withOpacity(0.9),
+                                  color: mintColor.withValues(alpha: 0.9),
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Courier',
@@ -581,8 +580,9 @@ class _GridBackgroundPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (size.height <= 0 || size.width <= 0)
+    if (size.height <= 0 || size.width <= 0) {
       return; // [Fix] Prevent NaN or invalid layout crashes
+    }
 
     final paint = Paint()
       ..style = PaintingStyle.stroke
@@ -599,12 +599,12 @@ class _GridBackgroundPainter extends CustomPainter {
           final normalizedY = (y / size.height) * 2.0 - 1.0;
           final diff = (normalizedY - scanLineY).abs();
           if (diff < 0.3) {
-            // [Fix] Clamp opacity to prevent withOpacity() errors
+            // [Fix] Clamp opacity to prevent withValues(alpha: ) errors
             opacity = (0.4 * (1.0 - diff / 0.3)).clamp(0.0, 1.0);
           }
         }
 
-        paint.color = Colors.white.withOpacity(opacity);
+        paint.color = Colors.white.withValues(alpha: opacity);
         canvas.drawRect(Rect.fromLTWH(x, y, step, step), paint);
       }
     }

@@ -137,7 +137,7 @@ class _LoadingDialog extends StatelessWidget {
         child: Container(
           width: double.infinity,
           height: double.infinity,
-          color: Colors.black.withOpacity(
+          color: Colors.black.withValues(alpha: 
             0.7,
           ), // [UX] Dim background to obscure data
           child: Center(
@@ -157,15 +157,15 @@ class _LoadingDialog extends StatelessWidget {
                       ),
                       ShaderMask(
                             shaderCallback: (bounds) {
-                              return LinearGradient(
+                              return const LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: const [
+                                colors: [
                                   Colors.transparent,
                                   Color(0xFFD4FF00), // Neon Lime
                                   Colors.transparent,
                                 ],
-                                stops: const [0.0, 0.5, 1.0],
+                                stops: [0.0, 0.5, 1.0],
                               ).createShader(bounds);
                             },
                             blendMode: BlendMode.srcIn,
@@ -196,14 +196,14 @@ class _LoadingDialog extends StatelessWidget {
                                       2, // [Layout] Minimal height to fit text
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(
+                                  color: Colors.black.withValues(alpha: 
                                     0.5, // [Visual] Ghost layer opacity
                                   ),
                                   border: Border.symmetric(
                                     horizontal: BorderSide(
                                       color: const Color(
                                         0xFFD4FF00,
-                                      ).withOpacity(0.3),
+                                      ).withValues(alpha: 0.3),
                                       width: 1,
                                     ),
                                   ),
@@ -234,7 +234,7 @@ class _LoadingDialog extends StatelessWidget {
                               .animate(onPlay: (c) => c.repeat())
                               .shimmer(
                                 duration: 2.seconds,
-                                color: Colors.white.withOpacity(0.5),
+                                color: Colors.white.withValues(alpha: 0.5),
                               ),
                     ),
                   ),
@@ -266,7 +266,7 @@ class _WaveformAnimation extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFD050FF).withOpacity(0.5),
+                    color: const Color(0xFFD050FF).withValues(alpha: 0.5),
                     blurRadius: 10,
                   ),
                 ],
@@ -294,7 +294,7 @@ class _GlitchIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Icon(icon, size: 80, color: color.withOpacity(0.5))
+        Icon(icon, size: 80, color: color.withValues(alpha: 0.5))
             .animate(onPlay: (c) => c.repeat())
             .move(
               begin: const Offset(-2, 0),
