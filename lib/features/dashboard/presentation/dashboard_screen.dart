@@ -468,7 +468,8 @@ class _GoalCarouselState extends ConsumerState<_GoalCarousel> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.92);
+    _pageController =
+        PageController(); // [Sync] Full width to match summary card
   }
 
   @override
@@ -485,8 +486,9 @@ class _GoalCarouselState extends ConsumerState<_GoalCarousel> {
 
     return Column(
       children: [
+        // [Fix] Use SizedBox with explicit height instead of Expanded
         SizedBox(
-          height: 260,
+          height: 280, // Flexible height that adapts to IntrinsicHeight content
           child: PageView.builder(
             controller: _pageController,
             itemCount: itemCount,
@@ -592,61 +594,63 @@ class _WishlistProgressCard extends StatelessWidget {
     final imageUrl = topWishlist.imageUrl;
     final remaining = (total - saved).clamp(0, total).toInt();
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isPureFinance
-              ? colors.border
-              : colors.accent.withValues(alpha: 0.5),
-          width: 0.5,
+    return IntrinsicHeight(
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          vertical: 20,
+          horizontal: 16,
+        ), // [Fix] Added padding for breathing room
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(24), // [Sync] Match summary card
+          border: Border.all(
+            color: isPureFinance
+                ? colors.border
+                : colors.accent.withValues(alpha: 0.5),
+            width: 0.5,
+          ),
+          boxShadow: isPureFinance
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: colors.accent.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    spreadRadius: -5,
+                  ),
+                ],
         ),
-        boxShadow: isPureFinance
-            ? [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                ),
-              ]
-            : [
-                BoxShadow(
-                  color: colors.accent.withValues(alpha: 0.05),
-                  blurRadius: 20,
-                  spreadRadius: -5,
-                ),
-              ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          // Scanline Texture Overlay (Only for Cyberpunk/Vibe mode)
-          if (!isPureFinance)
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.05),
-                      ],
-                      stops: const [0.5, 0.5],
-                      tileMode: TileMode.repeated,
-                      transform: const GradientRotation(0.1),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            // Scanline Texture Overlay (Only for Cyberpunk/Vibe mode)
+            if (!isPureFinance)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.05),
+                        ],
+                        stops: const [0.5, 0.5],
+                        tileMode: TileMode.repeated,
+                        transform: const GradientRotation(0.1),
+                      ),
+                      backgroundBlendMode: BlendMode.overlay,
                     ),
-                    backgroundBlendMode: BlendMode.overlay,
                   ),
                 ),
               ),
-            ),
 
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: TweenAnimationBuilder<double>(
+            TweenAnimationBuilder<double>(
               key: ValueKey('${progress}_$navIndex'),
               tween: Tween<double>(begin: 0.0, end: progress),
               duration: const Duration(milliseconds: 1200),
@@ -661,8 +665,8 @@ class _WishlistProgressCard extends StatelessWidget {
                       children: [
                         // Image Frame
                         Container(
-                          width: 80,
-                          height: 80,
+                          width: 85, // [Sync] Scaled up for larger card
+                          height: 85, // [Sync] Scaled up for larger card
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
@@ -690,7 +694,7 @@ class _WishlistProgressCard extends StatelessWidget {
                                   ),
                                 ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 12), // [Fix] Consistent spacing
                         // Title & Percentage
                         Expanded(
                           child: Column(
@@ -720,7 +724,7 @@ class _WishlistProgressCard extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.only(
                                       left: 4.0,
-                                      right: 12.0,
+                                      right: 0.0,
                                     ),
                                     child: Text(
                                       '${(animatedProgress * 100).toStringAsFixed(1)}%',
@@ -744,8 +748,7 @@ class _WishlistProgressCard extends StatelessWidget {
                       ],
                     ),
 
-                    const SizedBox(height: 10),
-
+                    const SizedBox(height: 12), // [Fix] Consistent rhythm
                     // Status Message (Above Gauge)
                     if (!isPureFinance)
                       Padding(
@@ -753,16 +756,13 @@ class _WishlistProgressCard extends StatelessWidget {
                         child: Row(
                           children: [
                             Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: colors.accent,
-                                    shape: BoxShape.circle,
-                                  ),
-                                )
-                                .animate(onPlay: (c) => c.repeat())
-                                .fadeIn(duration: 500.ms)
-                                .fadeOut(delay: 500.ms),
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: colors.accent,
+                                shape: BoxShape.circle,
+                              ),
+                            ), // [Fix] Removed infinite animation to prevent freeze
                             const SizedBox(width: 6),
                             Text(
                               '실시간 저축 분석중...',
@@ -777,111 +777,123 @@ class _WishlistProgressCard extends StatelessWidget {
                         ),
                       ),
 
-                    // 3. Middle Quadrant: Wide Laser Gauge + Ruler
-                    Column(
-                      children: [
-                        Stack(
-                          alignment: Alignment.centerLeft,
-                          children: [
-                            // Background Bar
-                            Container(
-                              height: 12,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: isPureFinance
-                                    ? colors.border.withValues(alpha: 0.3)
-                                    : Colors.white.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                            ),
-                            // Active Laser Bar
-                            Builder(
-                              builder: (context) {
-                                final safeProgress = animatedProgress.clamp(
-                                  0.0,
-                                  1.0,
-                                );
-                                final barWidth =
-                                    (MediaQuery.of(context).size.width - 64) *
-                                    safeProgress;
+                    if (isPureFinance)
+                      const SizedBox(height: 10) // [Redesign] 16 -> 10
+                    else
+                      const SizedBox(height: 10),
 
-                                return Stack(
-                                  alignment: Alignment.centerRight,
-                                  children: [
-                                    // Neon Glow (Blur)
-                                    if (!isPureFinance && safeProgress > 0.05)
-                                      Container(
-                                        height: 12,
-                                        width: barWidth,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: colors.accent.withValues(
-                                                alpha: 0.6,
-                                              ),
-                                              blurRadius: 8,
-                                              spreadRadius: 1,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    // Main Bar (Laser)
-                                    Container(
-                                      height: 12,
-                                      width: barWidth,
-                                      decoration: BoxDecoration(
-                                        gradient: isPureFinance
-                                            ? null
-                                            : LinearGradient(
-                                                colors: [
-                                                  colors.accent.withValues(
-                                                    alpha: 0.7,
-                                                  ),
-                                                  colors.accent,
-                                                ],
-                                              ),
-                                        color: isPureFinance
-                                            ? colors.accent
-                                            : null,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        // Ruler Notches
-                        if (!isPureFinance)
-                          SizedBox(
-                            height: 8,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: List.generate(21, (index) {
-                                final isMajor = index % 2 == 0; // 0, 10, 20...
-                                return Container(
-                                  width: 1,
-                                  height: isMajor ? 6 : 3,
-                                  color: Colors.white.withValues(
-                                    alpha: isMajor ? 0.3 : 0.1,
+                    // 3. Middle Quadrant: Wide Laser Gauge + Ruler
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Column(
+                          children: [
+                            Stack(
+                              alignment: Alignment.centerLeft,
+                              children: [
+                                // Background Bar
+                                Container(
+                                  height: 12,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: isPureFinance
+                                        ? colors.border.withValues(alpha: 0.3)
+                                        : Colors.white.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
-                                );
-                              }),
+                                ),
+                                // Active Laser Bar
+                                Builder(
+                                  builder: (context) {
+                                    final safeProgress = animatedProgress.clamp(
+                                      0.0,
+                                      1.0,
+                                    );
+                                    // [Fix] Use constraints.maxWidth for accurate gauge width
+                                    final barWidth =
+                                        constraints.maxWidth * safeProgress;
+
+                                    return Stack(
+                                      alignment: Alignment.centerRight,
+                                      children: [
+                                        // Neon Glow (Blur)
+                                        if (!isPureFinance &&
+                                            safeProgress > 0.05)
+                                          Container(
+                                            height: 12,
+                                            width: barWidth,
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: colors.accent
+                                                      .withValues(alpha: 0.6),
+                                                  blurRadius: 8,
+                                                  spreadRadius: 1,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        // Main Bar (Laser)
+                                        Container(
+                                          height: 12,
+                                          width: barWidth,
+                                          decoration: BoxDecoration(
+                                            gradient: isPureFinance
+                                                ? null
+                                                : LinearGradient(
+                                                    colors: [
+                                                      colors.accent.withValues(
+                                                        alpha: 0.7,
+                                                      ),
+                                                      colors.accent,
+                                                    ],
+                                                  ),
+                                            color: isPureFinance
+                                                ? colors.accent
+                                                : null,
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
-                          ),
-                      ],
+                            const SizedBox(height: 6),
+                            // Ruler Notches
+                            if (!isPureFinance)
+                              SizedBox(
+                                height: 8,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: List.generate(21, (index) {
+                                    final isMajor =
+                                        index % 2 == 0; // 0, 10, 20...
+                                    return Container(
+                                      width: 1,
+                                      height: isMajor ? 6 : 3,
+                                      color: Colors.white.withValues(
+                                        alpha: isMajor ? 0.3 : 0.1,
+                                      ),
+                                    );
+                                  }),
+                                ),
+                              ),
+                          ],
+                        );
+                      },
                     ),
 
-                    const SizedBox(height: 12),
-
+                    const SizedBox(height: 16), // [Fix] Consistent rhythm
                     // 4. Bottom Quadrant: Data Reality
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment
+                          .spaceBetween, // [Sync] Sharp alignment
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         // Current / Target Amount (Left side - 60% width)
@@ -896,10 +908,12 @@ class _WishlistProgressCard extends StatelessWidget {
                                   color:
                                       (isPureFinance
                                               ? const Color(0xFF8B95A1)
-                                              : Colors.white24)
-                                          .withValues(alpha: 0.5),
+                                              : Colors
+                                                    .white70) // [Readability] Increased opacity
+                                          .withValues(alpha: 0.75),
                                   fontSize: 7,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight
+                                      .w500, // [Readability] Improved weight
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -934,10 +948,12 @@ class _WishlistProgressCard extends StatelessWidget {
                                   color:
                                       (isPureFinance
                                               ? const Color(0xFF8B95A1)
-                                              : Colors.white24)
-                                          .withValues(alpha: 0.5),
+                                              : Colors
+                                                    .white70) // [Readability] Increased opacity
+                                          .withValues(alpha: 0.75),
                                   fontSize: 7,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight
+                                      .w500, // [Readability] Improved weight
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -978,8 +994,8 @@ class _WishlistProgressCard extends StatelessWidget {
                 );
               },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

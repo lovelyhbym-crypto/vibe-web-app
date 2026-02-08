@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/ui/background_gradient.dart';
-import '../../../core/ui/glass_card.dart';
 import '../../../core/utils/i18n.dart';
 import '../../wishlist/domain/wishlist_model.dart';
 import '../providers/wishlist_provider.dart';
@@ -20,7 +19,6 @@ import 'package:nerve/features/auth/providers/user_profile_provider.dart';
 import '../../../core/services/sound_service.dart';
 import '../../../core/services/haptic_service.dart';
 import 'widgets/countdown_timer_widget.dart';
-import 'package:nerve/core/ui/floating_input_field.dart';
 import '../../../core/ui/bouncy_button.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {
@@ -953,7 +951,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                       height: height,
                                       progress: value,
                                     ),
-                                    // [Refinement] Image-Timer Vignette
+                                    // [Refinement] Image-Timer Vignette & Atmosphere Fade
                                     Positioned.fill(
                                       child: DecoratedBox(
                                         decoration: BoxDecoration(
@@ -962,11 +960,19 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                             end: Alignment.topCenter,
                                             colors: [
                                               Colors.black.withValues(
-                                                alpha: 0.8,
+                                                alpha: 0.9,
                                               ),
+                                              // Tension Hint: Red if Broken, Lime if Active
+                                              item.isBroken
+                                                  ? const Color(
+                                                      0xFF8B0000,
+                                                    ).withValues(alpha: 0.4)
+                                                  : const Color(
+                                                      0xFFD4FF00,
+                                                    ).withValues(alpha: 0.1),
                                               Colors.transparent,
                                             ],
-                                            stops: const [0.0, 0.4],
+                                            stops: const [0.0, 0.15, 0.5],
                                           ),
                                         ),
                                       ),
@@ -1211,120 +1217,141 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                           ),
 
                         const SizedBox(
-                          height: 36,
+                          height: 24,
                         ), // Increased spacing to separate from Daily Goal
-                        // Price Info Block (Grouping Price & Remaining)
+                        // [Redesign] Utility Box (Data Section)
                         Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '총 가격',
-                                      style: TextStyle(
-                                        color: isPureFinance
-                                            ? colors.textSub
-                                            : Colors.white38,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.normal,
-                                      ),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.2),
+                            border: Border.all(
+                              color: const Color(
+                                0xFF3A4A2A,
+                              ), // [Localize] Dark lime
+                              width: 0.8, // [Localize] Reduced thickness
+                            ),
+                          ),
+                          child: IntrinsicHeight(
+                            child: Row(
+                              children: [
+                                // Left: Total Price
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                      horizontal: 16,
                                     ),
-                                    const SizedBox(height: 4),
-                                    _isEditing
-                                        ? TextField(
-                                            controller: _priceController,
-                                            keyboardType: TextInputType.number,
-                                            style: GoogleFonts.robotoMono(
-                                              color: isPureFinance
-                                                  ? colors.accent
-                                                  : Colors.blueAccent,
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: -0.5,
-                                            ),
-                                            decoration: InputDecoration(
-                                              filled: true,
-                                              fillColor: colors.surface,
-                                              border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                borderSide: BorderSide.none,
-                                              ),
-                                              enabledBorder: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                borderSide: isPureFinance
-                                                    ? BorderSide.none
-                                                    : BorderSide(
-                                                        color: colors.accent
-                                                            .withValues(
-                                                              alpha: 0.5,
-                                                            ),
-                                                      ),
-                                              ),
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 8,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '총 목표 금액', // [Localize] Korean
+                                          style: GoogleFonts.robotoMono(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.6,
+                                            ), // [Localize] Gray instead of red
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.0,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        _isEditing
+                                            ? TextField(
+                                                controller: _priceController,
+                                                keyboardType:
+                                                    TextInputType.number,
+                                                style: GoogleFonts.robotoMono(
+                                                  color: isPureFinance
+                                                      ? colors.accent
+                                                      : const Color(0xFFD4FF00),
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  letterSpacing: -0.5,
+                                                ),
+                                                decoration:
+                                                    const InputDecoration(
+                                                      border: InputBorder.none,
+                                                      isDense: true,
+                                                      contentPadding:
+                                                          EdgeInsets.zero,
+                                                    ),
+                                              )
+                                            : FittedBox(
+                                                fit: BoxFit.scaleDown,
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(
+                                                  i18n.formatCurrency(
+                                                    item.totalGoal,
                                                   ),
-                                              suffixText: '원',
-                                              helperText: '수정할 목표 금액을 입력하세요',
-                                              helperStyle: TextStyle(
-                                                color: isPureFinance
-                                                    ? colors.textSub
-                                                    : Colors.white60,
+                                                  style: GoogleFonts.robotoMono(
+                                                    color: isPureFinance
+                                                        ? colors.textMain
+                                                        : Colors.white,
+                                                    fontSize: 24,
+                                                    fontWeight: FontWeight.bold,
+                                                    letterSpacing: -1.0,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          )
-                                        : Text(
-                                            i18n.formatCurrency(item.totalGoal),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                // Vertical Divider (Thin Neon)
+                                Container(
+                                  width: 1,
+                                  color: colors.accent.withValues(alpha: 0.3),
+                                ),
+                                // Right: Remaining
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                      horizontal: 16,
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          '남은 금액', // [Localize] Korean
+                                          style: GoogleFonts.robotoMono(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.6,
+                                            ), // [Localize] Gray instead of red
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 1.0,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            i18n.formatCurrency(remaining),
                                             style: GoogleFonts.robotoMono(
                                               color: isPureFinance
                                                   ? colors.textMain
                                                   : Colors.white,
-                                              fontSize: 20,
+                                              fontSize: 24,
                                               fontWeight: FontWeight.bold,
-                                              letterSpacing: -0.5,
+                                              letterSpacing: -1.0,
                                             ),
                                           ),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      '남은 금액',
-                                      style: TextStyle(
-                                        color: isPureFinance
-                                            ? colors.textSub
-                                            : Colors.white38,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.normal,
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      i18n.formatCurrency(remaining),
-                                      style: GoogleFonts.robotoMono(
-                                        color: isPureFinance
-                                            ? colors.textMain
-                                            : Colors.white,
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: -0.5,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
 
@@ -1346,11 +1373,14 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                     Text(
                                       '성공 확률 : ',
                                       style: TextStyle(
-                                        color: isPureFinance
-                                            ? colors.textSub
-                                            : Colors.white38,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.normal,
+                                        color:
+                                            (isPureFinance
+                                                    ? const Color(0xFF8B95A1)
+                                                    : Colors.white70)
+                                                .withValues(alpha: 0.75),
+                                        fontSize: 7,
+                                        fontWeight: FontWeight.w500,
+                                        letterSpacing: 0.5,
                                       ),
                                     ),
                                     Text(
@@ -1569,57 +1599,128 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                           ],
                         ),
                         const SizedBox(height: 16),
-                        GlassCard(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 10,
-                          ),
+                        const SizedBox(height: 16),
+                        // [Redesign] Protocol Input (Penalty)
+                        Container(
                           width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.6),
+                            border: Border.all(
+                              color: isPureFinance
+                                  ? colors.border
+                                  : Colors.white24,
+                              width: 1,
+                            ),
+                            // Scanline Gradient
+                            gradient: isPureFinance
+                                ? null
+                                : LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.black.withValues(alpha: 0.8),
+                                    ],
+                                    stops: const [0.5, 0.5],
+                                    tileMode: TileMode.repeated,
+                                    transform: const GradientRotation(
+                                      0.1,
+                                    ), // Slight angle
+                                  ),
+                          ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              FloatingInputField(
-                                controller: _penaltyController,
-                                label: (item.isAchieved || progress >= 1.0)
-                                    ? "성공한 목표에는 벌칙이 없습니다"
-                                    : "실패 시 수행할 벌칙을 입력하세요",
-                                readOnly: item.isAchieved || progress >= 1.0,
-                                maxLines: 4,
-                                style: TextStyle(
+                              // Header Bar
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
                                   color: isPureFinance
-                                      ? colors.textMain
-                                      : Colors.white,
-                                  fontSize: 16,
-                                  height: 1.5,
+                                      ? colors.border.withValues(alpha: 0.3)
+                                      : Colors.white.withValues(alpha: 0.1),
+                                  border: Border(
+                                    bottom: BorderSide(
+                                      color: isPureFinance
+                                          ? colors.border
+                                          : Colors.white12,
+                                      width: 1,
+                                    ),
+                                  ),
                                 ),
-                                accentColor: isPureFinance
-                                    ? colors.accent
-                                    : const Color(0xFFD4FF00),
+                                child: Text(
+                                  "벌칙 프로토콜 입력", // [Update] Changed from 이행 to 벌칙
+                                  style: GoogleFonts.robotoMono(
+                                    fontSize: 10,
+                                    color: isPureFinance
+                                        ? colors.textSub
+                                        : Colors.white54,
+                                    letterSpacing: 1.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
-                              if (_hasChanges)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child:
-                                      Text(
-                                            '수정 사항이 있습니다. 하단의 SAVE 버튼을 눌러 확정하세요.',
-                                            style: TextStyle(
-                                              color: isPureFinance
-                                                  ? colors.accent
-                                                  : const Color(0xFFD4FF00),
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          )
-                                          .animate(
-                                            onPlay: (controller) => controller
-                                                .repeat(reverse: true),
-                                          )
-                                          .fadeIn(duration: 1000.ms)
-                                          .fadeOut(duration: 1000.ms),
+                              // Edit Area
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: TextField(
+                                  controller: _penaltyController,
+                                  enabled:
+                                      !(item.isAchieved || progress >= 1.0),
+                                  maxLines: 4,
+                                  style: TextStyle(
+                                    color: isPureFinance
+                                        ? colors.textMain
+                                        : Colors.white,
+                                    fontSize: 15,
+                                    height: 1.5,
+                                    fontFamily: 'Courier', // Monospace feel
+                                  ),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    hintText:
+                                        (item.isAchieved || progress >= 1.0)
+                                        ? "프로토콜이 완료되었습니다."
+                                        : "실패 시 수행할 벌칙 프로토콜을 입력하세요", // [Localize] Removed >ㅡ
+                                    hintStyle: TextStyle(
+                                      color: isPureFinance
+                                          ? colors.textSub
+                                          : Colors.white30,
+                                      fontSize: 14,
+                                      fontFamily:
+                                          'Courier', // [Localize] Monospace
+                                    ),
+                                  ),
                                 ),
+                              ),
                             ],
                           ),
                         ),
+                        if (_hasChanges)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child:
+                                Text(
+                                      '수정 사항이 있습니다. 하단의 SAVE 버튼을 눌러 확정하세요.',
+                                      style: TextStyle(
+                                        color: isPureFinance
+                                            ? colors.accent
+                                            : const Color(0xFFD4FF00),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                    .animate(
+                                      onPlay: (controller) =>
+                                          controller.repeat(reverse: true),
+                                    )
+                                    .fadeIn(duration: 1000.ms)
+                                    .fadeOut(duration: 1000.ms),
+                          ),
 
                         const SizedBox(height: 160), // Bottom padding
                       ],
@@ -1684,7 +1785,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                         ],
                       ),
                       child: Text(
-                        "SAVE CHANGES",
+                        "설정 확정", // [Localize] Korean
                         style: GoogleFonts.robotoMono(
                           color: Colors.black,
                           fontWeight: FontWeight.w900,
