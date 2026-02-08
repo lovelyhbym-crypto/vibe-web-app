@@ -645,7 +645,7 @@ class _WishlistProgressCard extends StatelessWidget {
             ),
 
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: TweenAnimationBuilder<double>(
               key: ValueKey('${progress}_$navIndex'),
               tween: Tween<double>(begin: 0.0, end: progress),
@@ -661,8 +661,8 @@ class _WishlistProgressCard extends StatelessWidget {
                       children: [
                         // Image Frame
                         Container(
-                          width: 70,
-                          height: 70,
+                          width: 80,
+                          height: 80,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
@@ -727,7 +727,7 @@ class _WishlistProgressCard extends StatelessWidget {
                                       style: TextStyle(
                                         fontFamily: 'Courier',
                                         fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.w300,
                                         color: animatedProgress < 0
                                             ? colors.danger
                                             : (isPureFinance
@@ -744,12 +744,12 @@ class _WishlistProgressCard extends StatelessWidget {
                       ],
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
 
                     // Status Message (Above Gauge)
                     if (!isPureFinance)
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 6.0),
+                        padding: const EdgeInsets.only(bottom: 8.0),
                         child: Row(
                           children: [
                             Container(
@@ -785,13 +785,13 @@ class _WishlistProgressCard extends StatelessWidget {
                           children: [
                             // Background Bar
                             Container(
-                              height: 10,
+                              height: 12,
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 color: isPureFinance
                                     ? colors.border.withValues(alpha: 0.3)
                                     : Colors.white.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(5),
+                                borderRadius: BorderRadius.circular(6),
                               ),
                             ),
                             // Active Laser Bar
@@ -811,11 +811,11 @@ class _WishlistProgressCard extends StatelessWidget {
                                     // Neon Glow (Blur)
                                     if (!isPureFinance && safeProgress > 0.05)
                                       Container(
-                                        height: 10,
+                                        height: 12,
                                         width: barWidth,
                                         decoration: BoxDecoration(
                                           borderRadius: BorderRadius.circular(
-                                            5,
+                                            6,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
@@ -830,7 +830,7 @@ class _WishlistProgressCard extends StatelessWidget {
                                       ),
                                     // Main Bar (Laser)
                                     Container(
-                                      height: 10,
+                                      height: 12,
                                       width: barWidth,
                                       decoration: BoxDecoration(
                                         gradient: isPureFinance
@@ -846,7 +846,7 @@ class _WishlistProgressCard extends StatelessWidget {
                                         color: isPureFinance
                                             ? colors.accent
                                             : null,
-                                        borderRadius: BorderRadius.circular(5),
+                                        borderRadius: BorderRadius.circular(6),
                                       ),
                                     ),
                                   ],
@@ -855,7 +855,7 @@ class _WishlistProgressCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         // Ruler Notches
                         if (!isPureFinance)
                           SizedBox(
@@ -877,15 +877,16 @@ class _WishlistProgressCard extends StatelessWidget {
                       ],
                     ),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 14),
 
                     // 4. Bottom Quadrant: Data Reality
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        // Current / Target Amount (Left side)
+                        // Current / Target Amount (Left side - 60% width)
                         Expanded(
+                          flex: 6,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -895,7 +896,7 @@ class _WishlistProgressCard extends StatelessWidget {
                                   color: isPureFinance
                                       ? const Color(0xFF8B95A1)
                                       : Colors.white24,
-                                  fontSize: 8,
+                                  fontSize: 6,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
                                 ),
@@ -919,8 +920,9 @@ class _WishlistProgressCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
 
-                        // Remaining Amount (Right Side)
-                        Flexible(
+                        // Remaining Amount (Right Side - 40% width)
+                        Expanded(
+                          flex: 4,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
@@ -930,7 +932,7 @@ class _WishlistProgressCard extends StatelessWidget {
                                   color: isPureFinance
                                       ? const Color(0xFF8B95A1)
                                       : Colors.white24,
-                                  fontSize: 9,
+                                  fontSize: 6,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
                                 ),
