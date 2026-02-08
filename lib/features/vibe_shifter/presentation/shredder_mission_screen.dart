@@ -199,8 +199,7 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
 
     // Fixed size container reference (320x480)
     const double w = 320;
-    const double h =
-        600; // OVERSHOOT: Generating longer cracks to ensure they reach screen bottom
+    const double h = 480; // 사진 높이에 딱 맞춤
 
     if (isHorizontal) {
       // Left to Right crack
@@ -983,7 +982,8 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
                     },
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
-                      clipBehavior: Clip.antiAlias,
+                      clipBehavior:
+                          Clip.antiAliasWithSaveLayer, // Stronger clipping
                       child: Container(
                         width: double.infinity,
                         height: double.infinity,
@@ -995,34 +995,105 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
                             if (_targetType == _TargetType.image &&
                                 _targetImage != null)
                               Center(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Image.file(
-                                    File(_targetImage!.path),
-                                    fit: BoxFit.cover,
-                                  ),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    ColorFiltered(
+                                      colorFilter: _crackPaths.isNotEmpty
+                                          ? const ColorFilter.matrix([
+                                              0.7,
+                                              0,
+                                              0,
+                                              0,
+                                              0,
+                                              0,
+                                              0.7,
+                                              0,
+                                              0,
+                                              0,
+                                              0,
+                                              0,
+                                              0.7,
+                                              0,
+                                              0,
+                                              0,
+                                              0,
+                                              0,
+                                              1,
+                                              0,
+                                            ])
+                                          : const ColorFilter.mode(
+                                              Colors.transparent,
+                                              BlendMode.dst,
+                                            ),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(16),
+                                        clipBehavior:
+                                            Clip.antiAliasWithSaveLayer,
+                                        child: Image.file(
+                                          File(_targetImage!.path),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                    // CRACKS internal to Image bounds - using Positioned.fill to match sibling size
+                                    Positioned.fill(
+                                      child: IgnorePointer(
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          clipBehavior:
+                                              Clip.antiAliasWithSaveLayer,
+                                          child: CustomPaint(
+                                            painter: CrackPainter(_crackPaths),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               )
                             else
                               Center(
-                                child: ShatterReceiptWidget(
-                                  targetName:
-                                      (_targetText != null &&
-                                          _targetText!.isNotEmpty)
-                                      ? _targetText!
-                                      : "유혹 파쇄 시스템",
-                                  savedAmount: _randomSavedAmount,
-                                  damageLevel: damagePercent,
+                                child: ColorFiltered(
+                                  // [Visual Enhancement] Darken and desaturate when cracks appear
+                                  colorFilter: _crackPaths.isNotEmpty
+                                      ? const ColorFilter.matrix([
+                                          // Reduce brightness by 30% and saturation
+                                          0.7, 0, 0, 0, 0,
+                                          0, 0.7, 0, 0, 0,
+                                          0, 0, 0.7, 0, 0,
+                                          0, 0, 0, 1, 0,
+                                        ])
+                                      : const ColorFilter.mode(
+                                          Colors.transparent,
+                                          BlendMode.dst,
+                                        ),
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      ShatterReceiptWidget(
+                                        targetName:
+                                            (_targetText != null &&
+                                                _targetText!.isNotEmpty)
+                                            ? _targetText!
+                                            : "유혹 파쇄 시스템",
+                                        savedAmount: _randomSavedAmount,
+                                        damageLevel: damagePercent,
+                                      ),
+                                      // CRACKS internal to Receipt bounds - using Positioned.fill to match sibling size
+                                      Positioned.fill(
+                                        child: IgnorePointer(
+                                          child: CustomPaint(
+                                            painter: CrackPainter(_crackPaths),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-
-                            // BLACK CRACKS (Overlayed on both)
-                            IgnorePointer(
-                              child: CustomPaint(
-                                painter: CrackPainter(_crackPaths),
-                                size: Size.infinite,
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -1247,7 +1318,6 @@ class _ShredderMissionScreenState extends ConsumerState<ShredderMissionScreen>
   }
 }
 
-// Simple Painter without Blur
 class CrackPainter extends CustomPainter {
   final List<Path> cracks;
 
@@ -1257,15 +1327,35 @@ class CrackPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (cracks.isEmpty) return;
 
-    final paint = Paint()
-      ..color = Colors.black
-          .withOpacity(0.9) // Black cracks
+    // [핵심 수정] 캔버스 강제 클리핑 (Hardware Clipping)
+    // 그리기 시작 전에 캔버스 영역을 '둥근 사각형(Radius 16)'으로 강제 고정합니다.
+    // 이렇게 하면 경로(Path)가 600px까지 내려가도, 480px(size.height) 밑으로는
+    // 물리적으로 그려지지 않습니다.
+    canvas.clipRRect(
+      RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(16)),
+    );
+
+    // Step 1: Draw outer glow (Screen blend mode effect)
+    // Neon lime glow (or White based on preference)
+    final glowPaint = Paint()
+      ..color = const Color(0xFFD4FF00)
+          .withValues(alpha: 0.5) // 최신 문법 적용
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+
+    // Step 2: Draw main crack (Multiply blend mode effect)
+    final crackPaint = Paint()
+      ..color = const Color(0xFF000000)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.butt; // Sharp cap
+      ..strokeCap = StrokeCap.butt
+      ..blendMode = BlendMode.multiply;
 
     for (final path in cracks) {
-      canvas.drawPath(path, paint);
+      canvas.drawPath(path, glowPaint);
+      canvas.drawPath(path, crackPaint);
     }
   }
 
