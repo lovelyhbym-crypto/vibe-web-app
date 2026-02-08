@@ -877,7 +877,7 @@ class _WishlistProgressCard extends StatelessWidget {
                       ],
                     ),
 
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
 
                     // 4. Bottom Quadrant: Data Reality
                     Row(
@@ -893,10 +893,12 @@ class _WishlistProgressCard extends StatelessWidget {
                               Text(
                                 '현재 금액 / 목표 금액',
                                 style: TextStyle(
-                                  color: isPureFinance
-                                      ? const Color(0xFF8B95A1)
-                                      : Colors.white24,
-                                  fontSize: 6,
+                                  color:
+                                      (isPureFinance
+                                              ? const Color(0xFF8B95A1)
+                                              : Colors.white24)
+                                          .withValues(alpha: 0.5),
+                                  fontSize: 7,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
                                 ),
@@ -929,10 +931,12 @@ class _WishlistProgressCard extends StatelessWidget {
                               Text(
                                 '남은 금액',
                                 style: TextStyle(
-                                  color: isPureFinance
-                                      ? const Color(0xFF8B95A1)
-                                      : Colors.white24,
-                                  fontSize: 6,
+                                  color:
+                                      (isPureFinance
+                                              ? const Color(0xFF8B95A1)
+                                              : Colors.white24)
+                                          .withValues(alpha: 0.5),
+                                  fontSize: 7,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
                                 ),
