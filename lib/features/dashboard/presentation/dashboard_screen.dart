@@ -486,7 +486,7 @@ class _GoalCarouselState extends ConsumerState<_GoalCarousel> {
     return Column(
       children: [
         SizedBox(
-          height: 220,
+          height: 260,
           child: PageView.builder(
             controller: _pageController,
             itemCount: itemCount,
@@ -582,7 +582,8 @@ class _WishlistProgressCard extends StatelessWidget {
     final title = topWishlist.title;
     final total = topWishlist.totalGoal;
     final saved = topWishlist.savedAmount;
-    final progress = total > 0 ? (saved / total).clamp(0.0, 1.0) : 0.0;
+    final penalty = topWishlist.penaltyAmount ?? 0.0;
+    final progress = total > 0 ? ((saved - penalty) / total) : 0.0;
 
     // Theme logic
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
@@ -617,281 +618,362 @@ class _WishlistProgressCard extends StatelessWidget {
                 ),
               ],
       ),
-      child: TweenAnimationBuilder<double>(
-        key: ValueKey('${progress}_$navIndex'),
-        tween: Tween<double>(begin: 0.0, end: progress),
-        duration: const Duration(milliseconds: 1200),
-        curve: Curves.easeOutCubic,
-        builder: (context, animatedProgress, child) {
-          final percentage = (animatedProgress * 100).toInt();
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1 & 2. Upper Quadrant: Image & Title row
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Image Frame
-                  Container(
-                    width: 70,
-                    height: 70,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isPureFinance
-                            ? colors.border
-                            : colors.accent.withValues(alpha: 0.5),
-                        width: 1.5,
-                      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          // Scanline Texture Overlay (Only for Cyberpunk/Vibe mode)
+          if (!isPureFinance)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.05),
+                      ],
+                      stops: const [0.5, 0.5],
+                      tileMode: TileMode.repeated,
+                      transform: const GradientRotation(0.1),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: imageUrl != null
-                        ? Image.network(
-                            imageUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, _, __) => Icon(
-                              Icons.image_not_supported,
-                              color: colors.textSub,
-                            ),
-                          )
-                        : Container(
-                            color: colors.border.withValues(alpha: 0.3),
-                            child: Icon(Icons.flag, color: colors.textSub),
-                          ),
+                    backgroundBlendMode: BlendMode.overlay,
                   ),
-                  const SizedBox(width: 12),
-                  // Title & %
-                  Expanded(
-                    child: SizedBox(
-                      height: 70,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  '[ 목표 : $title ]',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w900,
-                                    color: colors.textMain,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '$percentage%',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w900,
-                                  color: isPureFinance
-                                      ? colors.textMain
-                                      : colors.accent,
-                                  fontFamily: 'Courier',
-                                  letterSpacing: -1,
-                                ),
-                              ),
-                            ],
-                          ),
-                          // State Message for aesthetics
-                          if (!isPureFinance)
-                            Row(
-                              children: [
-                                Container(
-                                      width: 6,
-                                      height: 6,
-                                      decoration: BoxDecoration(
-                                        color: colors.accent,
-                                        shape: BoxShape.circle,
-                                      ),
-                                    )
-                                    .animate(onPlay: (c) => c.repeat())
-                                    .fadeIn(duration: 500.ms)
-                                    .fadeOut(delay: 500.ms),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '실시간 저축 분석 중...',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    color: colors.accent.withValues(alpha: 0.7),
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
+            ),
 
-              const SizedBox(height: 16),
-
-              // 3. Middle Quadrant: Wide Laser Gauge + Ruler
-              Column(
-                children: [
-                  Stack(
-                    alignment: Alignment.centerLeft,
-                    children: [
-                      // Background Bar
-                      Container(
-                        height: 10,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: isPureFinance
-                              ? colors.border.withValues(alpha: 0.3)
-                              : Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(5),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: TweenAnimationBuilder<double>(
+              key: ValueKey('${progress}_$navIndex'),
+              tween: Tween<double>(begin: 0.0, end: progress),
+              duration: const Duration(milliseconds: 1200),
+              curve: Curves.easeOutCubic,
+              builder: (context, animatedProgress, child) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1 & 2. Upper Quadrant: Image & Title row
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Image Frame
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isPureFinance
+                                  ? colors.border
+                                  : colors.accent.withValues(alpha: 0.5),
+                              width: 1.5,
+                            ),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: imageUrl != null
+                              ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, _, __) => Icon(
+                                    Icons.image_not_supported,
+                                    color: colors.textSub,
+                                  ),
+                                )
+                              : Container(
+                                  color: colors.border.withValues(alpha: 0.3),
+                                  child: Icon(
+                                    Icons.flag,
+                                    color: colors.textSub,
+                                  ),
+                                ),
                         ),
-                      ),
-                      // Active Laser Bar
-                      Stack(
-                        alignment: Alignment.centerRight,
-                        children: [
-                          // Neon Glow (Blur)
-                          if (!isPureFinance && animatedProgress > 0.05)
-                            Container(
-                              height: 10,
-                              width:
-                                  (MediaQuery.of(context).size.width - 64) *
-                                  animatedProgress,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(5),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: colors.accent.withValues(alpha: 0.6),
-                                    blurRadius: 8,
-                                    spreadRadius: 1,
+                        const SizedBox(width: 12),
+                        // Title & Percentage
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Title and Percentage Row
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      title,
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w900,
+                                        color: colors.textMain,
+                                        letterSpacing: -0.5,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  // Percentage Display (Top Right)
+                                  Container(
+                                    padding: const EdgeInsets.only(
+                                      left: 4.0,
+                                      right: 12.0,
+                                    ),
+                                    child: Text(
+                                      '${(animatedProgress * 100).toStringAsFixed(1)}%',
+                                      style: TextStyle(
+                                        fontFamily: 'Courier',
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: animatedProgress < 0
+                                            ? colors.danger
+                                            : (isPureFinance
+                                                  ? colors.accent
+                                                  : colors.accent),
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
-                            ),
-                          // Main Bar (Laser)
-                          Container(
-                            height: 10,
-                            width:
-                                (MediaQuery.of(context).size.width - 64) *
-                                animatedProgress,
-                            decoration: BoxDecoration(
-                              gradient: isPureFinance
-                                  ? null
-                                  : LinearGradient(
-                                      colors: [
-                                        colors.accent.withValues(alpha: 0.7),
-                                        colors.accent,
-                                      ],
-                                    ),
-                              color: isPureFinance ? colors.accent : null,
-                              borderRadius: BorderRadius.circular(5),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  // Ruler Notches
-                  if (!isPureFinance)
-                    SizedBox(
-                      height: 8,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: List.generate(21, (index) {
-                          final isMajor = index % 2 == 0; // 0, 10, 20...
-                          return Container(
-                            width: 1,
-                            height: isMajor ? 6 : 3,
-                            color: Colors.white.withValues(
-                              alpha: isMajor ? 0.3 : 0.1,
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                ],
-              ),
-
-              const SizedBox(height: 16),
-
-              // 4. Bottom Quadrant: Data Reality
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  // Amount (Left side - Secondary)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '현재 / 목표',
-                        style: TextStyle(
-                          fontSize: 8,
-                          color: colors.textSub,
-                          fontWeight: FontWeight.bold,
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      RichText(
-                        text: TextSpan(
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: colors.textSub,
-                            fontFamily: 'Courier',
-                          ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Status Message (Above Gauge)
+                    if (!isPureFinance)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6.0),
+                        child: Row(
                           children: [
-                            TextSpan(
-                              text: NumberFormat.simpleCurrency(
-                                locale: 'ko_KR',
-                              ).format(saved).replaceAll('₩', ''),
-                              style: const TextStyle(
+                            Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: colors.accent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                )
+                                .animate(onPlay: (c) => c.repeat())
+                                .fadeIn(duration: 500.ms)
+                                .fadeOut(delay: 500.ms),
+                            const SizedBox(width: 6),
+                            Text(
+                              '실시간 저축 분석중...',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: colors.accent.withValues(alpha: 0.7),
                                 fontWeight: FontWeight.bold,
+                                fontFamily: 'Courier',
                               ),
-                            ),
-                            const TextSpan(text: ' / '),
-                            TextSpan(
-                              text: NumberFormat.simpleCurrency(
-                                locale: 'ko_KR',
-                              ).format(total).replaceAll('₩', ''),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                  // Remaining Amount (Right side - Primary)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '남은 금액',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: colors.textSub,
-                          fontWeight: FontWeight.bold,
+
+                    // 3. Middle Quadrant: Wide Laser Gauge + Ruler
+                    Column(
+                      children: [
+                        Stack(
+                          alignment: Alignment.centerLeft,
+                          children: [
+                            // Background Bar
+                            Container(
+                              height: 10,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: isPureFinance
+                                    ? colors.border.withValues(alpha: 0.3)
+                                    : Colors.white.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                            ),
+                            // Active Laser Bar
+                            Builder(
+                              builder: (context) {
+                                final safeProgress = animatedProgress.clamp(
+                                  0.0,
+                                  1.0,
+                                );
+                                final barWidth =
+                                    (MediaQuery.of(context).size.width - 64) *
+                                    safeProgress;
+
+                                return Stack(
+                                  alignment: Alignment.centerRight,
+                                  children: [
+                                    // Neon Glow (Blur)
+                                    if (!isPureFinance && safeProgress > 0.05)
+                                      Container(
+                                        height: 10,
+                                        width: barWidth,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            5,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: colors.accent.withValues(
+                                                alpha: 0.6,
+                                              ),
+                                              blurRadius: 8,
+                                              spreadRadius: 1,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    // Main Bar (Laser)
+                                    Container(
+                                      height: 10,
+                                      width: barWidth,
+                                      decoration: BoxDecoration(
+                                        gradient: isPureFinance
+                                            ? null
+                                            : LinearGradient(
+                                                colors: [
+                                                  colors.accent.withValues(
+                                                    alpha: 0.7,
+                                                  ),
+                                                  colors.accent,
+                                                ],
+                                              ),
+                                        color: isPureFinance
+                                            ? colors.accent
+                                            : null,
+                                        borderRadius: BorderRadius.circular(5),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                      ),
-                      Text(
-                        '${NumberFormat.decimalPattern('ko_KR').format(remaining)}원',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: isPureFinance ? colors.textMain : Colors.white,
-                          letterSpacing: -1.0,
+                        const SizedBox(height: 4),
+                        // Ruler Notches
+                        if (!isPureFinance)
+                          SizedBox(
+                            height: 8,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: List.generate(21, (index) {
+                                final isMajor = index % 2 == 0; // 0, 10, 20...
+                                return Container(
+                                  width: 1,
+                                  height: isMajor ? 6 : 3,
+                                  color: Colors.white.withValues(
+                                    alpha: isMajor ? 0.3 : 0.1,
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // 4. Bottom Quadrant: Data Reality
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Current / Target Amount (Left side)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '현재 금액 / 목표 금액',
+                                style: TextStyle(
+                                  color: isPureFinance
+                                      ? const Color(0xFF8B95A1)
+                                      : Colors.white24,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${NumberFormat.decimalPattern('ko_KR').format(saved)} / ${NumberFormat.decimalPattern('ko_KR').format(total)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isPureFinance
+                                      ? colors.textMain
+                                      : Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'Courier',
+                                  letterSpacing: -0.3,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
+                        const SizedBox(width: 12),
+
+                        // Remaining Amount (Right Side)
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                '남은 금액',
+                                style: TextStyle(
+                                  color: isPureFinance
+                                      ? const Color(0xFF8B95A1)
+                                      : Colors.white24,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              TweenAnimationBuilder<double>(
+                                key: ValueKey(
+                                  'remaining_${remaining}_$navIndex',
+                                ),
+                                tween: Tween<double>(
+                                  begin: 0,
+                                  end: remaining.toDouble(),
+                                ),
+                                duration: const Duration(milliseconds: 1500),
+                                curve: Curves.easeOutExpo,
+                                builder: (context, value, child) {
+                                  return Text(
+                                    NumberFormat.decimalPattern(
+                                      'ko_KR',
+                                    ).format(value.toInt()),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: isPureFinance
+                                          ? colors.textMain
+                                          : Colors.white,
+                                      letterSpacing: -0.5,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

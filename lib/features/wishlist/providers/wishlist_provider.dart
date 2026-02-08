@@ -63,29 +63,38 @@ class WishlistNotifier extends _$WishlistNotifier {
 
     final items = safeResponse.map((e) => WishlistModel.fromJson(e)).toList();
 
-    // [Auto Update] 날짜가 바뀌었다면 모든 활성 아이템의 recordAccess 실행
+    return items;
+  }
+
+  /// UI에서 진입 시 한 번만 호출하여 날짜 체크 및 접속 기록 갱신
+  Future<void> checkAccess() async {
+    final wishlist = state.valueOrNull ?? [];
+    if (wishlist.isEmpty) return;
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    // 비동기 실행 (결과 기다리지 않음)
-    Future(() async {
-      for (final item in items) {
-        if (item.lastOpenedAt == null) {
-          await recordAccess(item.id!);
-        } else {
-          final last = DateTime(
-            item.lastOpenedAt!.year,
-            item.lastOpenedAt!.month,
-            item.lastOpenedAt!.day,
-          );
-          if (last.isBefore(today)) {
-            await recordAccess(item.id!);
-          }
+    for (final item in wishlist) {
+      if (item.id == null) continue;
+
+      bool shouldUpdate = false;
+      if (item.lastOpenedAt == null) {
+        shouldUpdate = true;
+      } else {
+        final last = DateTime(
+          item.lastOpenedAt!.year,
+          item.lastOpenedAt!.month,
+          item.lastOpenedAt!.day,
+        );
+        if (last.isBefore(today)) {
+          shouldUpdate = true;
         }
       }
-    });
 
-    return items;
+      if (shouldUpdate) {
+        await recordAccess(item.id!);
+      }
+    }
   }
 
   /// 사용자가 앱을 켰을 때 접속 기록 (lastOpenedAt) 갱신

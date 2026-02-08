@@ -1750,27 +1750,6 @@ class _TodaysRecordsList extends ConsumerStatefulWidget {
 
 class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
   bool _isExpanded = true;
-  int _previousCount = 0;
-  bool _isLongLoading = false;
-  Timer? _loadingTimer;
-
-  @override
-  void dispose() {
-    _loadingTimer?.cancel();
-    super.dispose();
-  }
-
-  void _startLoadingTimer() {
-    _loadingTimer?.cancel();
-    _isLongLoading = false;
-    _loadingTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _isLongLoading = true;
-        });
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1778,35 +1757,8 @@ class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
     final savingAsync = ref.watch(savingProvider);
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
 
-    // [Step 2] Auto-Expand Logic using ref.listen
-    ref.listen(savingProvider, (previous, next) {
-      next.whenData((savings) {
-        final now = DateTime.now();
-        final todayParams = DateTime(now.year, now.month, now.day);
-        final todaysCount = savings.where((s) {
-          final sDate = DateTime(
-            s.createdAt.year,
-            s.createdAt.month,
-            s.createdAt.day,
-          );
-          return sDate.isAtSameMomentAs(todayParams);
-        }).length;
-
-        if (todaysCount > _previousCount) {
-          setState(() {
-            _isExpanded = true;
-            _previousCount = todaysCount;
-          });
-        } else {
-          _previousCount = todaysCount;
-        }
-      });
-    });
-
     return savingAsync.when(
       data: (savings) {
-        _loadingTimer?.cancel(); // Cancel timer on success
-
         final now = DateTime.now();
         final todayParams = DateTime(now.year, now.month, now.day);
         final todaysRecords = savings.where((s) {
@@ -2014,18 +1966,6 @@ class _TodaysRecordsListState extends ConsumerState<_TodaysRecordsList> {
         );
       },
       loading: () {
-        _startLoadingTimer();
-        if (_isLongLoading) {
-          return Padding(
-            padding: const EdgeInsets.all(20),
-            child: Center(
-              child: Text(
-                "기록을 불러올 수 없습니다",
-                style: TextStyle(color: colors.textSub),
-              ),
-            ),
-          );
-        }
         return const Center(child: CircularProgressIndicator());
       },
       error: (e, st) => Text("Error: $e"),

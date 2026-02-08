@@ -38,6 +38,10 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 3),
     );
+    // [System Stabilization] Record access once on init
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(wishlistProvider.notifier).checkAccess();
+    });
   }
 
   @override

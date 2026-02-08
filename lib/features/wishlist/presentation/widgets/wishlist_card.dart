@@ -269,12 +269,15 @@ class WishlistCard extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Text(
-          i18n.formatCurrency(item.price),
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            color: colors.textMain,
+        Flexible(
+          child: Text(
+            i18n.formatCurrency(item.price),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: colors.textMain,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -382,36 +385,48 @@ class WishlistCard extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Success Probability
-        // Success Probability
-        Text(
-          '성공 확률 : $percentage%',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: progress < 0 ? Colors.redAccent : defaultColor,
+        Flexible(
+          child: Text(
+            '성공 확률 : $percentage%',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: progress < 0 ? Colors.redAccent : defaultColor,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-
+        const SizedBox(width: 8),
         // Remaining Amount
-        Row(
-          children: [
-            Text(
-              '남은 금액: ',
-              style: TextStyle(
-                color: isPureFinance ? const Color(0xFF8B95A1) : Colors.white60,
-                fontSize: 12,
-                fontWeight: isPureFinance ? FontWeight.normal : FontWeight.w400,
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                '남은 금액: ',
+                style: TextStyle(
+                  color: isPureFinance
+                      ? const Color(0xFF8B95A1)
+                      : Colors.white60,
+                  fontSize: 12,
+                  fontWeight: isPureFinance
+                      ? FontWeight.normal
+                      : FontWeight.w400,
+                ),
               ),
-            ),
-            AnimatedValueText(
-              valueKey: (item.totalGoal - item.savedAmount).toInt(),
-              text: i18n.formatCurrency(item.totalGoal - item.savedAmount),
-              defaultColor: valueColor,
-              isNegative: false,
-              baseFontSize: isPureFinance ? 13 : 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ],
+              Flexible(
+                child: AnimatedValueText(
+                  valueKey: (item.totalGoal - item.savedAmount).toInt(),
+                  text: i18n.formatCurrency(item.totalGoal - item.savedAmount),
+                  defaultColor: valueColor,
+                  isNegative: false,
+                  baseFontSize: isPureFinance ? 13 : 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
