@@ -384,16 +384,50 @@ class WishlistCard extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Success Probability
+        // Success Probability with Flash Animation
         Flexible(
-          child: Text(
-            '성공 확률 : $percentage%',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: progress < 0 ? Colors.redAccent : defaultColor,
-            ),
-            overflow: TextOverflow.ellipsis,
+          child: TweenAnimationBuilder<double>(
+            key: ValueKey('probability_flash_$animationTriggerId'),
+            tween: Tween<double>(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 800),
+            curve: Curves.elasticOut,
+            builder: (context, value, child) {
+              // Scale pulse: 1.0 -> 1.2 -> 1.0
+              final scale = value < 0.5
+                  ? 1.0 +
+                        (value * 2 * 0.2) // 0.0-0.5: 1.0 -> 1.2
+                  : 1.2 - ((value - 0.5) * 2 * 0.2); // 0.5-1.0: 1.2 -> 1.0
+
+              // Neon flash: bright lime -> default color
+              final flashColor = Color.lerp(
+                const Color(0xFFD4FF00), // Neon lime
+                progress < 0 ? Colors.redAccent : defaultColor,
+                value,
+              )!;
+
+              return Transform.scale(
+                scale: scale,
+                child: Text(
+                  '성공 확률 : $percentage%',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: flashColor,
+                    shadows: value < 0.5
+                        ? [
+                            Shadow(
+                              color: const Color(
+                                0xFFD4FF00,
+                              ).withValues(alpha: 1.0 - value * 2),
+                              blurRadius: 8,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            },
           ),
         ),
         const SizedBox(width: 8),

@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // [Fix] Global check date
 
 import 'package:nerve/core/network/supabase_client.dart';
 import 'package:nerve/features/auth/providers/auth_provider.dart';
@@ -878,11 +879,9 @@ class WishlistNotifier extends _$WishlistNotifier {
 
     // 보상 (1%)
     // [FIX] savedAmount 대신 penaltyAmount에서 차감하여 성공 확률만 높이고 '남은 금액'은 유지함
+    // [Fix] Allow negative penaltyAmount to increase success probability above 100%
     final bonusAmount = original.totalGoal * 0.01;
-    final newPenaltyAmount = (original.penaltyAmount - bonusAmount).clamp(
-      0.0,
-      double.infinity,
-    );
+    final newPenaltyAmount = original.penaltyAmount - bonusAmount;
 
     // Optimistic Update
     // [Fog Cleaning] 2.0 감소 (직접 감소)
@@ -916,6 +915,10 @@ class WishlistNotifier extends _$WishlistNotifier {
           .from('wishlists')
           .update(updates)
           .eq('id', id);
+
+      // [Fix] Save global check date to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_survival_check_date', now.toIso8601String());
     } catch (e) {
       debugPrint('Error performing survival check: $e');
       // [FIX] 컬럼 누락 에러(PGRST204)인 경우 로컬 상태 유지 (새로고침 방지)
