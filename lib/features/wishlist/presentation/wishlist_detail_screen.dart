@@ -961,7 +961,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                             begin: Alignment.bottomCenter,
                                             end: Alignment.topCenter,
                                             colors: [
-                                              Colors.black.withValues(alpha: 0.8),
+                                              Colors.black.withValues(
+                                                alpha: 0.8,
+                                              ),
                                               Colors.transparent,
                                             ],
                                             stops: const [0.0, 0.4],
@@ -982,8 +984,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                             color: colors.accent,
                                             boxShadow: [
                                               BoxShadow(
-                                                color: colors.accent
-                                                    .withValues(alpha: 0.8),
+                                                color: colors.accent.withValues(
+                                                  alpha: 0.8,
+                                                ),
                                                 blurRadius: 8,
                                                 spreadRadius: 2,
                                               ),
@@ -1259,7 +1262,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                                     ? BorderSide.none
                                                     : BorderSide(
                                                         color: colors.accent
-                                                            .withValues(alpha: 0.5),
+                                                            .withValues(
+                                                              alpha: 0.5,
+                                                            ),
                                                       ),
                                               ),
                                               contentPadding:
@@ -1325,119 +1330,157 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
 
                         const SizedBox(height: 24),
 
-                        // Progress Bar
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        // Progress Bar (Laser Gauge Style)
+                        TweenAnimationBuilder<double>(
+                          tween: Tween<double>(begin: 0.0, end: progress),
+                          duration: const Duration(milliseconds: 1200),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, animatedProgress, child) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  '성공 확률 : ',
-                                  style: TextStyle(
-                                    color: isPureFinance
-                                        ? colors.textSub
-                                        : Colors.white38,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.normal,
-                                  ),
-                                ),
-                                Text(
-                                  '${(progress * 100).toInt()}%',
-                                  style: GoogleFonts.robotoMono(
-                                    color: progress < 0
-                                        ? colors.danger
-                                        : (isPureFinance
-                                              ? colors.textMain
-                                              : colors.accent),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            TweenAnimationBuilder<double>(
-                              key: ValueKey(
-                                '${item.savedAmount}-$_animationTriggerId',
-                              ),
-                              tween: Tween<double>(end: progress),
-                              duration: const Duration(milliseconds: 1000),
-                              curve: Curves.easeOutCubic,
-                              builder: (context, value, child) {
-                                final progressValue = value.clamp(0.0, 1.0);
-                                final isLow = value <= 0;
-                                final isHigh = value >= 0.8;
-
-                                final Widget indicator = LinearProgressIndicator(
-                                  value: progressValue,
-                                  backgroundColor: isPureFinance
-                                      ? colors.border
-                                      : const Color(0xFF1C1C1E),
-                                  color: isPureFinance
-                                      ? colors.textMain
-                                      : (value < 0
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '성공 확률 : ',
+                                      style: TextStyle(
+                                        color: isPureFinance
+                                            ? colors.textSub
+                                            : Colors.white38,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${(animatedProgress * 100).toInt()}%',
+                                      style: GoogleFonts.robotoMono(
+                                        color: animatedProgress < 0
                                             ? colors.danger
-                                            : colors.accent),
-                                  minHeight: 6.0,
-                                  borderRadius: BorderRadius.circular(3.0),
-                                );
-
-                                if (isPureFinance) return indicator;
-
-                                if (isLow) {
-                                  // Stage 3: Visual pressure shimmer for 0%
-                                  return indicator
-                                      .animate(
-                                        onPlay: (controller) =>
-                                            controller.repeat(reverse: true),
-                                      )
-                                      .shimmer(
-                                        duration: 2.seconds,
-                                        color: Colors.white24,
-                                        stops: [0.0, 0.5, 1.0],
-                                      )
-                                      .tint(color: Colors.white10);
-                                }
-
-                                // Stage 1: Pulse animation
-                                final Widget animatedGauge = indicator
-                                    .animate(
-                                      onPlay: (controller) =>
-                                          controller.repeat(reverse: true),
-                                    )
-                                    .custom(
-                                      duration: 1500.ms,
-                                      builder: (context, animValue, child) {
-                                        return Opacity(
-                                          opacity: 0.7 + (animValue * 0.3),
-                                          child: child,
-                                        );
-                                      },
-                                    );
-
-                                if (isHigh) {
-                                  // Stage 2: Neon Glow for 80%+
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(3.0),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: colors.accent.withValues(alpha: 0.6),
-                                          blurRadius: 12,
-                                          spreadRadius: 2,
+                                            : (isPureFinance
+                                                  ? colors.textMain
+                                                  : colors.accent),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        letterSpacing: -0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                // Laser Gauge Bar
+                                Column(
+                                  children: [
+                                    Stack(
+                                      alignment: Alignment.centerLeft,
+                                      children: [
+                                        // Background Bar
+                                        Container(
+                                          height: 10,
+                                          width: double.infinity,
+                                          decoration: BoxDecoration(
+                                            color: isPureFinance
+                                                ? colors.border.withValues(
+                                                    alpha: 0.3,
+                                                  )
+                                                : Colors.white.withValues(
+                                                    alpha: 0.1,
+                                                  ),
+                                            borderRadius: BorderRadius.circular(
+                                              5,
+                                            ),
+                                          ),
+                                        ),
+                                        // Active Laser Bar
+                                        LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final maxWidth =
+                                                constraints.maxWidth;
+                                            final barWidth =
+                                                maxWidth * animatedProgress;
+                                            return Stack(
+                                              alignment: Alignment.centerRight,
+                                              children: [
+                                                // Neon Glow (Blur)
+                                                if (!isPureFinance &&
+                                                    animatedProgress > 0.05)
+                                                  Container(
+                                                    height: 10,
+                                                    width: barWidth,
+                                                    decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            5,
+                                                          ),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: colors.accent
+                                                              .withValues(
+                                                                alpha: 0.6,
+                                                              ),
+                                                          blurRadius: 8,
+                                                          spreadRadius: 1,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                // Main Bar (Laser)
+                                                Container(
+                                                  height: 10,
+                                                  width: barWidth,
+                                                  decoration: BoxDecoration(
+                                                    gradient: isPureFinance
+                                                        ? null
+                                                        : LinearGradient(
+                                                            colors: [
+                                                              colors.accent
+                                                                  .withValues(
+                                                                    alpha: 0.7,
+                                                                  ),
+                                                              colors.accent,
+                                                            ],
+                                                          ),
+                                                    color: isPureFinance
+                                                        ? colors.accent
+                                                        : null,
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          5,
+                                                        ),
+                                                  ),
+                                                ),
+                                              ],
+                                            );
+                                          },
                                         ),
                                       ],
                                     ),
-                                    child: animatedGauge,
-                                  );
-                                }
-
-                                return animatedGauge;
-                              },
-                            ),
-                          ],
+                                    const SizedBox(height: 4),
+                                    // Ruler Notches
+                                    if (!isPureFinance)
+                                      SizedBox(
+                                        height: 8,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: List.generate(31, (index) {
+                                            final isMajor = index % 5 == 0;
+                                            return Container(
+                                              width: 1,
+                                              height: isMajor ? 6 : 3,
+                                              color: Colors.white.withValues(
+                                                alpha: isMajor ? 0.3 : 0.1,
+                                              ),
+                                            );
+                                          }),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
                         ),
 
                         const SizedBox(height: 64),

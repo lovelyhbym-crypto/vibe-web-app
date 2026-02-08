@@ -77,15 +77,36 @@ class WishlistCard extends ConsumerWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(context, ref, i18n, colors, isPureFinance),
-            const SizedBox(height: 12),
-            _buildProgressBar(colors, isPureFinance, progress),
-            const SizedBox(height: 8),
-            _buildFooter(i18n, colors, isPureFinance, progress, percentage),
-          ],
+        child: TweenAnimationBuilder<double>(
+          key: ValueKey('$progress-$animationTriggerId'),
+          tween: Tween<double>(begin: 0.0, end: progress),
+          duration: const Duration(milliseconds: 1200),
+          curve: Curves.easeOutCubic,
+          builder: (context, animatedProgress, child) {
+            final animatedPercentage = (animatedProgress * 100).toInt();
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context, ref, i18n, colors, isPureFinance),
+                const SizedBox(height: 12),
+                _buildProgressBar(
+                  context,
+                  colors,
+                  isPureFinance,
+                  animatedProgress,
+                ),
+                const SizedBox(height: 8),
+                _buildFooter(
+                  i18n,
+                  colors,
+                  isPureFinance,
+                  animatedProgress,
+                  animatedPercentage,
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -106,53 +127,65 @@ class WishlistCard extends ConsumerWidget {
         color: colors.surface,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            child: SizedBox(
-              height: 160,
-              width: double.infinity,
-              child: Hero(
-                tag: 'wishlist_img_${item.id}',
-                child: TweenAnimationBuilder<double>(
-                  key: ValueKey('$progress-$animationTriggerId'),
-                  tween: Tween<double>(
-                    begin: 0.0,
-                    end: progress.clamp(0.0, 1.0),
-                  ),
-                  duration: const Duration(milliseconds: 1000),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) {
-                    return VibeImageEffect(
+      child: TweenAnimationBuilder<double>(
+        key: ValueKey('$progress-$animationTriggerId'),
+        tween: Tween<double>(begin: 0.0, end: progress),
+        duration: const Duration(milliseconds: 1200),
+        curve: Curves.easeOutCubic,
+        builder: (context, animatedProgress, child) {
+          final animatedPercentage = (animatedProgress * 100).toInt();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
+                child: SizedBox(
+                  height: 160,
+                  width: double.infinity,
+                  child: Hero(
+                    tag: 'wishlist_img_${item.id}',
+                    child: VibeImageEffect(
                       imageUrl: item.imageUrl,
                       width: double.infinity,
                       height: double.infinity,
                       blurLevel: item.currentBlurPoints,
                       isBroken: item.isBroken,
                       brokenImageIndex: item.brokenImageIndex,
-                      progress: value,
-                    );
-                  },
+                      progress: animatedProgress,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context, ref, i18n, colors, isPureFinance),
-                const SizedBox(height: 12),
-                _buildProgressBar(colors, isPureFinance, progress),
-                const SizedBox(height: 12),
-                _buildFooter(i18n, colors, isPureFinance, progress, percentage),
-              ],
-            ),
-          ),
-        ],
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(context, ref, i18n, colors, isPureFinance),
+                    const SizedBox(height: 12),
+                    _buildProgressBar(
+                      context,
+                      colors,
+                      isPureFinance,
+                      animatedProgress,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildFooter(
+                      i18n,
+                      colors,
+                      isPureFinance,
+                      animatedProgress,
+                      animatedPercentage,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -249,30 +282,86 @@ class WishlistCard extends ConsumerWidget {
   }
 
   Widget _buildProgressBar(
+    BuildContext context,
     VibeColors colors,
     bool isPureFinance,
     double progress,
   ) {
-    return TweenAnimationBuilder<double>(
-      key: ValueKey('$progress-$animationTriggerId'),
-      tween: Tween<double>(begin: 0.0, end: progress.clamp(0.0, 1.0)),
-      duration: const Duration(milliseconds: 1000),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return LinearProgressIndicator(
-          value: value,
-          backgroundColor: isPureFinance
-              ? colors.border
-              : (Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey[800]
-                    : Colors.grey[300]), // Safer default
-          color: isPureFinance
-              ? colors.textMain
-              : (value < 0 ? Colors.redAccent : const Color(0xFFD4FF00)),
-          minHeight: 3.0,
-          borderRadius: BorderRadius.circular(2.0),
-        );
-      },
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            // Background Bar
+            Container(
+              height: 10,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: isPureFinance
+                    ? colors.border.withValues(alpha: 0.3)
+                    : Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(5),
+              ),
+            ),
+            // Active Laser Bar
+            Stack(
+              alignment: Alignment.centerRight,
+              children: [
+                // Neon Glow (Blur)
+                if (!isPureFinance && progress > 0.05)
+                  Container(
+                    height: 10,
+                    width: (MediaQuery.of(context).size.width - 64) * progress,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.accent.withValues(alpha: 0.6),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                // Main Bar (Laser)
+                Container(
+                  height: 10,
+                  width: (MediaQuery.of(context).size.width - 64) * progress,
+                  decoration: BoxDecoration(
+                    gradient: isPureFinance
+                        ? null
+                        : LinearGradient(
+                            colors: [
+                              colors.accent.withValues(alpha: 0.7),
+                              colors.accent,
+                            ],
+                          ),
+                    color: isPureFinance ? colors.accent : null,
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        // Ruler Notches
+        if (!isPureFinance)
+          SizedBox(
+            height: 8,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(21, (index) {
+                final isMajor = index % 2 == 0;
+                return Container(
+                  width: 1,
+                  height: isMajor ? 6 : 3,
+                  color: Colors.white.withValues(alpha: isMajor ? 0.3 : 0.1),
+                );
+              }),
+            ),
+          ),
+      ],
     );
   }
 
@@ -293,12 +382,14 @@ class WishlistCard extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         // Success Probability
-        AnimatedValueText(
-          valueKey: percentage,
-          text: '성공 확률 : $percentage%',
-          defaultColor: defaultColor,
-          isNegative: progress < 0,
-          baseFontSize: 12,
+        // Success Probability
+        Text(
+          '성공 확률 : $percentage%',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: progress < 0 ? Colors.redAccent : defaultColor,
+          ),
         ),
 
         // Remaining Amount

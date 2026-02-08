@@ -590,7 +590,6 @@ class _WishlistProgressCard extends StatelessWidget {
 
     final imageUrl = topWishlist.imageUrl;
     final remaining = (total - saved).clamp(0, total).toInt();
-    final percentage = (progress * 100).toInt();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -618,148 +617,150 @@ class _WishlistProgressCard extends StatelessWidget {
                 ),
               ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1 & 2. Upper Quadrant: Image & Title row
-          Row(
+      child: TweenAnimationBuilder<double>(
+        key: ValueKey('${progress}_$navIndex'),
+        tween: Tween<double>(begin: 0.0, end: progress),
+        duration: const Duration(milliseconds: 1200),
+        curve: Curves.easeOutCubic,
+        builder: (context, animatedProgress, child) {
+          final percentage = (animatedProgress * 100).toInt();
+          return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image Frame
-              Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isPureFinance
-                        ? colors.border
-                        : colors.accent.withValues(alpha: 0.5),
-                    width: 1.5,
-                  ),
-                ),
-                clipBehavior: Clip.antiAlias,
-                child: imageUrl != null
-                    ? Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, _, __) => Icon(
-                          Icons.image_not_supported,
-                          color: colors.textSub,
-                        ),
-                      )
-                    : Container(
-                        color: colors.border.withValues(alpha: 0.3),
-                        child: Icon(Icons.flag, color: colors.textSub),
+              // 1 & 2. Upper Quadrant: Image & Title row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image Frame
+                  Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isPureFinance
+                            ? colors.border
+                            : colors.accent.withValues(alpha: 0.5),
+                        width: 1.5,
                       ),
-              ),
-              const SizedBox(width: 12),
-              // Title & %
-              Expanded(
-                child: SizedBox(
-                  height: 70,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: imageUrl != null
+                        ? Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, _, __) => Icon(
+                              Icons.image_not_supported,
+                              color: colors.textSub,
+                            ),
+                          )
+                        : Container(
+                            color: colors.border.withValues(alpha: 0.3),
+                            child: Icon(Icons.flag, color: colors.textSub),
+                          ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Title & %
+                  Expanded(
+                    child: SizedBox(
+                      height: 70,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Expanded(
-                            child: Text(
-                              '[ 목표 : $title ]',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w900,
-                                color: colors.textMain,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '[ 목표 : $title ]',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w900,
+                                    color: colors.textMain,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '$percentage%',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                  color: isPureFinance
+                                      ? colors.textMain
+                                      : colors.accent,
+                                  fontFamily: 'Courier',
+                                  letterSpacing: -1,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$percentage%',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                              color: isPureFinance
-                                  ? colors.textMain
-                                  : colors.accent,
-                              fontFamily: 'Courier',
-                              letterSpacing: -1,
+                          // State Message for aesthetics
+                          if (!isPureFinance)
+                            Row(
+                              children: [
+                                Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                        color: colors.accent,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    )
+                                    .animate(onPlay: (c) => c.repeat())
+                                    .fadeIn(duration: 500.ms)
+                                    .fadeOut(delay: 500.ms),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '실시간 저축 분석 중...',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: colors.accent.withValues(alpha: 0.7),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
                         ],
                       ),
-                      // State Message for aesthetics
-                      if (!isPureFinance)
-                        Row(
-                          children: [
-                            Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: BoxDecoration(
-                                    color: colors.accent,
-                                    shape: BoxShape.circle,
-                                  ),
-                                )
-                                .animate(onPlay: (c) => c.repeat())
-                                .fadeIn(duration: 500.ms)
-                                .fadeOut(delay: 500.ms),
-                            const SizedBox(width: 6),
-                            Text(
-                              '실시간 저축 분석 중...',
-                              style: TextStyle(
-                                fontSize: 9,
-                                color: colors.accent.withValues(alpha: 0.7),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // 3. Middle Quadrant: Wide Laser Gauge + Ruler
-          Column(
-            children: [
-              Stack(
-                alignment: Alignment.centerLeft,
-                children: [
-                  // Background Bar
-                  Container(
-                    height: 10,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: isPureFinance
-                          ? colors.border.withValues(alpha: 0.3)
-                          : Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(5),
                     ),
                   ),
-                  // Active Laser Bar
-                  TweenAnimationBuilder<double>(
-                    tween: Tween<double>(end: progress),
-                    duration: const Duration(milliseconds: 1000),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, value, child) {
-                      return Stack(
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // 3. Middle Quadrant: Wide Laser Gauge + Ruler
+              Column(
+                children: [
+                  Stack(
+                    alignment: Alignment.centerLeft,
+                    children: [
+                      // Background Bar
+                      Container(
+                        height: 10,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: isPureFinance
+                              ? colors.border.withValues(alpha: 0.3)
+                              : Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                      ),
+                      // Active Laser Bar
+                      Stack(
                         alignment: Alignment.centerRight,
                         children: [
                           // Neon Glow (Blur)
-                          if (!isPureFinance && value > 0.05)
+                          if (!isPureFinance && animatedProgress > 0.05)
                             Container(
                               height: 10,
                               width:
                                   (MediaQuery.of(context).size.width - 64) *
-                                  value,
+                                  animatedProgress,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(5),
                                 boxShadow: [
@@ -776,7 +777,7 @@ class _WishlistProgressCard extends StatelessWidget {
                             height: 10,
                             width:
                                 (MediaQuery.of(context).size.width - 64) *
-                                value,
+                                animatedProgress,
                             decoration: BoxDecoration(
                               gradient: isPureFinance
                                   ? null
@@ -791,106 +792,106 @@ class _WishlistProgressCard extends StatelessWidget {
                             ),
                           ),
                         ],
-                      );
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              // Ruler Notches
-              if (!isPureFinance)
-                SizedBox(
-                  height: 8,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(21, (index) {
-                      final isMajor = index % 2 == 0; // 0, 10, 20...
-                      return Container(
-                        width: 1,
-                        height: isMajor ? 6 : 3,
-                        color: Colors.white.withValues(
-                          alpha: isMajor ? 0.3 : 0.1,
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // 4. Bottom Quadrant: Data Reality
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // Amount (Left side - Secondary)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '현재 / 목표',
-                    style: TextStyle(
-                      fontSize: 8,
-                      color: colors.textSub,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  RichText(
-                    text: TextSpan(
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: colors.textSub,
-                        fontFamily: 'Courier',
                       ),
-                      children: [
-                        TextSpan(
-                          text: NumberFormat.simpleCurrency(
-                            locale: 'ko_KR',
-                          ).format(saved).replaceAll('₩', ''),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        const TextSpan(text: ' / '),
-                        TextSpan(
-                          text: NumberFormat.simpleCurrency(
-                            locale: 'ko_KR',
-                          ).format(total).replaceAll('₩', ''),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
+                  const SizedBox(height: 4),
+                  // Ruler Notches
+                  if (!isPureFinance)
+                    SizedBox(
+                      height: 8,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(21, (index) {
+                          final isMajor = index % 2 == 0; // 0, 10, 20...
+                          return Container(
+                            width: 1,
+                            height: isMajor ? 6 : 3,
+                            color: Colors.white.withValues(
+                              alpha: isMajor ? 0.3 : 0.1,
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
                 ],
               ),
-              // Remaining Amount (Right side - Primary)
-              Column(
+
+              const SizedBox(height: 16),
+
+              // 4. Bottom Quadrant: Data Reality
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    '남은 금액',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: colors.textSub,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  // Amount (Left side - Secondary)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '현재 / 목표',
+                        style: TextStyle(
+                          fontSize: 8,
+                          color: colors.textSub,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      RichText(
+                        text: TextSpan(
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colors.textSub,
+                            fontFamily: 'Courier',
+                          ),
+                          children: [
+                            TextSpan(
+                              text: NumberFormat.simpleCurrency(
+                                locale: 'ko_KR',
+                              ).format(saved).replaceAll('₩', ''),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const TextSpan(text: ' / '),
+                            TextSpan(
+                              text: NumberFormat.simpleCurrency(
+                                locale: 'ko_KR',
+                              ).format(total).replaceAll('₩', ''),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    '${NumberFormat.simpleCurrency(locale: 'ko_KR').format(remaining)}원',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: isPureFinance
-                          ? colors.textMain
-                          : (remaining > 0 ? colors.accent : Colors.grey),
-                      letterSpacing: -1.0,
-                    ),
+                  // Remaining Amount (Right side - Primary)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '남은 금액',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: colors.textSub,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${NumberFormat.decimalPattern('ko_KR').format(remaining)}원',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: isPureFinance ? colors.textMain : Colors.white,
+                          letterSpacing: -1.0,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
