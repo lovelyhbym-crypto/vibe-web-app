@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
 import 'package:nerve/core/ui/bouncy_button.dart';
-import 'widgets/engine_core_widget.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -184,7 +183,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
           // Layer 2: Engine Core Background
           // 위치를 약 20px 위로 조정 (Alignment.center에서 약간 위로)
-          const Align(alignment: Alignment(0, -0.1), child: EngineCoreWidget()),
+          // Layer 2: Minimal Text Logo (Breathing)
+          Align(
+            alignment: const Alignment(0, -0.1),
+            child:
+                const Text(
+                      'NERVE',
+                      style: TextStyle(
+                        fontFamily: 'Courier',
+                        fontSize: 48,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 12.0,
+                        color: Color(0xFFCCFF00),
+                      ),
+                    )
+                    .animate(onPlay: (c) => c.repeat(reverse: true))
+                    .fadeIn(duration: 2000.ms)
+                    .then()
+                    .fadeOut(
+                      duration: 2000.ms,
+                      delay: 500.ms,
+                    ), // Breathing Effect
+          ),
 
           // Layer 3: Blurry Environment Lights (Translucent Overlays)
           Positioned(
@@ -342,8 +362,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       fontSize: 10, // 11 -> 10px로 더 콤팩트하게
                                       fontWeight: FontWeight
                                           .w400, // Bold에서 Regular로 변경하여 세련미 추가
-                                      color: Colors.white.withValues(alpha: 
-                                        0.7,
+                                      color: Colors.white.withValues(
+                                        alpha: 0.7,
                                       ), // 완벽한 화이트보다 살짝 투명하게
                                       letterSpacing: 4.0,
                                     ),
@@ -358,7 +378,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       fontSize:
                                           11.5, // 자간 폭이 넓어지므로 전체 폭을 맞추기 위해 12.5 -> 11.5
                                       fontWeight: FontWeight.w300,
-                                      color: Colors.white.withValues(alpha: 0.35),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.35,
+                                      ),
                                       letterSpacing:
                                           2.5, // 자간을 넓게 조정 (사진의 느낌 반영)
                                     ),

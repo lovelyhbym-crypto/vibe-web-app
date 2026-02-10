@@ -15,7 +15,6 @@ import 'package:nerve/features/saving/providers/saving_provider.dart';
 import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
 import 'package:nerve/features/wishlist/domain/wishlist_model.dart';
 import 'package:nerve/core/theme/theme_provider.dart';
-import 'package:nerve/features/auth/presentation/widgets/engine_core_widget.dart';
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:nerve/features/home/providers/navigation_provider.dart';
@@ -43,6 +42,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
   bool _isWaitingForTransfer = false;
   late AnimationController _syncController;
   bool _isFinishing = false; // [Visual Engine] Final glitch effect trigger
+  bool _showSuccessAnimation = false; // [Added] Success animation trigger
 
   @override
   void initState() {
@@ -753,10 +753,17 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               if (success != true) return; // '다시 확인하기'를 눌렀을 때 차가운 침묵을 실현
 
               // 3. 보상 및 효과 (검증 완료 후 실행)
+              if (mounted) {
+                setState(() => _showSuccessAnimation = true);
+              }
+
               ref.read(rewardStateProvider.notifier).triggerConfetti();
               // [Added] Sensory Feedback: Firework Sound & Strong Vibration
               SoundService().playFirework();
               HapticService.vibrate();
+
+              // 3.5. 성공 애니메이션 감상 시간 확보 (1.5초)
+              await Future.delayed(const Duration(milliseconds: 1500));
 
               // 4. 목표 탭으로 즉시 이동 (메인 context 사용)
               if (mounted) {
@@ -1604,6 +1611,48 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                   ),
                 ),
               ),
+              // Success Animation Layer
+              if (_showSuccessAnimation)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.8),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                                Icons.check_circle_outline,
+                                color: Color(0xFFCCFF00),
+                                size: 80,
+                              )
+                              .animate()
+                              .scale(
+                                duration: 300.ms,
+                                curve: Curves.easeOutBack,
+                              )
+                              .then()
+                              .shake(duration: 200.ms),
+                          const SizedBox(height: 24),
+                          Text(
+                                'SAVING_RECORDED',
+                                style: TextStyle(
+                                  color: const Color(
+                                    0xFFCCFF00,
+                                  ).withValues(alpha: 0.8),
+                                  fontFamily: 'Courier',
+                                  fontSize: 16,
+                                  letterSpacing: 2.0,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                              .animate()
+                              .fadeIn(delay: 200.ms)
+                              .slideY(begin: 0.2, end: 0),
+                        ],
+                      ),
+                    ),
+                  ).animate().fadeIn(duration: 200.ms),
+                ),
             ],
           ),
         );
@@ -2053,7 +2102,9 @@ class _NeuralSyncOverlayState extends State<_NeuralSyncOverlay> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const EngineCoreWidget(isAccelerated: true),
+            const Icon(Icons.sync, size: 64, color: Color(0xFFD4FF00))
+                .animate(onPlay: (c) => c.repeat())
+                .rotate(duration: 2000.ms, curve: Curves.easeInOut),
             const Padding(
               padding: EdgeInsets.only(top: 48),
             ), // Increased vertical spacing

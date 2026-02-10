@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/presentation/login_screen.dart';
+import '../../features/auth/presentation/booting_screen.dart';
 import '../../features/wishlist/presentation/wishlist_screen.dart';
 import '../../features/saving/presentation/saving_record_screen.dart';
 import '../../features/home/presentation/main_navigation_screen.dart';
@@ -23,12 +24,18 @@ GoRouter goRouter(Ref ref) {
   final authState = ref.watch(authProvider);
 
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/booting',
     redirect: (context, state) {
       final authNotifier = ref.read(authProvider.notifier);
       final isLoggedIn =
           authState.asData?.value != null || authNotifier.isGuest;
       final isLoggingIn = state.uri.path == '/login';
+      final isBooting = state.uri.path == '/booting';
+
+      // 부팅 화면은 항상 허용
+      if (isBooting) {
+        return null;
+      }
 
       if (!isLoggedIn && !isLoggingIn) {
         return '/login';
@@ -41,6 +48,10 @@ GoRouter goRouter(Ref ref) {
       return null;
     },
     routes: [
+      GoRoute(
+        path: '/booting',
+        builder: (context, state) => const BootingScreen(),
+      ),
       GoRoute(
         path: '/',
         builder: (context, state) {
