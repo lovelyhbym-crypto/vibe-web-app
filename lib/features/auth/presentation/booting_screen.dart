@@ -19,94 +19,61 @@ class BootingScreen extends ConsumerStatefulWidget {
   ConsumerState<BootingScreen> createState() => _BootingScreenState();
 }
 
+class LoadingLine extends StatelessWidget {
+  const LoadingLine({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+          width: 200,
+          height: 1,
+          decoration: BoxDecoration(
+            color: const Color(0xFFCCFF00),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFCCFF00).withValues(alpha: 0.6),
+                blurRadius: 10,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+        )
+        .animate(onPlay: (c) => c.repeat(reverse: true))
+        .custom(
+          duration: 1000.ms,
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: 0.5 + (value * 0.5), // Pulse 0.5 -> 1.0
+              child: child,
+            );
+          },
+        );
+  }
+}
+
 class _BootingScreenState extends ConsumerState<BootingScreen> {
-  bool _isAccelerated = false;
-  bool _shouldFlash = false;
-  final List<String> _logs = [];
-  Timer? _logTimer;
-  int _logIndex = 0;
-
-  // 시스템 로그 시퀀스
-  final List<String> _systemLogs = [
-    '> INITIALIZING NERVE_CORE_ENGINE...',
-    '> ALLOCATING MEMORY SECTORS... [OK]',
-    '> LINKING TO SECURE_DATABASE...',
-    '> CONNECTING TO SUPABASE...',
-    '> SYNCING WISHLIST_DATA...',
-    '> RETRIEVING USER_STATE...',
-    '> ANALYZING SAVING_LOG...',
-    '> CALCULATING IMPACT_RATIO...',
-    '> SYSTEM READY.',
-    '> PROTOCOL: SAVE_YOUR_DREAMS.',
-    '> ACCESS_GRANTED.',
-  ];
-
   @override
   void initState() {
     super.initState();
     _startBootingSequence();
   }
 
-  @override
-  void dispose() {
-    _logTimer?.cancel();
-    super.dispose();
-  }
-
   Future<void> _startBootingSequence() async {
-    // 1. 시작 시 묵직한 진동
-    await HapticService.heavy();
+    // 1. Start Haptic
+    await HapticService.light();
 
-    // 2. 로그 출력 시작 (0.1초 간격)
-    _logTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (_logIndex < _systemLogs.length && mounted) {
-        setState(() {
-          _logs.add(_systemLogs[_logIndex]);
-          _logIndex++;
-
-          // 로그 출력 시 미세한 틱 진동
-          HapticService.light();
-        });
-      }
-    });
-
-    // 3. 실제 데이터 로딩 시작 (병렬 처리)
-    final startTime = DateTime.now();
-
+    // 2. Data Pre-fetch + Min Delay (1.5s)
     try {
       await Future.wait([
         ref.read(wishlistProvider.future),
         ref.read(savingProvider.future),
+        Future.delayed(const Duration(milliseconds: 1500)),
       ]);
     } catch (e) {
-      debugPrint('Booting data load error (non-critical): $e');
+      debugPrint('Booting data load error: $e');
     }
 
-    final elapsed = DateTime.now().difference(startTime);
-
-    // 4. 최소 1.5초 보장 (UX 안정성)
-    final remainingTime = const Duration(milliseconds: 1500) - elapsed;
-    if (remainingTime.isNegative == false) {
-      await Future.delayed(remainingTime);
-    }
-
-    // 5. 로딩 50% 이상 완료 시 엔진 가속
-    if (mounted) {
-      setState(() => _isAccelerated = true);
-    }
-
-    // 6. 추가 대기 (가속 애니메이션 표현)
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    // 7. 최종 Flash 연출
-    if (mounted) {
-      setState(() => _shouldFlash = true);
-      await HapticService.heavy(); // 최종 점화 진동
-    }
-
-    await Future.delayed(const Duration(milliseconds: 300));
-
-    // 8. 대시보드로 전환
+    // 3. Navigate (Silent Boot)
     if (mounted) {
       context.go('/');
     }
@@ -114,164 +81,102 @@ class _BootingScreenState extends ConsumerState<BootingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const deepNavyBlack = Color(0xFF0A0A0E);
     const accentColor = Color(0xFFCCFF00); // Neon Lime
 
     return Scaffold(
-      backgroundColor: deepNavyBlack,
+      backgroundColor: Colors.black, // [Pure Black UI]
       body: Stack(
         children: [
-          // Layer 1: Digital Grid Background (Almost Invisible)
+          // Layer 1: Stealth Grid (1% Opacity) [Grid Stealth]
           Positioned.fill(
             child: CustomPaint(
-              painter: _GridPainter(opacity: 0.015), // 1.5% Opacity
+              painter: _GridPainter(opacity: 0.01), // 1% Opacity
             ),
           ),
 
-          // Layer 1.5: Heavy Vignette (Masking edges)
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.transparent,
-                    deepNavyBlack, // Fade into background color
-                  ],
-                  stops: [0.2, 0.85], // Center 20% clear, edges completely dark
-                  radius: 1.0, // Tighter radius to ensure dark edges
-                ),
-              ),
-            ),
-          ), // Layer 2: Breathing Logo (Center)
+          // Layer 2: Breathing Logo (Center)
           Align(
             alignment: Alignment.center,
             child:
                 Text(
                       'NERVE',
                       style: TextStyle(
-                        fontFamily: 'Courier', // 기계적인 느낌 유지
+                        fontFamily: 'Courier',
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 8.0, // 넓은 자간으로 압도감
+                        letterSpacing: 8.0,
                         color: accentColor,
                       ),
                     )
                     .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .custom(
+                    .scale(
+                      begin: const Offset(1.0, 1.0),
+                      end: const Offset(
+                        1.02,
+                        1.02,
+                      ), // [Heartbeat] Subtle 1.0 -> 1.02
                       duration: 2000.ms,
-                      builder: (context, value, child) {
-                        return Opacity(
-                          opacity: 0.2 + (value * 0.8), // 0.2 -> 1.0 -> 0.2
-                          child: child,
-                        );
-                      },
+                      curve: Curves.easeInOutSine,
                     )
-                    // 미세한 Glow 효과 (Breathing과 동기화)
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .custom(
+                    .shimmer(
                       duration: 2000.ms,
-                      builder: (context, value, child) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: accentColor.withValues(
-                                  alpha: 0.1 + (value * 0.2),
-                                ),
-                                blurRadius: 20 + (value * 20),
-                                spreadRadius: value * 10,
-                              ),
-                            ],
-                          ),
-                          child: child,
-                        );
-                      },
+                      color: Colors.white.withValues(
+                        alpha: 0.5,
+                      ), // [Shimmer] Subtle
                     ),
           ),
 
-          // Layer 3: Minimal Progress Bar (Bottom Edge 1px)
+          // Layer 3: Dynamic Neon Flow Loading Line [Neon Flow]
           Positioned(
-            bottom: 0,
+            bottom: 100,
             left: 0,
             right: 0,
-            child: SizedBox(
-              height: 1, // 1px
-              child: Stack(
-                children: [
-                  // Background Dim Line
-                  Container(color: Colors.white.withValues(alpha: 0.05)),
-                  // Progress Line
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeOutExpo,
-                        width: _isAccelerated
-                            ? constraints.maxWidth
-                            : constraints.maxWidth *
-                                  (_logIndex / _systemLogs.length),
-                        color: accentColor,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: accentColor.withValues(alpha: 0.8),
-                                blurRadius: 4,
-                                spreadRadius: 0,
-                              ),
-                            ],
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: 1500.ms,
+              curve: Curves.easeInOutExpo,
+              builder: (context, loadingProgress, child) {
+                return Center(
+                  child:
+                      Container(
+                            width:
+                                MediaQuery.of(context).size.width *
+                                loadingProgress,
+                            height: 2, // Slightly thicker for neon effect
+                            decoration: BoxDecoration(
+                              color: accentColor,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: accentColor.withValues(alpha: 0.6),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                          )
+                          .animate(
+                            onPlay: (c) => c.repeat(), // Continuous loop
+                          )
+                          .shimmer(
+                            duration: 1500.ms,
+                            color: accentColor.withValues(alpha: 0.5),
+                            angle: 0.0, // Horizontal flow
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ),
-
-          // Layer 4: Version Info (Top Right - Minimal)
-          Positioned(
-            top: 60,
-            right: 24,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  'NERVE_OS',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    fontFamily: 'Courier',
-                    fontSize: 8,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Flash Effect (최종 점화)
-          if (_shouldFlash)
-            Positioned.fill(
-              child: Container(color: accentColor.withValues(alpha: 0.2))
-                  .animate()
-                  .fadeIn(duration: 100.ms)
-                  .then()
-                  .fadeOut(duration: 200.ms),
-            ),
         ],
       ),
     );
   }
 }
 
-/// Digital Grid Background Painter
-/// shredder_mission_screen.dart에서 사용된 0.03 투명도 그리드
+/// Digital Grid Background Painter [Restored & Stealthed]
 class _GridPainter extends CustomPainter {
   final double opacity;
 
-  _GridPainter({this.opacity = 0.03});
+  _GridPainter({this.opacity = 0.01}); // Default 1% Opacity
 
   @override
   void paint(Canvas canvas, Size size) {
