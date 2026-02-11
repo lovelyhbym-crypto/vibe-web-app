@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
 import 'package:nerve/core/ui/bouncy_button.dart';
+import 'package:nerve/core/ui/vortex_engine.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -183,28 +184,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
           // Layer 2: Engine Core Background
           // 위치를 약 20px 위로 조정 (Alignment.center에서 약간 위로)
-          // Layer 2: Minimal Text Logo (Breathing)
-          Align(
-            alignment: const Alignment(0, -0.1),
-            child:
-                const Text(
-                      'NERVE',
-                      style: TextStyle(
-                        fontFamily: 'Courier',
-                        fontSize: 48,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 12.0,
-                        color: Color(0xFFCCFF00),
-                      ),
-                    )
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .fadeIn(duration: 2000.ms)
-                    .then()
-                    .fadeOut(
-                      duration: 2000.ms,
-                      delay: 500.ms,
-                    ), // Breathing Effect
-          ),
+          const Align(alignment: Alignment(0, -0.1), child: VortexEngine()),
 
           // Layer 3: Blurry Environment Lights (Translucent Overlays)
           Positioned(
@@ -486,42 +466,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             decoration:
                                                 TextDecoration.underline,
                                             decorationColor: Colors.white24,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      GestureDetector(
-                                        onTap: () {
-                                          HapticFeedback.mediumImpact();
-                                          ref
-                                              .read(authProvider.notifier)
-                                              .loginAsGuest();
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 12,
-                                            horizontal: 24,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: accentColor.withValues(
-                                                alpha: 0.3,
-                                              ),
-                                              width: 1,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            '게스트로 계속하기',
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              color: Color(0xFFCCFF00),
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              letterSpacing: 0.5,
-                                            ),
                                           ),
                                         ),
                                       ),
