@@ -59,23 +59,61 @@ class _BootingScreenState extends ConsumerState<BootingScreen> {
   }
 
   Future<void> _startBootingSequence() async {
-    // 1. Start Haptic
-    await HapticService.light();
+    debugPrint('🚀 [BOOTING] Sequence started');
 
-    // 2. Data Pre-fetch + Min Delay (1.5s)
+    // 1. Start Haptic
     try {
+      debugPrint('🚀 [BOOTING] Step 1: Haptic feedback starting...');
+      await HapticService.light();
+      debugPrint('🚀 [BOOTING] Step 1: Haptic feedback completed');
+    } catch (e) {
+      debugPrint('🚀 [BOOTING] Step 1: Haptic error (ignored): $e');
+    }
+
+    // 2. Data Pre-fetch + Min Delay (1.5s) with Timeout
+    try {
+      debugPrint('🚀 [BOOTING] Step 2: Data pre-fetch starting...');
+
+      // Add timeout to prevent infinite loading
       await Future.wait([
-        ref.read(wishlistProvider.future),
-        ref.read(savingProvider.future),
+        ref
+            .read(wishlistProvider.future)
+            .timeout(
+              const Duration(seconds: 10),
+              onTimeout: () {
+                debugPrint(
+                  '🚀 [BOOTING] ⚠️ wishlistProvider timeout - continuing anyway',
+                );
+                return [];
+              },
+            ),
+        ref
+            .read(savingProvider.future)
+            .timeout(
+              const Duration(seconds: 10),
+              onTimeout: () {
+                debugPrint(
+                  '🚀 [BOOTING] ⚠️ savingProvider timeout - continuing anyway',
+                );
+                return [];
+              },
+            ),
         Future.delayed(const Duration(milliseconds: 1500)),
       ]);
+      debugPrint('🚀 [BOOTING] Step 2: Data pre-fetch completed');
     } catch (e) {
-      debugPrint('Booting data load error: $e');
+      debugPrint('🚀 [BOOTING] Step 2: Data load error: $e');
+      // Continue anyway - app should still be usable
     }
 
     // 3. Navigate (Silent Boot)
+    debugPrint('🚀 [BOOTING] Step 3: Navigation check - mounted: $mounted');
     if (mounted) {
+      debugPrint('🚀 [BOOTING] Step 3: Navigating to /');
       context.go('/');
+      debugPrint('🚀 [BOOTING] Step 3: Navigation completed');
+    } else {
+      debugPrint('🚀 [BOOTING] Step 3: Widget not mounted, navigation skipped');
     }
   }
 

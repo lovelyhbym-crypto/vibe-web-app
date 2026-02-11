@@ -59,7 +59,10 @@ class QuestStatusCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.75),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: themeColor.withValues(alpha: 0.6), width: 1.5),
+          border: Border.all(
+            color: themeColor.withValues(alpha: 0.6),
+            width: 1.5,
+          ),
           boxShadow: [
             BoxShadow(
               color: themeColor.withValues(alpha: 0.2),
@@ -132,6 +135,11 @@ class QuestStatusCard extends ConsumerWidget {
     required String progressText,
     required bool isDone,
   }) {
+    // Ensure progress is safe for widthFactor
+    final safeProgress = progress.isNaN || progress.isInfinite
+        ? 0.0
+        : progress.clamp(0.0, 1.0);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -171,12 +179,12 @@ class QuestStatusCard extends ConsumerWidget {
               duration: const Duration(milliseconds: 500),
               height: 4,
               width:
-                  (progress * 1000) /
+                  (safeProgress * 1000) /
                   10, // Just a trick for rendering if width is unknown, but here we are in Column
               // Use LayoutBuilder for better precision if needed, but FractionallySizedBox is easier
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
-                widthFactor: progress,
+                widthFactor: safeProgress,
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDone ? Colors.greenAccent : Colors.redAccent,

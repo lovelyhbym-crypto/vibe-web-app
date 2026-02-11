@@ -489,6 +489,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           ),
                                         ),
                                       ),
+                                      const SizedBox(height: 16),
+                                      GestureDetector(
+                                        onTap: () {
+                                          HapticFeedback.mediumImpact();
+                                          ref
+                                              .read(authProvider.notifier)
+                                              .loginAsGuest();
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 12,
+                                            horizontal: 24,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: accentColor.withValues(
+                                                alpha: 0.3,
+                                              ),
+                                              width: 1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: const Text(
+                                            '게스트로 계속하기',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: Color(0xFFCCFF00),
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),

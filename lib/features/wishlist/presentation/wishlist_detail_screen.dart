@@ -1359,10 +1359,21 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
 
                         // Progress Bar (Laser Gauge Style)
                         TweenAnimationBuilder<double>(
-                          tween: Tween<double>(begin: 0.0, end: progress),
+                          tween: Tween<double>(
+                            begin: 0.0,
+                            end: progress.isNaN || progress.isInfinite
+                                ? 0.0
+                                : progress.clamp(0.0, 1.0),
+                          ),
                           duration: const Duration(milliseconds: 1200),
                           curve: Curves.easeOutCubic,
-                          builder: (context, animatedProgress, child) {
+                          builder: (context, rawProgress, child) {
+                            // Ensure animated progress is also safe
+                            final animatedProgress =
+                                rawProgress.isNaN || rawProgress.isInfinite
+                                ? 0.0
+                                : rawProgress.clamp(0.0, 1.0);
+
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -1428,7 +1439,8 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                             final maxWidth =
                                                 constraints.maxWidth;
                                             final barWidth =
-                                                maxWidth * animatedProgress;
+                                                (maxWidth * animatedProgress)
+                                                    .clamp(0.0, maxWidth);
                                             return Stack(
                                               alignment: Alignment.centerRight,
                                               children: [

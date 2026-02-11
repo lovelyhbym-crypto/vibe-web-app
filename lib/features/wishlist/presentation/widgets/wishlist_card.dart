@@ -290,6 +290,11 @@ class WishlistCard extends ConsumerWidget {
     bool isPureFinance,
     double progress,
   ) {
+    // Ensure progress is safe for width calculation
+    final safeProgress = progress.isNaN || progress.isInfinite
+        ? 0.0
+        : progress.clamp(0.0, 1.0);
+
     return Column(
       children: [
         Stack(
@@ -311,10 +316,11 @@ class WishlistCard extends ConsumerWidget {
               alignment: Alignment.centerRight,
               children: [
                 // Neon Glow (Blur)
-                if (!isPureFinance && progress > 0.05)
+                if (!isPureFinance && safeProgress > 0.05)
                   Container(
                     height: 10,
-                    width: (MediaQuery.of(context).size.width - 64) * progress,
+                    width:
+                        (MediaQuery.of(context).size.width - 64) * safeProgress,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(5),
                       boxShadow: [
@@ -329,7 +335,8 @@ class WishlistCard extends ConsumerWidget {
                 // Main Bar (Laser)
                 Container(
                   height: 10,
-                  width: (MediaQuery.of(context).size.width - 64) * progress,
+                  width:
+                      (MediaQuery.of(context).size.width - 64) * safeProgress,
                   decoration: BoxDecoration(
                     gradient: isPureFinance
                         ? null

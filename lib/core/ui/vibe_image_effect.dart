@@ -29,6 +29,12 @@ class VibeImageEffect extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Ensure progress is within valid range [0.0, 1.0]
+    // This prevents assertion errors in FractionallySizedBox
+    final safeProgress = progress.isNaN || progress.isInfinite
+        ? 0.0
+        : progress.clamp(0.0, 1.0);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final double w = width == double.infinity
@@ -54,7 +60,7 @@ class VibeImageEffect extends StatelessWidget {
                   ClipRect(
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      widthFactor: progress,
+                      widthFactor: safeProgress,
                       child: _buildImage(grayscale: false, w: w, h: h),
                     ),
                   ),

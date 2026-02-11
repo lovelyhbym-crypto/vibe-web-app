@@ -11,7 +11,9 @@ class MainNavigationScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('🏠 [MAIN_NAV] Building MainNavigationScreen');
     final selectedIndex = ref.watch(navigationIndexProvider);
+    debugPrint('🏠 [MAIN_NAV] Selected index: $selectedIndex');
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
 
     final screens = [
@@ -19,6 +21,7 @@ class MainNavigationScreen extends ConsumerWidget {
       const WishlistScreen(),
       const DashboardScreen(),
     ];
+    debugPrint('🏠 [MAIN_NAV] Screens initialized, rendering IndexedStack');
 
     void onItemTapped(int index) {
       ref.read(navigationIndexProvider.notifier).setIndex(index);

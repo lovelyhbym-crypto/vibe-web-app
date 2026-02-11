@@ -30,8 +30,13 @@ class DashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    debugPrint('📊 [DASHBOARD] Building DashboardScreen');
     final dashboardAsync = ref.watch(dashboardProvider);
+    debugPrint(
+      '📊 [DASHBOARD] dashboardAsync state: ${dashboardAsync.runtimeType}',
+    );
     final totalSaved = ref.watch(totalSavedProvider);
+    debugPrint('📊 [DASHBOARD] totalSaved: $totalSaved');
     final navIndex = ref.watch(navigationIndexProvider); // Watch nav index
 
     // Listen for achievement events
@@ -90,103 +95,117 @@ class DashboardScreen extends ConsumerWidget {
         iconTheme: IconThemeData(color: colors.textMain),
       ),
       body: dashboardAsync.when(
-        data: (data) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(dashboardProvider);
-            ref.invalidate(wishlistProvider);
-          },
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _PeriodSelector(),
-                const SizedBox(height: 16),
-                const SizedBox(height: 16),
+        data: (data) {
+          debugPrint('📊 [DASHBOARD] Rendering data view');
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(dashboardProvider);
+              ref.invalidate(wishlistProvider);
+            },
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _PeriodSelector(),
+                  const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                // Top: Total Saved Card
-                _SummaryCard(totalSaved: totalSaved)
-                    .animate()
-                    .fadeIn(duration: 600.ms)
-                    .slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
+                  // Top: Total Saved Card
+                  _SummaryCard(totalSaved: totalSaved)
+                      .animate()
+                      .fadeIn(duration: 600.ms)
+                      .slideY(begin: 0.2, end: 0, curve: Curves.easeOut),
 
-                const SizedBox(height: 24),
-
-                // [NEW] Goal Progress Slider
-                if (activeGoals.isNotEmpty) ...[
-                  _GoalCarousel(
-                    wishlist: activeGoals,
-                    averageDailySavings: data.averageDailySavings,
-                    navIndex: navIndex, // Pass navIndex
-                  ).animate().fadeIn(delay: 100.ms).slideX(begin: 0.1, end: 0),
                   const SizedBox(height: 24),
-                ],
 
-                // Middle: Weekly Trend
-                if (data.totalSaved > 0)
-                  _WeeklyTrendChart(
-                    weeklyData: data.weeklyTrend,
-                  ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1, end: 0),
+                  // [NEW] Goal Progress Slider
+                  if (activeGoals.isNotEmpty) ...[
+                    _GoalCarousel(
+                          wishlist: activeGoals,
+                          averageDailySavings: data.averageDailySavings,
+                          navIndex: navIndex, // Pass navIndex
+                        )
+                        .animate()
+                        .fadeIn(delay: 100.ms)
+                        .slideX(begin: 0.1, end: 0),
+                    const SizedBox(height: 24),
+                  ],
 
-                const SizedBox(height: 24),
+                  // Middle: Weekly Trend
+                  if (data.totalSaved > 0)
+                    _WeeklyTrendChart(weeklyData: data.weeklyTrend)
+                        .animate()
+                        .fadeIn(delay: 200.ms)
+                        .slideX(begin: 0.1, end: 0),
 
-                // Bottom: Category Pie
-                if (data.totalSaved > 0)
-                  _CategoryPieChart(
-                    categoryData: data.categoryBreakdown,
-                  ).animate().fadeIn(delay: 400.ms).slideX(begin: -0.1, end: 0),
+                  const SizedBox(height: 24),
 
-                const SizedBox(height: 48),
+                  // Bottom: Category Pie
+                  if (data.totalSaved > 0)
+                    _CategoryPieChart(categoryData: data.categoryBreakdown)
+                        .animate()
+                        .fadeIn(delay: 400.ms)
+                        .slideX(begin: -0.1, end: 0),
 
-                // [Ghost Data] The Ghost of Failed Dreams
-                Consumer(
-                  builder: (context, ref, _) {
-                    final userProfile = ref
-                        .watch(userProfileNotifierProvider)
-                        .valueOrNull;
-                    final failedCount = userProfile?.failedCount ?? 0;
+                  const SizedBox(height: 48),
 
-                    if (failedCount == 0) return const SizedBox.shrink();
+                  // [Ghost Data] The Ghost of Failed Dreams
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final userProfile = ref
+                          .watch(userProfileNotifierProvider)
+                          .valueOrNull;
+                      final failedCount = userProfile?.failedCount ?? 0;
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 24, left: 16),
-                      child: GestureDetector(
-                        onTap: () {
-                          // [Sound] Play Low Pitch Sound
-                          // await rumble.playLowPitch();
-                          HapticFeedback.heavyImpact();
-                          context.push('/failed-dreams');
-                        },
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.circle,
-                              size: 4,
-                              color: colors.textSub.withValues(alpha: 0.25),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '포기한 꿈: $failedCount개',
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
+                      if (failedCount == 0) return const SizedBox.shrink();
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 24, left: 16),
+                        child: GestureDetector(
+                          onTap: () {
+                            // [Sound] Play Low Pitch Sound
+                            // await rumble.playLowPitch();
+                            HapticFeedback.heavyImpact();
+                            context.push('/failed-dreams');
+                          },
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.circle,
+                                size: 4,
                                 color: colors.textSub.withValues(alpha: 0.25),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w300,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 6),
+                              Text(
+                                '포기한 꿈: $failedCount개',
+                                textAlign: TextAlign.left,
+                                style: TextStyle(
+                                  color: colors.textSub.withValues(alpha: 0.25),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w300,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+          );
+        },
+        loading: () {
+          debugPrint('📊 [DASHBOARD] Showing loading indicator');
+          return const Center(child: CircularProgressIndicator());
+        },
+        error: (err, stack) {
+          debugPrint('📊 [DASHBOARD] Error: $err');
+          return Center(child: Text('Error: $err'));
+        },
       ),
       floatingActionButton:
           FloatingActionButton(

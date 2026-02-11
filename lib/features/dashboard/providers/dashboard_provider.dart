@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:nerve/features/saving/providers/saving_provider.dart';
 import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
@@ -11,11 +12,16 @@ part 'dashboard_provider.g.dart';
 class DashboardNotifier extends _$DashboardNotifier {
   @override
   FutureOr<DashboardModel> build() async {
+    debugPrint('📊 [DASHBOARD_PROVIDER] Building dashboard data');
     final savings = ref.watch(savingProvider).asData?.value ?? [];
+    debugPrint('📊 [DASHBOARD_PROVIDER] Savings count: ${savings.length}');
     final wishlists = ref.watch(wishlistProvider).asData?.value ?? [];
+    debugPrint('📊 [DASHBOARD_PROVIDER] Wishlists count: ${wishlists.length}');
     final period = ref.watch(savingsPeriodProvider); // Watch period
+    debugPrint('📊 [DASHBOARD_PROVIDER] Period: $period');
 
     if (savings.isEmpty) {
+      debugPrint('📊 [DASHBOARD_PROVIDER] No savings, returning empty model');
       return DashboardModel.empty();
     }
 

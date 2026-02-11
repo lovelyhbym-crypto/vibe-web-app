@@ -1,4 +1,5 @@
 // Material import removed
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -32,19 +33,29 @@ GoRouter goRouter(Ref ref) {
       final isLoggingIn = state.uri.path == '/login';
       final isBooting = state.uri.path == '/booting';
 
+      debugPrint('🔀 [ROUTER] Redirect check:');
+      debugPrint('   - Current path: ${state.uri.path}');
+      debugPrint('   - isLoggedIn: $isLoggedIn');
+      debugPrint('   - isGuest: ${authNotifier.isGuest}');
+      debugPrint('   - authState: ${authState.asData?.value}');
+
       // 부팅 화면은 항상 허용
       if (isBooting) {
+        debugPrint('   - Action: Allow booting screen');
         return null;
       }
 
       if (!isLoggedIn && !isLoggingIn) {
+        debugPrint('   - Action: Redirect to /login (not logged in)');
         return '/login';
       }
 
       if (isLoggedIn && isLoggingIn) {
+        debugPrint('   - Action: Redirect to / (already logged in)');
         return '/';
       }
 
+      debugPrint('   - Action: No redirect needed');
       return null;
     },
     routes: [
