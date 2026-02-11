@@ -146,12 +146,12 @@ class _VortexRing extends StatelessWidget {
         .animate(onPlay: (c) => c.repeat())
         .fadeIn(duration: 800.ms)
         .scale(
-          begin: const Offset(1.6, 1.6),
-          end: const Offset(0.4, 0.4),
-          duration: 6.seconds,
+          begin: const Offset(1.5, 1.5),
+          end: const Offset(0.3, 0.3),
+          duration: 4.seconds,
           curve: Curves.easeInSine,
         )
-        .fadeOut(duration: 6.seconds, curve: Curves.easeInSine);
+        .fadeOut(duration: 4.seconds, curve: Curves.easeInSine);
   }
 }
 

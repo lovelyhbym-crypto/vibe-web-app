@@ -661,14 +661,26 @@ class _AchievedTimelineScreenState
     WishlistModel goal,
     List<SavingModel> savings,
   ) {
-    final start = goal.createdAt;
-    final end = goal.achievedAt ?? DateTime.now();
+    if (goal.id == null) return {};
 
-    // Filter savings within the goal period
-    final relevantSavings = savings.where((s) {
-      return s.createdAt.isAfter(start.subtract(const Duration(seconds: 1))) &&
-          s.createdAt.isBefore(end.add(const Duration(seconds: 1)));
+    // 1. Primary filter by wishlist ID (Most accurate)
+    final idMatchedSavings = savings.where((s) {
+      return s.wishlistIds.contains(goal.id);
     }).toList();
+
+    // 2. Fallback to time-based if no ID match (For legacy data or edge cases)
+    List<SavingModel> relevantSavings = idMatchedSavings;
+    if (relevantSavings.isEmpty) {
+      final start = goal.createdAt;
+      final end = goal.achievedAt ?? DateTime.now();
+
+      relevantSavings = savings.where((s) {
+        return s.createdAt.isAfter(
+              start.subtract(const Duration(seconds: 1)),
+            ) &&
+            s.createdAt.isBefore(end.add(const Duration(seconds: 1)));
+      }).toList();
+    }
 
     final stats = <String, int>{};
     for (final s in relevantSavings) {

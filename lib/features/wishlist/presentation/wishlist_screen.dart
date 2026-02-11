@@ -151,23 +151,6 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                   .length;
 
               Widget buildBanner() {
-                final savings = savingsAsync.valueOrNull ?? [];
-
-                // Aggregate savings by category
-                final stats = <String, int>{};
-                for (final s in savings) {
-                  stats.update(s.category, (val) => val + 1, ifAbsent: () => 1);
-                }
-
-                String summaryText = "";
-                if (stats.isNotEmpty) {
-                  summaryText = stats.entries
-                      .take(3) // Top 3 categories to avoid overcrowding
-                      .map((e) => "${i18n.categoryName(e.key)} x${e.value}")
-                      .join(", ");
-                  if (stats.length > 3) summaryText += "...";
-                }
-
                 return BouncyButton(
                   onTap: () => context.push('/achieved-goals'),
                   child: Container(
@@ -215,32 +198,6 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                                       fontSize: 12,
                                     ),
                                   ),
-                                  if (summaryText.isNotEmpty) ...[
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                      ),
-                                      child: Container(
-                                        width: 1,
-                                        height: 10,
-                                        color: colors.textSub.withValues(
-                                          alpha: 0.3,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        summaryText,
-                                        style: TextStyle(
-                                          color: colors.accent,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          fontFamily: 'Courier',
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ),
                             ],

@@ -2059,10 +2059,9 @@ class _NeuralSyncOverlayState extends State<_NeuralSyncOverlay> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // [Vortex Engine] Request: 3x Speed Accelerated Mode
-              const VortexEngine(isAccelerated: true)
-                  .animate()
-                  .scale(duration: 500.ms, curve: Curves.easeOutBack)
-                  .shake(duration: 300.ms),
+              const VortexEngine(
+                isAccelerated: true,
+              ).animate().fadeIn(duration: 300.ms),
               const SizedBox(height: 48),
               // Fade-in/out Log Text
               SizedBox(
