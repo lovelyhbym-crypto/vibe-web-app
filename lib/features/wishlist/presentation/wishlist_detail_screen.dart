@@ -1389,7 +1389,7 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                                                     ? const Color(0xFF8B95A1)
                                                     : Colors.white70)
                                                 .withValues(alpha: 0.75),
-                                        fontSize: 7,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.5,
                                       ),

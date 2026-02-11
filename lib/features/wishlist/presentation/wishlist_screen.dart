@@ -58,6 +58,15 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     }
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Trigger animation when tab becomes visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _resetAnimation();
+    });
+  }
+
   void _resetAnimation() {
     if (mounted) {
       setState(() {

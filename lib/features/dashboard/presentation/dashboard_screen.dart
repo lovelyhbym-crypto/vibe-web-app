@@ -753,7 +753,7 @@ class _WishlistProgressCard extends StatelessWidget {
                                       right: 0.0,
                                     ),
                                     child: Text(
-                                      '${(animatedProgress * 100).toStringAsFixed(1)}%',
+                                      '${(animatedProgress * 100).toInt()}.0%',
                                       style: TextStyle(
                                         fontFamily: 'Courier',
                                         fontSize: 16,

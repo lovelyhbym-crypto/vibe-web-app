@@ -157,15 +157,18 @@ class _AchievedTimelineScreenState
     final isPureFinance = themeMode == VibeThemeMode.pureFinance;
 
     const limeColor = Color(0xFFD4FF00);
-    final cardColor = Theme.of(context).cardColor;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'History',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          'SUCCESS_ARCHIVE',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            letterSpacing: 1.0,
+          ),
         ),
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.white,
         actions: [
@@ -182,11 +185,12 @@ class _AchievedTimelineScreenState
               ),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.analytics_outlined),
-            onPressed: () => context.push('/wishlist/glory-report'),
-            tooltip: 'Glory Report',
-          ),
+          // TODO: Implement Glory Report feature properly
+          // IconButton(
+          //   icon: const Icon(Icons.analytics_outlined),
+          //   onPressed: () => context.push('/wishlist/glory-report'),
+          //   tooltip: 'Glory Report',
+          // ),
           const SizedBox(width: 8),
         ],
       ),
@@ -211,6 +215,13 @@ class _AchievedTimelineScreenState
 
               return Stack(
                 children: [
+                  // Ghost Grid Background (behind everything)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(painter: _GridPainter()),
+                    ),
+                  ),
+                  // Main content
                   ListView.builder(
                     padding: EdgeInsets.only(
                       left: 20,
@@ -293,25 +304,30 @@ class _AchievedTimelineScreenState
                               // Timeline Column
                               Column(
                                 children: [
-                                  // Dot
+                                  // Dot with Neon Glow
                                   Container(
                                     width: 12,
                                     height: 12,
                                     decoration: BoxDecoration(
-                                      color: isPureFinance
-                                          ? colors.accent
-                                          : limeColor,
+                                      color: limeColor,
                                       shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: limeColor.withValues(
+                                            alpha: 0.6,
+                                          ),
+                                          blurRadius: 8,
+                                          spreadRadius: 2,
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  // Line
+                                  // Line with Neon Effect
                                   if (!isLast)
                                     Expanded(
                                       child: Container(
                                         width: 2,
-                                        color: isPureFinance
-                                            ? colors.border
-                                            : limeColor.withAlpha(77),
+                                        color: limeColor.withValues(alpha: 0.2),
                                       ),
                                     ),
                                 ],
@@ -331,32 +347,36 @@ class _AchievedTimelineScreenState
                                           goal.achievedAt ?? DateTime.now(),
                                         ),
                                         style: TextStyle(
-                                          color: Colors.grey[400],
+                                          color: limeColor.withValues(
+                                            alpha: 0.7,
+                                          ),
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                       const SizedBox(height: 8),
-                                      // Goal Card (Minimal)
+                                      // Goal Card (Hi-Tech Data Module)
                                       Container(
                                         padding: const EdgeInsets.all(16),
                                         decoration: BoxDecoration(
-                                          color: isPureFinance
-                                              ? colors.surface
-                                              : cardColor,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.05,
+                                          ),
                                           borderRadius: BorderRadius.circular(
                                             16,
                                           ),
                                           border: Border.all(
-                                            color: isPureFinance
-                                                ? colors.border
-                                                : Colors.white10,
+                                            color: limeColor.withValues(
+                                              alpha: 0.2,
+                                            ),
                                           ),
                                           boxShadow: isPureFinance
                                               ? [
                                                   BoxShadow(
                                                     color: Colors.black
-                                                        .withValues(alpha: 0.05),
+                                                        .withValues(
+                                                          alpha: 0.05,
+                                                        ),
                                                     blurRadius: 4,
                                                   ),
                                                 ]
@@ -367,40 +387,103 @@ class _AchievedTimelineScreenState
                                               CrossAxisAlignment.start,
                                           children: [
                                             Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 Expanded(
-                                                  child: Text(
-                                                    goal.title,
-                                                    style: TextStyle(
-                                                      fontSize: 18,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: isPureFinance
-                                                          ? colors.textMain
-                                                          : Colors.white,
-                                                    ),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        goal.title,
+                                                        style: const TextStyle(
+                                                          fontSize: 18,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.white,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 4),
+                                                    ],
                                                   ),
                                                 ),
-                                                if (isPureFinance)
-                                                  Container(
-                                                    padding:
-                                                        const EdgeInsets.all(2),
-                                                    decoration: BoxDecoration(
-                                                      color: colors.accent,
-                                                      shape: BoxShape.circle,
+                                                const SizedBox(width: 8),
+
+                                                // Right Side: Record ID, Check Icon & Amount
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
+                                                  children: [
+                                                    // Record ID & Check Icon (Row)
+                                                    Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        // Record ID Code
+                                                        Text(
+                                                          'RECORD_0x${goal.id?.substring(0, 3).toUpperCase() ?? "000"}',
+                                                          style: TextStyle(
+                                                            color: limeColor
+                                                                .withValues(
+                                                                  alpha: 0.4,
+                                                                ),
+                                                            fontSize: 10,
+                                                            fontFamily:
+                                                                'Courier',
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        if (isPureFinance)
+                                                          Container(
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  2,
+                                                                ),
+                                                            decoration:
+                                                                BoxDecoration(
+                                                                  color: colors
+                                                                      .accent,
+                                                                  shape: BoxShape
+                                                                      .circle,
+                                                                ),
+                                                            child: const Icon(
+                                                              Icons.check,
+                                                              color:
+                                                                  Colors.white,
+                                                              size: 14,
+                                                            ),
+                                                          )
+                                                        else
+                                                          const Icon(
+                                                            Icons.check_circle,
+                                                            color: limeColor,
+                                                            size: 20,
+                                                          ),
+                                                      ],
                                                     ),
-                                                    child: const Icon(
-                                                      Icons.check,
-                                                      color: Colors.white,
-                                                      size: 14,
+                                                    const SizedBox(height: 4),
+                                                    // Goal Amount (Right aligned below)
+                                                    Text(
+                                                      '${NumberFormat.decimalPattern('ko_KR').format(goal.totalGoal)}원',
+                                                      style: TextStyle(
+                                                        color: limeColor
+                                                            .withValues(
+                                                              alpha: 0.6,
+                                                            ),
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        fontFamily: 'Courier',
+                                                      ),
                                                     ),
-                                                  )
-                                                else
-                                                  const Icon(
-                                                    Icons.check_circle,
-                                                    color: limeColor,
-                                                    size: 20,
-                                                  ),
+                                                  ],
+                                                ),
                                               ],
                                             ),
                                             const SizedBox(height: 12),
@@ -462,20 +545,15 @@ class _AchievedTimelineScreenState
                                                         ),
                                                         Text(
                                                           '${i18n.categoryName(e.key)} x${e.value}',
-                                                          style: TextStyle(
-                                                            color: isPureFinance
-                                                                ? colors
-                                                                      .textMain
-                                                                : Colors
-                                                                      .white70,
-                                                            fontSize: 12,
-                                                            fontWeight:
-                                                                isPureFinance
-                                                                ? FontWeight
-                                                                      .w600
-                                                                : FontWeight
-                                                                      .normal,
-                                                          ),
+                                                          style:
+                                                              const TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 12,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .normal,
+                                                              ),
                                                         ),
                                                       ],
                                                     ),
@@ -614,4 +692,29 @@ class _AchievedTimelineScreenState
         return '✨';
     }
   }
+}
+
+// Ghost Grid Painter
+class _GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.01)
+      ..strokeWidth = 0.5;
+
+    const double spacing = 24.0;
+
+    // Vertical lines
+    for (double x = 0; x <= size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+
+    // Horizontal lines
+    for (double y = 0; y <= size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
