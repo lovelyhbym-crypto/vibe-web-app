@@ -21,6 +21,7 @@ import 'package:nerve/features/home/providers/navigation_provider.dart';
 import 'package:nerve/features/dashboard/providers/reward_state_provider.dart';
 import 'package:nerve/features/saving/presentation/widgets/custom_keypad.dart';
 import 'package:nerve/core/ui/bouncy_button.dart';
+import 'package:nerve/core/ui/vortex_engine.dart';
 
 class SavingRecordScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -762,8 +763,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               SoundService().playFirework();
               HapticService.vibrate();
 
-              // 3.5. 성공 애니메이션 감상 시간 확보 (1.5초)
-              await Future.delayed(const Duration(milliseconds: 1500));
+              // 3.5. 성공 애니메이션 감상 시간 확보 (0.8초로 단축)
+              await Future.delayed(const Duration(milliseconds: 800));
 
               // 4. 목표 탭으로 즉시 이동 (메인 context 사용)
               if (mounted) {
@@ -1620,34 +1621,39 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                                Icons.check_circle_outline,
-                                color: Color(0xFFCCFF00),
-                                size: 80,
-                              )
+                          const VortexEngine(isAccelerated: true)
                               .animate()
                               .scale(
-                                duration: 300.ms,
+                                duration: 400.ms,
                                 curve: Curves.easeOutBack,
                               )
                               .then()
                               .shake(duration: 200.ms),
                           const SizedBox(height: 24),
                           Text(
-                                'SAVING_RECORDED',
+                                'SAVING_RECORDED..',
                                 style: TextStyle(
                                   color: const Color(
                                     0xFFCCFF00,
                                   ).withValues(alpha: 0.8),
                                   fontFamily: 'Courier',
-                                  fontSize: 16,
-                                  letterSpacing: 2.0,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  letterSpacing: 4.0,
+                                  fontWeight: FontWeight.w900,
+                                  shadows: const [
+                                    Shadow(
+                                      color: Color(0xFFCCFF00),
+                                      blurRadius: 20,
+                                    ),
+                                  ],
                                 ),
                               )
-                              .animate()
-                              .fadeIn(delay: 200.ms)
-                              .slideY(begin: 0.2, end: 0),
+                              .animate(onPlay: (c) => c.repeat(reverse: true))
+                              .fadeIn(duration: 400.ms)
+                              .scale(
+                                begin: const Offset(0.95, 0.95),
+                                end: const Offset(1.05, 1.05),
+                              ),
                         ],
                       ),
                     ),
