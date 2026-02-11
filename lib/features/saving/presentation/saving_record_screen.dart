@@ -764,12 +764,8 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               SoundService().playFirework();
               HapticService.vibrate();
 
-              // 3.5. 성공 애니메이션 감상 시간 확보 (0.8초로 단축)
-              await Future.delayed(const Duration(milliseconds: 800));
-
-              // 4. 목표 탭으로 즉시 이동 (메인 context 사용)
+              // 4. 목표 탭으로 즉시 이동 (메인 context 사용) - 지연 제거
               if (mounted) {
-                // context.go('/') 대신 GoRouter.of(context).go('/') 사용 권장되나 context.go()도 screen context면 문제없음
                 context.go('/');
                 ref.read(navigationIndexProvider.notifier).setIndex(1);
               }
