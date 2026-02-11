@@ -18,6 +18,7 @@ import 'package:nerve/features/dashboard/providers/reward_state_provider.dart';
 import 'package:nerve/features/wishlist/presentation/widgets/quest_status_card.dart';
 import 'package:nerve/features/wishlist/presentation/widgets/wishlist_card.dart';
 import 'package:nerve/features/home/providers/navigation_provider.dart';
+import 'package:nerve/features/saving/providers/saving_provider.dart';
 
 class WishlistScreen extends ConsumerStatefulWidget {
   const WishlistScreen({super.key});
@@ -108,6 +109,7 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     }
 
     final wishlistAsync = ref.watch(wishlistProvider);
+    final savingsAsync = ref.watch(savingProvider);
     final i18n = I18n.of(context);
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
     final themeMode = ref.watch(themeNotifierProvider);
@@ -149,42 +151,105 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
                   .length;
 
               Widget buildBanner() {
+                final savings = savingsAsync.valueOrNull ?? [];
+
+                // Aggregate savings by category
+                final stats = <String, int>{};
+                for (final s in savings) {
+                  stats.update(s.category, (val) => val + 1, ifAbsent: () => 1);
+                }
+
+                String summaryText = "";
+                if (stats.isNotEmpty) {
+                  summaryText = stats.entries
+                      .take(3) // Top 3 categories to avoid overcrowding
+                      .map((e) => "${i18n.categoryName(e.key)} x${e.value}")
+                      .join(", ");
+                  if (stats.length > 3) summaryText += "...";
+                }
+
                 return BouncyButton(
                   onTap: () => context.push('/achieved-goals'),
                   child: Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
                     decoration: BoxDecoration(
                       color: colors.surface,
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colors.border.withValues(alpha: 0.5),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "나의 성공 기록",
-                              style: TextStyle(
-                                color: colors.textMain,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "나의 성공 기록",
+                                style: TextStyle(
+                                  color: colors.textMain,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "총 $achievedCount개의 목표 달성 완료",
-                              style: TextStyle(
-                                color: colors.textSub,
-                                fontSize: 12,
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  Text(
+                                    "총 $achievedCount개 목표 달성",
+                                    style: TextStyle(
+                                      color: colors.textSub,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  if (summaryText.isNotEmpty) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                      ),
+                                      child: Container(
+                                        width: 1,
+                                        height: 10,
+                                        color: colors.textSub.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        summaryText,
+                                        style: TextStyle(
+                                          color: colors.accent,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                          fontFamily: 'Courier',
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         Icon(
                           Icons.arrow_forward_ios,
                           color: isPureFinance ? colors.textSub : colors.accent,
-                          size: 16,
+                          size: 14,
                         ),
                       ],
                     ),
