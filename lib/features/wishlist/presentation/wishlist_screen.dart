@@ -17,6 +17,7 @@ import 'package:nerve/core/theme/theme_provider.dart';
 import 'package:nerve/features/dashboard/providers/reward_state_provider.dart';
 import 'package:nerve/features/wishlist/presentation/widgets/quest_status_card.dart';
 import 'package:nerve/features/wishlist/presentation/widgets/wishlist_card.dart';
+import 'package:nerve/features/home/providers/navigation_provider.dart';
 
 class WishlistScreen extends ConsumerStatefulWidget {
   const WishlistScreen({super.key});
@@ -58,15 +59,6 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Trigger animation when tab becomes visible
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _resetAnimation();
-    });
-  }
-
   void _resetAnimation() {
     if (mounted) {
       setState(() {
@@ -77,6 +69,14 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
 
   @override
   Widget build(BuildContext context) {
+    // [Animation Engine] Trigger gauge animation when switching to this tab
+    ref.listen(navigationIndexProvider, (previous, next) {
+      if (next == 1) {
+        // Index 1 is Wishlist Tab
+        _resetAnimation();
+      }
+    });
+
     // RewardState 감시하여 폭죽 트리거가 켜지면 실행
     ref.listen(rewardStateProvider, (previous, next) {
       if (next.isTriggered) {
