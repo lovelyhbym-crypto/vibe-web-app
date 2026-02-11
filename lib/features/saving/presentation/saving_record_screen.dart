@@ -44,7 +44,6 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
   bool _isWaitingForTransfer = false;
   late AnimationController _syncController;
   bool _isFinishing = false; // [Visual Engine] Final glitch effect trigger
-  bool _showSuccessAnimation = false; // [Added] Success animation trigger
 
   @override
   void initState() {
@@ -755,10 +754,6 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               if (success != true) return; // '다시 확인하기'를 눌렀을 때 차가운 침묵을 실현
 
               // 3. 보상 및 효과 (검증 완료 후 실행)
-              if (mounted) {
-                setState(() => _showSuccessAnimation = true);
-              }
-
               ref.read(rewardStateProvider.notifier).triggerConfetti();
               // [Added] Sensory Feedback: Firework Sound & Strong Vibration
               SoundService().playFirework();
@@ -1551,54 +1546,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
             ),
           ),
 
-          // Layer 6: Full-screen Success Overlay (Vortex Engine Restoration)
-          if (_showSuccessAnimation)
-            Positioned.fill(
-              child: Container(
-                color: Colors.black.withValues(alpha: 0.85),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const VortexEngine(isAccelerated: true)
-                            .animate()
-                            .scale(duration: 400.ms, curve: Curves.easeOutBack)
-                            .then()
-                            .shake(duration: 200.ms),
-                        const SizedBox(height: 32),
-                        Text(
-                              'SAVING_RECORDED..',
-                              style: TextStyle(
-                                color: const Color(
-                                  0xFFCCFF00,
-                                ).withValues(alpha: 0.95),
-                                fontFamily: 'Courier',
-                                fontSize: 24,
-                                letterSpacing: 8.0,
-                                fontWeight: FontWeight.w900,
-                                shadows: const [
-                                  Shadow(
-                                    color: Color(0xFFCCFF00),
-                                    blurRadius: 30,
-                                  ),
-                                ],
-                              ),
-                            )
-                            .animate(onPlay: (c) => c.repeat(reverse: true))
-                            .fadeIn(duration: 400.ms)
-                            .scale(
-                              begin: const Offset(0.9, 0.9),
-                              end: const Offset(1.1, 1.1),
-                              duration: 600.ms,
-                            ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ).animate().fadeIn(duration: 300.ms),
+          // Layer 6: Removed redundant overlay (Integrated into _NeuralSyncOverlay)
         ],
       ),
     );
@@ -2103,50 +2051,57 @@ class _NeuralSyncOverlayState extends State<_NeuralSyncOverlay> {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.black87,
+      color: Colors.black.withValues(alpha: 0.9),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.sync, size: 64, color: Color(0xFFD4FF00))
-                .animate(onPlay: (c) => c.repeat())
-                .rotate(duration: 2000.ms, curve: Curves.easeInOut),
-            const Padding(
-              padding: EdgeInsets.only(top: 48),
-            ), // Increased vertical spacing
-            // Fade-in/out Log Text
-            SizedBox(
-              height: 24,
-              child:
-                  Text(
-                        _logs[_logIndex],
-                        key: ValueKey(_logIndex),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFFD4FF00),
-                          fontFamily: 'Courier',
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                      .animate(key: ValueKey('anim_$_logIndex'))
-                      .fadeIn(duration: (widget.isRapidMode ? 200 : 300).ms)
-                      .then(delay: (widget.isRapidMode ? 1000 : 750).ms)
-                      .fadeOut(duration: (widget.isRapidMode ? 200 : 200).ms),
-            ),
-            const Padding(padding: EdgeInsets.only(top: 16)),
-            const Text(
-                  "PROCESSSING NEURAL SYNC...",
-                  style: TextStyle(
-                    color: Colors.white24,
-                    fontSize: 10,
-                    letterSpacing: 3,
-                    fontWeight: FontWeight.w300,
-                  ),
-                )
-                .animate(onPlay: (c) => c.repeat())
-                .shimmer(duration: 2.seconds, color: Colors.white10),
-          ],
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // [Vortex Engine] Request: 3x Speed Accelerated Mode
+              const VortexEngine(isAccelerated: true)
+                  .animate()
+                  .scale(duration: 500.ms, curve: Curves.easeOutBack)
+                  .shake(duration: 300.ms),
+              const SizedBox(height: 48),
+              // Fade-in/out Log Text
+              SizedBox(
+                height: 30,
+                child:
+                    Text(
+                          _logs[_logIndex],
+                          key: ValueKey(_logIndex),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xFFD4FF00),
+                            fontFamily: 'Courier',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                            shadows: [
+                              Shadow(color: Color(0xFFD4FF00), blurRadius: 15),
+                            ],
+                          ),
+                        )
+                        .animate(key: ValueKey('anim_$_logIndex'))
+                        .fadeIn(duration: (widget.isRapidMode ? 200 : 300).ms)
+                        .then(delay: (widget.isRapidMode ? 1000 : 750).ms)
+                        .fadeOut(duration: (widget.isRapidMode ? 200 : 200).ms),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                    "NERVE_SINGULARITY_SYNCING...",
+                    style: TextStyle(
+                      color: Colors.white24,
+                      fontSize: 10,
+                      letterSpacing: 4,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  )
+                  .animate(onPlay: (c) => c.repeat())
+                  .shimmer(duration: 2.seconds, color: Colors.white10),
+            ],
+          ),
         ),
       ),
     );
