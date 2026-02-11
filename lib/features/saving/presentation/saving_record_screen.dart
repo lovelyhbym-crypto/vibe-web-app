@@ -16,6 +16,7 @@ import 'package:nerve/features/wishlist/providers/wishlist_provider.dart';
 import 'package:nerve/features/wishlist/domain/wishlist_model.dart';
 import 'package:nerve/core/theme/theme_provider.dart';
 import 'dart:async';
+import 'dart:ui';
 import 'dart:math' as math;
 import 'package:nerve/features/home/providers/navigation_provider.dart';
 import 'package:nerve/features/dashboard/providers/reward_state_provider.dart';
@@ -1553,6 +1554,55 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
               gravity: 0.2,
             ),
           ),
+
+          // Layer 6: Full-screen Success Overlay (Vortex Engine Restoration)
+          if (_showSuccessAnimation)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withValues(alpha: 0.85),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const VortexEngine(isAccelerated: true)
+                            .animate()
+                            .scale(duration: 400.ms, curve: Curves.easeOutBack)
+                            .then()
+                            .shake(duration: 200.ms),
+                        const SizedBox(height: 32),
+                        Text(
+                              'SAVING_RECORDED..',
+                              style: TextStyle(
+                                color: const Color(
+                                  0xFFCCFF00,
+                                ).withValues(alpha: 0.95),
+                                fontFamily: 'Courier',
+                                fontSize: 24,
+                                letterSpacing: 8.0,
+                                fontWeight: FontWeight.w900,
+                                shadows: const [
+                                  Shadow(
+                                    color: Color(0xFFCCFF00),
+                                    blurRadius: 30,
+                                  ),
+                                ],
+                              ),
+                            )
+                            .animate(onPlay: (c) => c.repeat(reverse: true))
+                            .fadeIn(duration: 400.ms)
+                            .scale(
+                              begin: const Offset(0.9, 0.9),
+                              end: const Offset(1.1, 1.1),
+                              duration: 600.ms,
+                            ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ).animate().fadeIn(duration: 300.ms),
         ],
       ),
     );
@@ -1612,53 +1662,7 @@ class _SavingRecordScreenState extends ConsumerState<SavingRecordScreen>
                   ),
                 ),
               ),
-              // Success Animation Layer
-              if (_showSuccessAnimation)
-                Positioned.fill(
-                  child: Container(
-                    color: Colors.black.withValues(alpha: 0.8),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const VortexEngine(isAccelerated: true)
-                              .animate()
-                              .scale(
-                                duration: 400.ms,
-                                curve: Curves.easeOutBack,
-                              )
-                              .then()
-                              .shake(duration: 200.ms),
-                          const SizedBox(height: 24),
-                          Text(
-                                'SAVING_RECORDED..',
-                                style: TextStyle(
-                                  color: const Color(
-                                    0xFFCCFF00,
-                                  ).withValues(alpha: 0.8),
-                                  fontFamily: 'Courier',
-                                  fontSize: 18,
-                                  letterSpacing: 4.0,
-                                  fontWeight: FontWeight.w900,
-                                  shadows: const [
-                                    Shadow(
-                                      color: Color(0xFFCCFF00),
-                                      blurRadius: 20,
-                                    ),
-                                  ],
-                                ),
-                              )
-                              .animate(onPlay: (c) => c.repeat(reverse: true))
-                              .fadeIn(duration: 400.ms)
-                              .scale(
-                                begin: const Offset(0.95, 0.95),
-                                end: const Offset(1.05, 1.05),
-                              ),
-                        ],
-                      ),
-                    ),
-                  ).animate().fadeIn(duration: 200.ms),
-                ),
+              // Success Animation Layer moved to main Stack
             ],
           ),
         );
