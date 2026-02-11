@@ -18,7 +18,6 @@ import 'package:nerve/features/dashboard/providers/reward_state_provider.dart';
 import 'package:nerve/features/wishlist/presentation/widgets/quest_status_card.dart';
 import 'package:nerve/features/wishlist/presentation/widgets/wishlist_card.dart';
 import 'package:nerve/features/home/providers/navigation_provider.dart';
-import 'package:nerve/features/saving/providers/saving_provider.dart';
 
 class WishlistScreen extends ConsumerStatefulWidget {
   const WishlistScreen({super.key});
@@ -109,7 +108,6 @@ class _WishlistScreenState extends ConsumerState<WishlistScreen>
     }
 
     final wishlistAsync = ref.watch(wishlistProvider);
-    final savingsAsync = ref.watch(savingProvider);
     final i18n = I18n.of(context);
     final colors = Theme.of(context).extension<VibeThemeExtension>()!.colors;
     final themeMode = ref.watch(themeNotifierProvider);
