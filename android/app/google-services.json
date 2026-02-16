@@ -12,7 +12,12 @@
           "package_name": "com.example.vive_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "198497109026-onfr6av8rucsa01hv1a08i5ir348sve8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD60vBEfshq8s9--ocik6p77BoHnRQ7N0A"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "198497109026-onfr6av8rucsa01hv1a08i5ir348sve8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "198497109026-0p5t92uacc9oc2a8t1754nj9okj0c49g.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.viveApp"
+              }
+            }
+          ]
         }
       }
     },
@@ -31,7 +48,20 @@
           "package_name": "com.lovelyhbym.nerve"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "198497109026-8hbd53401b3jod3qc3gtg6ctk77j380v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.lovelyhbym.nerve",
+            "certificate_hash": "6b1a499260398d7e7658ac6a37e0250a62b74b9a"
+          }
+        },
+        {
+          "client_id": "198497109026-onfr6av8rucsa01hv1a08i5ir348sve8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD60vBEfshq8s9--ocik6p77BoHnRQ7N0A"
@@ -39,7 +69,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "198497109026-onfr6av8rucsa01hv1a08i5ir348sve8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "198497109026-0p5t92uacc9oc2a8t1754nj9okj0c49g.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.viveApp"
+              }
+            }
+          ]
         }
       }
     }

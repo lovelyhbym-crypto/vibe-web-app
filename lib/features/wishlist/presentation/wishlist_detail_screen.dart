@@ -20,6 +20,8 @@ import '../../../core/services/sound_service.dart';
 import '../../../core/services/haptic_service.dart';
 import 'widgets/countdown_timer_widget.dart';
 import '../../../core/ui/bouncy_button.dart';
+import '../../../core/services/preference_service.dart';
+import 'widgets/peek_a_boo_wrapper.dart';
 
 class WishlistDetailScreen extends ConsumerStatefulWidget {
   final WishlistModel item;
@@ -44,6 +46,9 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
   bool _isSaving = false;
   int _animationTriggerId = 0;
   bool _isSpinning = false;
+
+  // Peek-a-boo Discovery 시스템
+  bool _isFirstEntry = false;
 
   void _spinPenaltySlotMachine() async {
     if (_isSpinning) return;
@@ -104,6 +109,19 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
     _penaltyController.addListener(_onTextChanged);
     _titleController.addListener(_onTextChanged);
     _priceController.addListener(_onTextChanged);
+
+    // Peek-a-boo Discovery: 최초 진입 체크
+    _checkFirstEntry();
+  }
+
+  /// Peek-a-boo Discovery: 최초 진입 여부 확인
+  Future<void> _checkFirstEntry() async {
+    final isFirst = await PreferenceService.checkAndMarkFirstEntry();
+    if (isFirst && mounted) {
+      setState(() {
+        _isFirstEntry = true;
+      });
+    }
   }
 
   @override
@@ -1741,29 +1759,32 @@ class _WishlistDetailScreenState extends ConsumerState<WishlistDetailScreen>
                 ),
               ],
             ),
-            // Side Edge Handle
+            // Side Edge Handle with Peek-a-boo Discovery
             Positioned(
               right: 0,
               top: 0,
               bottom: 0,
               width: 20,
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: () => _showEdgeMenu(item),
-                onLongPress: () => _showEdgeMenu(item),
-                child: Center(
-                  child: Container(
-                    width: 4,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                        ),
-                      ],
+              child: PeekABooWrapper(
+                showAnimation: _isFirstEntry,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTap: () => _showEdgeMenu(item),
+                  onLongPress: () => _showEdgeMenu(item),
+                  child: Center(
+                    child: Container(
+                      width: 4,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
